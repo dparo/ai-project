@@ -5,7 +5,11 @@
 #include "platform.c"
 
 
+#if defined __DEBUG
 #define TOKENIZER_DEBUG 1
+#else
+#define TOKENIZER_DEBUG 0
+#endif
 
 #define TOKENIZER_DOLLAR_SIGN_VALID_IDENTIFIER (1)
 

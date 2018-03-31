@@ -4,6 +4,8 @@
 
 ** Implementazione di un risolutore
    - https://en.wikipedia.org/wiki/Shunting-yard_algorithm
+   - https://en.wikipedia.org/wiki/Boolean_satisfiability_problem
+   - https://en.wikipedia.org/wiki/DPLL_algorithm
    - http://logictools.org/propositional.html
    - http://minisat.se/
    - http://minisat.se/downloads/MiniSat.pdf
