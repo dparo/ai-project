@@ -215,15 +215,22 @@ bruteforce_solve(Token *queue,
     void *v;
 
 
-    for ( int i = 0; it < stb_sdict_count(d); i ++ ) {
-        
+    /* allocates some uint64_t based on the count and encode */
+    /*     all possible booleans in there; */
+    
+    for ( int c = 0; c < stb_sdict_count(d); c ++ ) {
+        for (int it = 0; it < c || it == 0; it ++ ) {
+            for( int k = 0; k < 2; k++) {
+                
+            }
+        }
     }
 
 }
 
 
 int main( int argc, char **argv)
-{
+{  
     platform_init();
     UNUSED(argc), UNUSED(argv);
 #if 0
