@@ -109,6 +109,18 @@ int generator(void)
 #define PROP_CALC_C_IMPL
 #include "prop-calc.c"
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#pragma GCC diagnostic ignored "-Wsign-compare"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wtype-limits"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#pragma GCC diagnostic ignored "-Wunused-value"
+#define STB_DEFINE
+#include "stb.h"
+#pragma GCC diagnostic pop
+
+
 void test_generator(void)
 {
 
@@ -171,7 +183,45 @@ pcalc_greater_or_eq_precedence(Token *sample,
     return result;
 }
 
- 
+
+
+
+struct prop_calc_id {
+    uint32_t id;
+    uint32_t index;
+};
+
+void
+bruteforce_solve(Token *queue,
+                 size_t queuesize)
+{
+    stb_sdict *d = stb_sdict_new(1);
+
+    
+    
+    Token *t = queue;
+    size_t it = 0;
+    for ( t = queue; it < queuesize; t = & queue[++it]) {
+        if ( t->type == TT_IDENTIFIER ) {
+            char temp = t->text[t->text_len];
+            t->text[t->text_len] = 0;
+            stb_sdict_set(d, t->text, NULL);
+            t->text[t->text_len] = temp;
+        }
+    }   
+
+    int i = 0;
+    char *k;
+    void *v;
+
+
+    for ( int i = 0; it < stb_sdict_count(d); i ++ ) {
+        
+    }
+
+}
+
+
 int main( int argc, char **argv)
 {
     platform_init();
@@ -298,6 +348,12 @@ parse_end: {
     for ( size_t i = 0; i < queue_top; i++ ) {
         log_token(& (queue[i]));
     }
+
+
+    printf("Running bruteforce method\n");
+
+    bruteforce_solve(queue, queue_top);
+    
     
     puts("Exiting application");
     return 0;
