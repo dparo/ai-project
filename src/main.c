@@ -60,9 +60,7 @@ coro_enginnering(void)
     if (s.j) {
         goto *(s.j);
     }
-
-    
-
+ 
     
     memset(&s, 0, sizeof(s));
 
@@ -148,20 +146,44 @@ string_starts_with(char *starter,
      return result;
 }
 
+
+bool
+prop_calc_token_is_operator(Token *t)
+{
+    bool result = true;
+    if (   t->type == TT_NONE
+        || t->type == TT_IDENTIFIER
+        || t->type == TT_PUNCT_OPEN_PAREN
+        || t->type == TT_PUNCT_CLOSE_PAREN
+        || t->type == TT_CONSTANT ) {
+        result = false;
+    }
+    return result;
+}
+
+
+bool
+pcalc_greater_or_eq_precedence(Token *sample,
+                               Token *tested )
+{
+    bool result = false;
+
+    return result;
+}
+
  
 int main( int argc, char **argv)
 {
     platform_init();
     UNUSED(argc), UNUSED(argv);
 #if 0
-    test_generator();
-    return 0;
+    test_generator(); 
+   return 0;
 #endif
 
 
-
     char code [] =
-        "( A | B ) <-> ( C && B )"
+        "( !A | B ) <-> ( C & !B )"
         "\0\0\0\0\0\0";
     
     
@@ -170,7 +192,7 @@ int main( int argc, char **argv)
     Tokenizer tknzr;
     tokenizer_init_from_memory( &tknzr, code,
                                 sizeof(code),
-                                "");
+                                "*code*");
 
     Token function_name = Empty_Token;
     bool searching_for_function = true;
@@ -179,8 +201,27 @@ int main( int argc, char **argv)
     i32 nested_brackets = 0;
     i32 nested_braces = 0;
 
-     
-     
+
+
+
+    // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
+
+    // operator stack
+    Token stack[1024];
+    size_t stack_top = 0;
+
+
+    // output queue
+    Token queue[1024];
+    size_t queue_top = 0;
+    
+    
+#define TOKEN_STACK_PUSH( token )                                       \
+    do { (stack)[(stack_top)++] = (token); assert((stack_top) != sizeof(stack)); } while(0)
+    
+#define TOKEN_QUEUE_PUSH( token )                                       \
+    do { (queue)[(queue_top)++] = (token); assert((queue_top) != sizeof(queue)); } while(0)
+
      
     // NOTE: Maybe better error handling because even the push_state can throw an error
     //       Maybe set a locked variable inside the tokenizer for critical stuff
@@ -188,11 +229,76 @@ int main( int argc, char **argv)
     while (!done && get_next_token( &tknzr, & token)) {
         // NOTE: At every iteration the tokenizer error is cleared with the call to get_next_token
         if ( tknzr.err ) {
-            assert_msg(0, "We got an error boys");
             puts(tknzr.err_desc);
+            assert_msg(0, "We got an error boys");
+        }    
+
+        //log_token(& token);
+
+        {
+            if (token.type == TT_CONSTANT ||
+                token.type == TT_IDENTIFIER ) {
+                TOKEN_QUEUE_PUSH(token);
+            } /* else if ( is function ) */
+            else if ( prop_calc_token_is_operator(& token )) {
+                Token *peek = NULL;
+                while ( ( stack_top != 0 && (peek = & (stack[stack_top - 1])))
+                        && ( pcalc_greater_or_eq_precedence(& token, peek)
+                             && peek->type != TT_PUNCT_OPEN_PAREN)) {
+                    TOKEN_QUEUE_PUSH(*peek);
+                    stack_top--;
+                }
+
+                TOKEN_STACK_PUSH(token);
+            } else if ( token.type == TT_PUNCT_OPEN_PAREN ) {
+                TOKEN_STACK_PUSH(token);
+            } else if (token.type == TT_PUNCT_CLOSE_PAREN ) {
+                Token *peek = NULL;
+                while ( ( stack_top != 0 && (peek = & (stack[stack_top - 1])))
+                        && ( peek->type != TT_PUNCT_OPEN_PAREN)) {
+                    TOKEN_QUEUE_PUSH(*peek);
+                    stack_top--;
+                }
+                if ( stack_top == 0 ) {
+                    if ( peek && peek->type != TT_PUNCT_OPEN_PAREN ) {
+                        // Mismatched parentheses
+                        fprintf(stderr, "Mismatched parens\n");
+                        goto parse_end;
+                    }
+                } else {
+                    // pop the closed paren from the stack
+                    stack_top--;
+                }
+            }
         }
-        log_token(& token);
+        
+
     }
+
+    /* if there are no more tokens to read: */
+    /* 	while there are still operator tokens on the stack: */
+    /* 		/\* if the operator token on the top of the stack is a bracket, then there are mismatched parentheses. *\/ */
+    /* 		pop the operator from the operator stack onto the output queue. */
+
+    Token *peek = NULL;
+    while ( stack_top != 0 && (peek = & (stack[stack_top - 1]))) {
+        if ( peek->type == TT_PUNCT_OPEN_PAREN ||
+             peek->type == TT_PUNCT_CLOSE_PAREN ) {
+            fprintf(stderr, "Mismatched parens\n");
+            goto parse_end;
+        }
+        TOKEN_QUEUE_PUSH(*peek);
+        stack_top--;
+    }
+
+    
+parse_end: {
+    }
+    
+    for ( size_t i = 0; i < queue_top; i++ ) {
+        log_token(& (queue[i]));
+    }
+    
     puts("Exiting application");
     return 0;
 

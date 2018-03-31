@@ -66,7 +66,10 @@ enum Token_Type {
      TT_PUNCT_SEMICOLON, // ;
      TT_PUNCT_COLON,     // :
      TT_PUNCT_ARROW,
+
      TT_PUNCT_BOTHDIR_ARROW,
+     TT_PUNCT_DEDUCTION, // |- |=
+     TT_PUNCT_DEFINITION, // :-
 
      TT_PUNCT_OPEN_PAREN,
      TT_PUNCT_CLOSE_PAREN,
@@ -689,8 +692,15 @@ parse_punctuator ( Tokenizer *tknzr,
           token->text_len = 1;
      }
      else if ( c1 == ':') {
-          token->type = TT_PUNCT_COLON;
-          token->text_len = 1;
+         if ( c2 == '-' ) {
+             token->type = TT_PUNCT_DEFINITION;
+             token->text_len = 2;
+
+         }
+         else {
+             token->type = TT_PUNCT_COLON;
+             token->text_len = 1;
+         }
      }
      else if ( c1 == '.') {
           if ( c2 == '.' && c3 == '.' ) {
@@ -877,6 +887,10 @@ parse_punctuator ( Tokenizer *tknzr,
           else if (c2 == '|') {
                token->type = TT_PUNCT_LOGICAL_OR;
                token->text_len = 2;
+          } else if (c2 == '-' || c2 == '=' ) {
+              token->type = TT_PUNCT_DEDUCTION;
+               token->text_len = 2;
+
           }
           else {
                token->type = TT_PUNCT_BITWISE_OR;
