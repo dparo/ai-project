@@ -40,97 +40,11 @@
 
 
 
-# define YIELD_NORES()                                                   \
-    do { s.j = && jmp##__func__##__LINE__; return; jmp##__func__##__LINE__: {} } while(0)
-
-# define YIELD(result)                                                  \
-    do { s.j = && jmp##__func__##__LINE__; return (result); jmp##__func__##__LINE__: {} } while(0)
-
-
-int
-coro_enginnering(void)
-{
-    static struct {
-        void *j;
-        
-        int a;
-        int b;
-    } s = {};
-
-    if (s.j) {
-        goto *(s.j);
-    }
- 
-    
-    memset(&s, 0, sizeof(s));
-
-    s.a = 10;
-    s.b = 11;
-
-
-    YIELD(10);
-       
-    s.j = NULL;
-    return 0;
-    
-}
-
-int generator(void)
-{
-    static struct {
-        void *j;
-
-        
-        int a;
-    } s = {0};
-
-
-    if (s.j) {
-        goto *(s.j);
-    } else {
-        memset(&s, 0, sizeof(s));
-    }
-
-
-
-    for ( s.a = 0; s.a < 10; s.a++ ) {
-        YIELD(s.a);
-    }
-    
-
-    
-    s.j = NULL;    //return 0;
-    return -1;
-
-}
-
-
-
 #define PROP_CALC_C_IMPL
 #include "prop-calc.c"
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
-#pragma GCC diagnostic ignored "-Wsign-compare"
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
-#pragma GCC diagnostic ignored "-Wtype-limits"
-#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
-#pragma GCC diagnostic ignored "-Wunused-value"
-#define STB_DEFINE
-#include "stb.h"
-#pragma GCC diagnostic pop
-
-
-void test_generator(void)
-{
-
-    int value = 0;
-    for ( int it = 0; it < 3; it++ ) {
-        while (value = generator(), value != -1 ) {
-            printf("iteration %d -> %d\n", it, value);
-        }
-    }
-}
+#define PCALC_UTILS_C_IMPL
+#include "pcalc_utils.c"
 
 
 void log_token (Token *token)
@@ -139,24 +53,6 @@ void log_token (Token *token)
 }
 
 
-bool
-string_starts_with(char *starter,
-                   char *string,
-                   i32 string_len )
-{
-     bool result = true;
-     i32 i;
-     for ( i = 0;
-           (starter[i] != 0) && (i < string_len);
-           ++i ) {
-          if ( starter[i] != string[i] ) {
-               result = false;
-               break;
-          }
-     }
-
-     return result;
-}
 
 
 bool
@@ -238,10 +134,7 @@ pcalc_greater_or_eq_precedence(Token *sample,
 
 
 
-struct prop_calc_id {
-    uint32_t id;
-    uint32_t index;
-};
+
 
 
 void
@@ -278,41 +171,25 @@ bool_uint64_array_encoded_add( uint64_t *array,
     }
 }
 
-void
-test_uint64_t(void)
-{
-    uint64_t array[2];
-    for ( size_t i = 1; i < 72; i++ ) {
-        size_t bits_count = i;        
-        bool_uint64_array_encoded_add(array, bits_count);
-    }    
-}
+
+
+
+
+
+
 
 void
-pcalc_encoded_preprocess ( stb_sdict *d,
-                           uint64_t *array,
-                           size_t bits_count )
+pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
 {
-    assert(bits_count > 0);
-
-    size_t nelems;
-    if ( bits_count == 0 ) { nelems = 0; }
-    else { nelems = ((bits_count - 1) / (sizeof(uint64_t) * 8)) + 1; }
-   
-    size_t bits_count_remainder; (void) bits_count_remainder;
-    if ( nelems == 0 ) { bits_count_remainder = 0; }
-    else {  bits_count_remainder = ( bits_count) % ( sizeof(uint64_t) * 8); }
-
-
-    int it = 0;
+    int it1 = 0, it2 = 0;
     char *k;
     void *v;
-    stb_sdict_for(d, it, k, v) {
-        v = (void*) ((size_t)it);
-        stb_sdict_set(d, k, v);
+    stb_sdict_for(symtable->dict, it1, k, v) {
+        v = (void*) ((size_t)it2);
+        it2 ++ ;
+        stb_sdict_set(symtable->dict, k, v);
         printf("k : %s | v: %p\n", k, v);
     }
-
 }
 
 
@@ -353,23 +230,6 @@ boolean_unpack_from_uint64_array( uint64_t *array,
     return false;
 }
 
-void
-boolean_packing_unpacking_test(void)
-{
-    uint64_t array[2] = {0};
-    size_t array_bits_count = 128;
-    bool value = 1;
-    for (size_t i = 0; i < 100; i++ ) {
-        value = !value;
-        boolean_pack_into_uint64_array(value, array, array_bits_count, i);
-    }
-    for (size_t i = 0; i < 100; i++ ) {
-        boolean_unpack_from_uint64_array(array, array_bits_count, i);
-    }
-
-}
-
-
 bool
 pcalc_encoded_compute_with_value(Token *queue,
                                  size_t queuesize,
@@ -380,7 +240,7 @@ pcalc_encoded_compute_with_value(Token *queue,
     assert(array_bits_count > 0);
     
     bool *stack = calloc(queuesize, 1);
-    assert_msg(0, "The stack should be provided from the caller");
+    // assert_msg(0, "The stack should be provided from the caller");
     
     size_t stack_top = 0;
     if ( stack ) {
@@ -396,7 +256,6 @@ pcalc_encoded_compute_with_value(Token *queue,
                                                                array_bits_count,
                                                                bit_index );
                 
-                assert_msg(0, "Needs proper packing and unpacking testing");
             } else {
                 // Token is an operator: Needs to perform the operation
                 //                       and push it into the stack
@@ -415,44 +274,68 @@ pcalc_encoded_compute_with_value(Token *queue,
 }
 
 void
-bruteforce_solve(Token *queue,
-                 size_t queuesize)
+pcalc_build_symbol_table_from_queue(struct ast_token_queue *queue,
+                                    struct symbol_table *symtable)
 {
-    stb_sdict *d = stb_sdict_new(1);
-
+    Token *t;
+    size_t it;
     
-    
-    Token *t = queue;
-    size_t it = 0;
-    for ( t = queue; it < queuesize; t = & queue[++it]) {
+    for ( it = 0, t = queue->tokens; it < queue->num_tokens;
+          t = & (queue->tokens[++it])) {
         if ( t->type == TT_IDENTIFIER ) {
-            char temp = t->text[t->text_len];
-            t->text[t->text_len] = 0;
-            stb_sdict_set(d, t->text, NULL);
-            t->text[t->text_len] = temp;
+            //null terminate;
+            symbol_table_add_identifier(symtable, t);
         }
     }   
 
-    int i = 0;
-    char *k;
-    void *v;
+}
 
 
+size_t
+ast_truth_table_packed_compute_required_size( size_t required_num_of_bits )
+{
+    assert(required_num_of_bits);
+    return (required_num_of_bits - 1) /
+        (sizeof(ast_truth_value_packed) * 8) * sizeof(ast_truth_value_packed) + sizeof(ast_truth_value_packed);
+}
+
+struct ast_truth_table_packed*
+ast_truth_table_packed_alloc_from_symtable(struct symbol_table *symtable)
+{
+    struct ast_truth_table_packed* result;
+
+    size_t allocationsize =
+        ast_truth_table_packed_compute_required_size(symbol_table_num_ids(symtable));
+    assert(allocationsize);
+
+    result = calloc(allocationsize, 1);
+    assert(result);
+
+    result->num_bits = symbol_table_num_ids(symtable);
     /* allocates some uint64_t based on the count and encode */
     /*     all possible booleans in there; */
 
-    size_t temp = 129/* stb_sdict_count(d) */;
-    size_t allocationsize =
-        ((temp - 1) / (sizeof(uint64_t) * 8)) * sizeof(uint64_t) + sizeof(uint64_t);
-
-    assert(allocationsize);
     
-    uint64_t *data = calloc(allocationsize, 1);
 
-    if ( data ) {
 
-        pcalc_encoded_preprocess(d, data, stb_sdict_count(d));
-        size_t max_it = 1 << stb_sdict_count(d);
+    return result;
+}
+
+void
+bruteforce_solve(struct ast_token_queue *queue)
+{
+    struct symbol_table symtable = symbol_table_new();
+
+
+    pcalc_build_symbol_table_from_queue(queue, &symtable);
+    pcalc_symbol_table_preprocess_ids(& symtable);
+    
+    struct ast_truth_table_packed *ast_ttp =
+        ast_truth_table_packed_alloc_from_symtable(& symtable);
+
+    if ( ast_ttp ) {
+
+        size_t max_it = 1 << symbol_table_num_ids(& symtable);
 
         for (size_t i = 0; i < max_it; i ++ ) {
 #       if 0
@@ -460,32 +343,32 @@ bruteforce_solve(Token *queue,
 #       endif
             // Use the value right here and compute
             {
-                pcalc_encoded_compute_with_value(queue, queuesize, d, data, stb_sdict_count(d));
+#           if 0
+                pcalc_encoded_compute_with_value(queue->tokens, queue->num_tokens, d, data, stb_sdict_count(d));
+#           endif
+                assert_msg(0, "Need to refactor above line and function");
             }
+
+#       if 0
             bool_uint64_array_encoded_add( data,
                                            stb_sdict_count(d) );
+#       endif
+            assert_msg(0, "Need to refactor above line and function");
         }
 
 
-        free(data);
+        free(ast_ttp);
     }
 }
 
+
+#define TEST_C_IMPL
+#include "test.c"
 
 int main( int argc, char **argv)
 {
     platform_init();
     UNUSED(argc), UNUSED(argv);
-#if 0
-    pack_testing();
-    return 0;
-#endif
-#if 0
-    test_generator(); 
-    return 0;
-#endif
-
-
     char code [] =
         "( !A | B ) <-> ( C & !B  || !D | E | F| G)"
         "\0\0\0\0\0\0";
@@ -498,33 +381,14 @@ int main( int argc, char **argv)
                                 sizeof(code),
                                 "*code*");
 
-    Token function_name = Empty_Token;
-    bool searching_for_function = true;
-     
-    i32 nested_parens = 0;
-    i32 nested_brackets = 0;
-    i32 nested_braces = 0;
-
-
-
-
     // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 
     // operator stack
-    Token stack[1024];
-    size_t stack_top = 0;
-
-
-    // output queue
-    Token queue[1024];
-    size_t queue_top = 0;
+    struct ast_token_stack stack = {0};
+    struct ast_token_queue queue = {0};
     
     
-#define TOKEN_STACK_PUSH( token )                                       \
-    do { (stack)[(stack_top)++] = (token); assert((stack_top) != sizeof(stack)); } while(0)
     
-#define TOKEN_QUEUE_PUSH( token )                                       \
-    do { (queue)[(queue_top)++] = (token); assert((queue_top) != sizeof(queue)); } while(0)
 
      
     // NOTE: Maybe better error handling because even the push_state can throw an error
@@ -542,28 +406,27 @@ int main( int argc, char **argv)
         {
             if (token.type == TT_CONSTANT ||
                 token.type == TT_IDENTIFIER ) {
-                TOKEN_QUEUE_PUSH(token);
+                ast_token_queue_push(&queue, &token);
             } /* else if ( is function ) */
             else if ( prop_calc_token_is_operator(& token )) {
                 Token *peek = NULL;
-                while ( ( stack_top != 0 && (peek = & (stack[stack_top - 1])))
+                while ( ( (stack.num_tokens) != 0 && (peek = ast_token_stack_peek_addr(&stack)))
                         && ( pcalc_greater_or_eq_precedence(peek, & token)
                              && peek->type != TT_PUNCT_OPEN_PAREN)) {
-                    TOKEN_QUEUE_PUSH(*peek);
-                    stack_top--;
+                    ast_token_queue_push( &queue, peek);
+                    ast_token_stack_pop( & stack);
                 }
-
-                TOKEN_STACK_PUSH(token);
+                ast_token_stack_push( & stack, & token);
             } else if ( token.type == TT_PUNCT_OPEN_PAREN ) {
-                TOKEN_STACK_PUSH(token);
+                ast_token_stack_push( & stack, & token);
             } else if (token.type == TT_PUNCT_CLOSE_PAREN ) {
                 Token *peek = NULL;
-                while ( ( stack_top != 0 && (peek = & (stack[stack_top - 1])))
+                while ( ( (stack.num_tokens) != 0 && (peek = ast_token_stack_peek_addr(&stack)))
                         && ( peek->type != TT_PUNCT_OPEN_PAREN)) {
-                    TOKEN_QUEUE_PUSH(*peek);
-                    stack_top--;
+                    ast_token_queue_push( &queue, peek);
+                    ast_token_stack_pop( & stack);
                 }
-                if ( stack_top == 0 ) {
+                if ( stack.num_tokens == 0 ) {
                     if ( peek && peek->type != TT_PUNCT_OPEN_PAREN ) {
                         // Mismatched parentheses
                         fprintf(stderr, "Mismatched parens\n");
@@ -571,7 +434,7 @@ int main( int argc, char **argv)
                     }
                 } else {
                     // pop the closed paren from the stack
-                    stack_top--;
+                    ast_token_stack_pop( & stack);
                 }
             }
         }
@@ -585,28 +448,28 @@ int main( int argc, char **argv)
     /* 		pop the operator from the operator stack onto the output queue. */
 
     Token *peek = NULL;
-    while ( stack_top != 0 && (peek = & (stack[stack_top - 1]))) {
+    while ( ( (stack.num_tokens) != 0 && (peek = ast_token_stack_peek_addr(&stack)))) {
         if ( peek->type == TT_PUNCT_OPEN_PAREN ||
              peek->type == TT_PUNCT_CLOSE_PAREN ) {
             fprintf(stderr, "Mismatched parens\n");
             goto parse_end;
         }
-        TOKEN_QUEUE_PUSH(*peek);
-        stack_top--;
+        ast_token_queue_push( & queue, peek);
+        ast_token_stack_pop ( & stack );
     }
 
     
 parse_end: {
     }
     
-    for ( size_t i = 0; i < queue_top; i++ ) {
-        log_token(& (queue[i]));
+    for ( size_t i = 0; i < queue.num_tokens; i++ ) {
+        log_token(& (queue.tokens[i]));
     }
 
 
     printf("Running bruteforce method\n");
 
-    bruteforce_solve(queue, queue_top);
+    bruteforce_solve(& queue);
     
     
     puts("Exiting application");

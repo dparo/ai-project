@@ -25,7 +25,14 @@ struct ast_token_stack {
     Token tokens[AST_TOKEN_STACK_MAX_TOKENS_COUNT];
     size_t num_tokens;
 };
-    
+
+typedef uint64_t ast_truth_value_packed;
+
+struct ast_truth_table_packed {
+    // Flexible array member
+    size_t num_bits;
+    ast_truth_value_packed bits[];
+};
 
     
 
@@ -100,6 +107,41 @@ ast_token_queue_push(struct ast_token_queue *queue,
 
 
 
+struct symbol_table
+symbol_table_new(void)
+{
+    struct symbol_table result = { 0 };
+    result.dict = stb_sdict_new(1);
+    assert(result.dict);
+    return result;
+}
+
+
+size_t
+symbol_table_num_ids ( struct symbol_table *symtable )
+{
+    int result = stb_sdict_count(symtable->dict);
+    assert(result >= 0);
+    return (size_t) result;
+}
+
+void
+symbol_table_add_identifier(struct symbol_table *symtable,
+                            Token *t)
+{
+    assert(symtable && symtable->dict);
+    assert(t->text);
+    assert(t->text_len);
+
+    // null terminate before adding
+    char temp = t->text[t->text_len];
+    t->text[t->text_len] = 0;
+    int result = stb_sdict_set(symtable->dict, t->text, NULL);
+
+    // restore null termination
+    t->text[t->text_len] = temp;
+
+}
 
 
 #endif /* PCALC_UTILS_C_IMPL */
