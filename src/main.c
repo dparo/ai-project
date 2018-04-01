@@ -372,40 +372,34 @@ boolean_packing_unpacking_test(void)
 
 bool
 pcalc_encoded_compute_with_value(Token *queue,
-                                 size_t queuesize,                                 
+                                 size_t queuesize,
                                  stb_sdict *d,
                                  uint64_t *array,
-                                 size_t bits_count )
+                                 size_t array_bits_count )
 {
-    assert(bits_count > 0);
-
-    size_t nelems;
-    if ( bits_count == 0 ) { nelems = 0; }
-    else { nelems = ((bits_count - 1) / (sizeof(uint64_t) * 8)) + 1; }
-   
-    size_t bits_count_remainder; (void) bits_count_remainder;
-    if ( nelems == 0 ) { bits_count_remainder = 0; }
-    else {  bits_count_remainder = ( bits_count) % ( sizeof(uint64_t) * 8); }
-
-
+    assert(array_bits_count > 0);
+    
     bool *stack = calloc(queuesize, 1);
+    assert_msg(0, "The stack should be provided from the caller");
+    
     size_t stack_top = 0;
-
     if ( stack ) {
-
         for ( size_t it = 0; it < queuesize; it ++) {
             Token *t = & (queue[it]);
             if ( t->type == TT_IDENTIFIER ) {
                 char temp = t->text[t->text_len];
-                size_t index = (size_t) stb_sdict_get(d, t->text);
+                t->text[t->text_len] = 0;
+                size_t bit_index = (size_t) stb_sdict_get(d, t->text);
                 t->text[t->text_len] = temp;
                 
-                stack[stack_top++] = array[index / sizeof(uint64_t)]
-                    & ((uint64_t) - 1);
-
+                bool value = boolean_unpack_from_uint64_array( array,
+                                                               array_bits_count,
+                                                               bit_index );
+                
                 assert_msg(0, "Needs proper packing and unpacking testing");
             } else {
-                // needs to perform computation
+                // Token is an operator: Needs to perform the operation
+                //                       and push it into the stack
 
                 
             }
