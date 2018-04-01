@@ -196,7 +196,6 @@ void
 bool_uint64_array_encoded_add( uint64_t *array,
                                size_t bits_count )
 {
-
     assert(bits_count > 0);
 
     size_t nelems;
@@ -208,23 +207,20 @@ bool_uint64_array_encoded_add( uint64_t *array,
     else {  bits_count_remainder = ( bits_count) % ( sizeof(uint64_t) * 8); }
 
     for ( uint64_t *s = array; s < array + nelems; s ++) {
+        // Needs to check for bubble up
+        if ( s == (array + nelems - 1)) {
+            uint64_t checkvalue = ((uint64_t) 0 - 1) >> ( sizeof(uint64_t) * 8 - bits_count_remainder);
+                
+            if ( *s == checkvalue ) {
+                // Overflow simulation
+                memset(array, 0, sizeof(array[nelems]));
+                break;
+            }
+        }
         (*s)++;
         if ( s == 0 ) {
             // Bubble up the add
             continue;
-        } else {
-            // Check for last element
-            if ( s == (array + nelems - 1)) {
-                uint8_t lol = 0x0;
-                // Needs to check for bubble up
-                uint64_t checkvalue = ((uint64_t) 0 - 1) >> ( sizeof(uint64_t) * 8 - bits_count_remainder);
-                
-                if ( *s == checkvalue) {
-                    // Overflow simulation
-                    memset(array, 0, sizeof(array[nelems]));
-                    break;
-                }
-            }
         }
         break;
     }
@@ -268,22 +264,21 @@ bruteforce_solve(Token *queue,
     /* allocates some uint64_t based on the count and encode */
     /*     all possible booleans in there; */
 
+    size_t temp = 129/* stb_sdict_count(d) */;
     size_t allocationsize =
-        (stb_sdict_count(d) + sizeof(uint64_t) - 1) / sizeof(uint64_t);
+        ((temp - 1) / (sizeof(uint64_t) * 8)) * sizeof(uint64_t) + sizeof(uint64_t);
 
     assert(allocationsize);
-
-
-    uint64_t *data = malloc(allocationsize);
+    
+    uint64_t *data = calloc(allocationsize, 1);
 
     if ( data ) {
-    
-        for ( int c = 0; c < stb_sdict_count(d); c ++ ) {
-            for (int it = 0; it < c || it == 0; it ++ ) {
-                for( int k = 0; k < 2; k++) {
-                
-                }
-            }
+
+        size_t max_it = 1 << stb_sdict_count(d);
+        for (size_t i = 0; i < max_it; i ++ ) {
+            printf("%zx\n", data[0]);
+            bool_uint64_array_encoded_add( data,
+                                           stb_sdict_count(d) );
         }
 
     }
@@ -292,10 +287,6 @@ bruteforce_solve(Token *queue,
 
 int main( int argc, char **argv)
 {
-#if 1
-    test_uint64_t();
-    return 0;
-#endif
     platform_init();
     UNUSED(argc), UNUSED(argv);
 #if 0
@@ -305,7 +296,7 @@ int main( int argc, char **argv)
 
 
     char code [] =
-        "( !A | B ) <-> ( C & !B )"
+        "( !A | B ) <-> ( C & !B  || !D | E | F| G)"
         "\0\0\0\0\0\0";
     
     
