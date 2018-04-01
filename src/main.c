@@ -191,6 +191,56 @@ struct prop_calc_id {
     uint32_t index;
 };
 
+
+void
+bool_uint64_array_encoded_add( uint64_t *array,
+                               size_t bits_count )
+{
+
+    assert(bits_count > 0);
+
+    size_t nelems;
+    if ( bits_count == 0 ) { nelems = 0; }
+    else { nelems = ((bits_count - 1) / (sizeof(uint64_t) * 8)) + 1; }
+   
+    size_t bits_count_remainder;
+    if ( nelems == 0 ) { bits_count_remainder = 0; }
+    else {  bits_count_remainder = ( bits_count) % ( sizeof(uint64_t) * 8); }
+
+    for ( uint64_t *s = array; s < array + nelems; s ++) {
+        (*s)++;
+        if ( s == 0 ) {
+            // Bubble up the add
+            continue;
+        } else {
+            // Check for last element
+            if ( s == (array + nelems - 1)) {
+                uint8_t lol = 0x0;
+                // Needs to check for bubble up
+                uint64_t checkvalue = ((uint64_t) 0 - 1) >> ( sizeof(uint64_t) * 8 - bits_count_remainder);
+                
+                if ( *s == checkvalue) {
+                    // Overflow simulation
+                    memset(array, 0, sizeof(array[nelems]));
+                    break;
+                }
+            }
+        }
+        break;
+    }
+}
+
+void
+test_uint64_t(void)
+{
+    uint64_t array[2];
+    for ( size_t i = 1; i < 72; i++ ) {
+        size_t bits_count = i;        
+        bool_uint64_array_encoded_add(array, bits_count);
+    }    
+}
+
+
 void
 bruteforce_solve(Token *queue,
                  size_t queuesize)
@@ -217,20 +267,35 @@ bruteforce_solve(Token *queue,
 
     /* allocates some uint64_t based on the count and encode */
     /*     all possible booleans in there; */
+
+    size_t allocationsize =
+        (stb_sdict_count(d) + sizeof(uint64_t) - 1) / sizeof(uint64_t);
+
+    assert(allocationsize);
+
+
+    uint64_t *data = malloc(allocationsize);
+
+    if ( data ) {
     
-    for ( int c = 0; c < stb_sdict_count(d); c ++ ) {
-        for (int it = 0; it < c || it == 0; it ++ ) {
-            for( int k = 0; k < 2; k++) {
+        for ( int c = 0; c < stb_sdict_count(d); c ++ ) {
+            for (int it = 0; it < c || it == 0; it ++ ) {
+                for( int k = 0; k < 2; k++) {
                 
+                }
             }
         }
-    }
 
+    }
 }
 
 
 int main( int argc, char **argv)
-{  
+{
+#if 1
+    test_uint64_t();
+    return 0;
+#endif
     platform_init();
     UNUSED(argc), UNUSED(argv);
 #if 0
