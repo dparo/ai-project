@@ -289,7 +289,7 @@ test_uint64_t(void)
 }
 
 void
-pcalc_encoded_preprocces ( stb_sdict *d,
+pcalc_encoded_preprocess ( stb_sdict *d,
                            uint64_t *array,
                            size_t bits_count )
 {
@@ -299,7 +299,7 @@ pcalc_encoded_preprocces ( stb_sdict *d,
     if ( bits_count == 0 ) { nelems = 0; }
     else { nelems = ((bits_count - 1) / (sizeof(uint64_t) * 8)) + 1; }
    
-    size_t bits_count_remainder;
+    size_t bits_count_remainder; (void) bits_count_remainder;
     if ( nelems == 0 ) { bits_count_remainder = 0; }
     else {  bits_count_remainder = ( bits_count) % ( sizeof(uint64_t) * 8); }
 
@@ -310,13 +310,70 @@ pcalc_encoded_preprocces ( stb_sdict *d,
     stb_sdict_for(d, it, k, v) {
         v = (void*) ((size_t)it);
         stb_sdict_set(d, k, v);
+        printf("k : %s | v: %p\n", k, v);
     }
 
 }
 
 
 void
-pcalc_encoded_compute_with_value(stb_sdict *d,
+boolean_pack_into_uint64_array(bool value,
+                               uint64_t *array,
+                               size_t array_bits_count,
+                               size_t bit_index )
+{
+    assert(bit_index < array_bits_count );
+    size_t index = bit_index / ( sizeof(array[0]) * 8);
+    size_t mask = array[index] & ~((size_t)1 << ((size_t)bit_index - index * sizeof(array[0]) * 8));
+    array[index] = mask | (size_t)value << ((size_t)bit_index - index * sizeof(array[0]) * 8);
+#if 0
+    printf("bi: %zu | index: %zx | mask: %zx | array[index]: %zx\n",
+           bit_index, index, mask, array[index]);
+#endif
+
+}
+
+
+
+bool
+boolean_unpack_from_uint64_array( uint64_t *array,
+                                  size_t array_bits_count,
+                                  size_t bit_index)
+{
+    assert(bit_index < array_bits_count );
+    size_t index = bit_index / ( sizeof(array[0]) * 8);
+    size_t local_bit_index = ((size_t)bit_index - index * sizeof(array[0]) * 8);
+    size_t mask = ( (size_t) 1 << local_bit_index);
+    bool result = (array[index] &  mask) >> local_bit_index;
+#if 0
+        printf("bi: %zu | index: %zx | local_bit_index: %zd | mask: %zx | result: %d\n",
+               bit_index, index, local_bit_index, mask, result);
+#endif
+
+    return false;
+}
+
+void
+boolean_packing_unpacking_test(void)
+{
+    uint64_t array[2] = {0};
+    size_t array_bits_count = 128;
+    bool value = 1;
+    for (size_t i = 0; i < 100; i++ ) {
+        value = !value;
+        boolean_pack_into_uint64_array(value, array, array_bits_count, i);
+    }
+    for (size_t i = 0; i < 100; i++ ) {
+        boolean_unpack_from_uint64_array(array, array_bits_count, i);
+    }
+
+}
+
+
+bool
+pcalc_encoded_compute_with_value(Token *queue,
+                                 size_t queuesize,                                 
+                                 stb_sdict *d,
                                  uint64_t *array,
                                  size_t bits_count )
 {
@@ -326,10 +383,40 @@ pcalc_encoded_compute_with_value(stb_sdict *d,
     if ( bits_count == 0 ) { nelems = 0; }
     else { nelems = ((bits_count - 1) / (sizeof(uint64_t) * 8)) + 1; }
    
-    size_t bits_count_remainder;
+    size_t bits_count_remainder; (void) bits_count_remainder;
     if ( nelems == 0 ) { bits_count_remainder = 0; }
     else {  bits_count_remainder = ( bits_count) % ( sizeof(uint64_t) * 8); }
 
+
+    bool *stack = calloc(queuesize, 1);
+    size_t stack_top = 0;
+
+    if ( stack ) {
+
+        for ( size_t it = 0; it < queuesize; it ++) {
+            Token *t = & (queue[it]);
+            if ( t->type == TT_IDENTIFIER ) {
+                char temp = t->text[t->text_len];
+                size_t index = (size_t) stb_sdict_get(d, t->text);
+                t->text[t->text_len] = temp;
+                
+                stack[stack_top++] = array[index / sizeof(uint64_t)]
+                    & ((uint64_t) - 1);
+
+                assert_msg(0, "Needs proper packing and unpacking testing");
+            } else {
+                // needs to perform computation
+
+                
+            }
+            
+        }
+        
+        free(stack);
+        return true;
+    } else {
+        return false;
+    }
 
 }
 
@@ -370,18 +457,23 @@ bruteforce_solve(Token *queue,
 
     if ( data ) {
 
+        pcalc_encoded_preprocess(d, data, stb_sdict_count(d));
         size_t max_it = 1 << stb_sdict_count(d);
+
         for (size_t i = 0; i < max_it; i ++ ) {
+#       if 0
             printf("%zx\n", data[0]);
+#       endif
             // Use the value right here and compute
             {
-                pcalc_encoded_preprocces(d, data, stb_sdict_count(d));
-                pcalc_encoded_compute_with_value(d, data, stb_sdict_count(d));
+                pcalc_encoded_compute_with_value(queue, queuesize, d, data, stb_sdict_count(d));
             }
             bool_uint64_array_encoded_add( data,
                                            stb_sdict_count(d) );
         }
 
+
+        free(data);
     }
 }
 
@@ -390,6 +482,10 @@ int main( int argc, char **argv)
 {
     platform_init();
     UNUSED(argc), UNUSED(argv);
+#if 0
+    pack_testing();
+    return 0;
+#endif
 #if 0
     test_generator(); 
     return 0;
