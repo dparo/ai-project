@@ -236,6 +236,50 @@ test_uint64_t(void)
     }    
 }
 
+void
+pcalc_encoded_preprocces ( stb_sdict *d,
+                           uint64_t *array,
+                           size_t bits_count )
+{
+    assert(bits_count > 0);
+
+    size_t nelems;
+    if ( bits_count == 0 ) { nelems = 0; }
+    else { nelems = ((bits_count - 1) / (sizeof(uint64_t) * 8)) + 1; }
+   
+    size_t bits_count_remainder;
+    if ( nelems == 0 ) { bits_count_remainder = 0; }
+    else {  bits_count_remainder = ( bits_count) % ( sizeof(uint64_t) * 8); }
+
+
+    int it = 0;
+    char *k;
+    void *v;
+    stb_sdict_for(d, it, k, v) {
+        v = (void*) ((size_t)it);
+        stb_sdict_set(d, k, v);
+    }
+
+}
+
+
+void
+pcalc_encoded_compute_with_value(stb_sdict *d,
+                                 uint64_t *array,
+                                 size_t bits_count )
+{
+    assert(bits_count > 0);
+
+    size_t nelems;
+    if ( bits_count == 0 ) { nelems = 0; }
+    else { nelems = ((bits_count - 1) / (sizeof(uint64_t) * 8)) + 1; }
+   
+    size_t bits_count_remainder;
+    if ( nelems == 0 ) { bits_count_remainder = 0; }
+    else {  bits_count_remainder = ( bits_count) % ( sizeof(uint64_t) * 8); }
+
+
+}
 
 void
 bruteforce_solve(Token *queue,
@@ -277,6 +321,11 @@ bruteforce_solve(Token *queue,
         size_t max_it = 1 << stb_sdict_count(d);
         for (size_t i = 0; i < max_it; i ++ ) {
             printf("%zx\n", data[0]);
+            // Use the value right here and compute
+            {
+                pcalc_encoded_preprocces(d, data, stb_sdict_count(d));
+                pcalc_encoded_compute_with_value(d, data, stb_sdict_count(d));
+            }
             bool_uint64_array_encoded_add( data,
                                            stb_sdict_count(d) );
         }
