@@ -180,6 +180,58 @@ pcalc_greater_or_eq_precedence(Token *sample,
 {
     bool result = false;
 
+    switch (tested->type) {
+    case TT_PUNCT_BOTHDIR_ARROW: {
+        result = true;
+    } break;
+    case TT_PUNCT_ARROW: {
+        if (sample->type == TT_PUNCT_BOTHDIR_ARROW) {
+            result = false;
+        } else {
+            result = true;
+        }
+    } break;
+
+    case TT_PUNCT_LOGICAL_AND:
+    case TT_PUNCT_BITWISE_AND: {
+        if ( sample->type == TT_PUNCT_BOTHDIR_ARROW ||
+             sample->type == TT_PUNCT_ARROW ) {
+            result = false;
+        } else {
+            result = true;
+        }
+    } break;
+
+    case TT_PUNCT_LOGICAL_OR:
+    case TT_PUNCT_BITWISE_OR: {
+        if ( sample->type == TT_PUNCT_BOTHDIR_ARROW ||
+             sample->type == TT_PUNCT_ARROW ||
+             sample->type == TT_PUNCT_LOGICAL_AND ||
+             sample->type == TT_PUNCT_BITWISE_AND) {
+            result = false;
+        } else {
+            result = true;
+        }
+        
+
+    } break;
+
+    case TT_PUNCT_LOGICAL_NOT:
+    case TT_PUNCT_BITWISE_NOT: {
+        if ( sample->type == TT_PUNCT_LOGICAL_NOT ||
+             sample->type == TT_PUNCT_BITWISE_NOT ) {
+            result = true;
+        } else {
+            result = false;
+        }
+    } break;
+        
+    default: {
+        invalid_code_path();
+    } break;
+    }
+    
+
     return result;
 }
 
@@ -340,7 +392,7 @@ int main( int argc, char **argv)
     UNUSED(argc), UNUSED(argv);
 #if 0
     test_generator(); 
-   return 0;
+    return 0;
 #endif
 
 
@@ -405,7 +457,7 @@ int main( int argc, char **argv)
             else if ( prop_calc_token_is_operator(& token )) {
                 Token *peek = NULL;
                 while ( ( stack_top != 0 && (peek = & (stack[stack_top - 1])))
-                        && ( pcalc_greater_or_eq_precedence(& token, peek)
+                        && ( pcalc_greater_or_eq_precedence(peek, & token)
                              && peek->type != TT_PUNCT_OPEN_PAREN)) {
                     TOKEN_QUEUE_PUSH(*peek);
                     stack_top--;
