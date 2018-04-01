@@ -194,7 +194,7 @@ ast_truth_table_unpack_bool( struct ast_truth_table_packed *ast_ttp,
 }
 
 void
-ast_truth_table_packed_increment(struct ast_truth_table_packed *ast_ttp )
+ast_truth_table_packed_generate_next_combination(struct ast_truth_table_packed *ast_ttp )
 {
     assert(ast_ttp->num_bits > 0);
 

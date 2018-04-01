@@ -144,7 +144,7 @@ pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
         v = (void*) ((size_t)it2);
         it2 ++ ;
         stb_sdict_set(symtable->dict, k, v);
-        printf("k : %s | v: %p\n", k, v);
+        printf("k : %s | v: %zu\n", k, (size_t) v);
     }
 }
 
@@ -250,7 +250,7 @@ bruteforce_solve(struct ast_token_queue *queue)
                 pcalc_encoded_compute_with_value(queue, & symtable, ast_ttp );
             }
 
-            ast_truth_table_packed_increment(ast_ttp );
+            ast_truth_table_packed_generate_next_combination(ast_ttp );
         }
 
 
