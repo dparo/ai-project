@@ -150,17 +150,14 @@ pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
 
 
 void
-pcalc_encoded_compute_with_value(struct ast_token_queue *queue,
-                                 struct symbol_table *symtable,
-                                 struct ast_truth_table_packed *ast_ttp )
+pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
+                                  struct symbol_table *symtable,
+                                  struct ast_truth_table_packed *ast_ttp )
 {
     assert(ast_ttp->num_bits > 0);
 
     struct ast_token_stack stack;
     stack.num_tokens = 0;
-# if 0
-    assert_msg(0, "The stack should be provided from the caller");
-#endif
 
     // In the future this if will check for valid allocation
     if ( stack.tokens ) {
