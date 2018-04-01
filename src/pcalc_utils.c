@@ -144,5 +144,93 @@ symbol_table_add_identifier(struct symbol_table *symtable,
 }
 
 
+size_t
+symbol_table_get_identifier_value( struct symbol_table *symtable,
+                                   Token *t )
+{
+    assert(symtable && symtable->dict);
+    assert(t->text);
+    assert(t->text_len);
+
+    char temp = t->text[t->text_len];
+    t->text[t->text_len] = 0;
+    size_t result = (size_t) stb_sdict_get(symtable->dict, t->text);
+    t->text[t->text_len] = temp;
+    return result;
+}
+
+
+void
+ast_truth_table_pack_bool( struct ast_truth_table_packed *ast_ttp,
+                           bool value,
+                           size_t bit_index )
+{
+    assert(bit_index < ast_ttp->num_bits );
+    size_t index = bit_index / ( sizeof(ast_truth_value_packed) * 8);
+    size_t mask = ast_ttp->bits[index] & ~((size_t)1 << ((size_t)bit_index - index * sizeof(ast_truth_value_packed) * 8));
+    ast_ttp->bits[index] = mask | (size_t)value << ((size_t)bit_index - index * sizeof(ast_truth_value_packed) * 8);
+#if 0
+    printf("bi: %zu | index: %zx | mask: %zx | ast_ttp->bits[index]: %zx\n",
+           bit_index, index, mask, ast_ttp->bits[index]);
+#endif
+}
+
+
+bool
+ast_truth_table_unpack_bool( struct ast_truth_table_packed *ast_ttp,
+                             size_t bit_index)
+{
+    assert(bit_index < ast_ttp->num_bits );
+    size_t index = bit_index / ( sizeof(ast_truth_value_packed) * 8);
+    size_t local_bit_index = ((size_t)bit_index - index * sizeof(ast_truth_value_packed) * 8);
+    size_t mask = ( (size_t) 1 << local_bit_index);
+    bool result = (ast_ttp->bits[index] &  mask) >> local_bit_index;
+#if 0
+        printf("bi: %zu | index: %zx | local_bit_index: %zd | mask: %zx | result: %d\n",
+               bit_index, index, local_bit_index, mask, result);
+#endif
+
+    return false;
+}
+
+void
+ast_truth_table_packed_increment(struct ast_truth_table_packed *ast_ttp )
+{
+    assert(ast_ttp->num_bits > 0);
+
+    ast_truth_value_packed *array= ast_ttp->bits;
+    size_t bits_count = ast_ttp->num_bits;
+    
+    size_t nelems;
+    if ( bits_count == 0 ) { nelems = 0; }
+    else { nelems = ((bits_count - 1) / (sizeof(ast_truth_value_packed) * 8)) + 1; }
+   
+    size_t bits_count_remainder;
+    if ( nelems == 0 ) { bits_count_remainder = 0; }
+    else {  bits_count_remainder = ( bits_count) % ( sizeof(ast_truth_value_packed) * 8); }
+
+    for ( ast_truth_value_packed *s = array; s < array + nelems; s ++) {
+        // Needs to check for bubble up
+        if ( s == (array + nelems - 1)) {
+            ast_truth_value_packed checkvalue = ((ast_truth_value_packed) 0 - 1) >> ( sizeof(ast_truth_value_packed) * 8 - bits_count_remainder);
+                
+            if ( *s == checkvalue ) {
+                // Overflow simulation
+                memset(array, 0, sizeof(array[nelems]));
+                break;
+            }
+        }
+        (*s)++;
+        if ( s == 0 ) {
+            // Bubble up the add
+            continue;
+        }
+        break;
+    }
+}
+                           
+                           
+
+
 #endif /* PCALC_UTILS_C_IMPL */
 

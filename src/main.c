@@ -134,50 +134,6 @@ pcalc_greater_or_eq_precedence(Token *sample,
 
 
 
-
-
-
-void
-bool_uint64_array_encoded_add( uint64_t *array,
-                               size_t bits_count )
-{
-    assert(bits_count > 0);
-
-    size_t nelems;
-    if ( bits_count == 0 ) { nelems = 0; }
-    else { nelems = ((bits_count - 1) / (sizeof(uint64_t) * 8)) + 1; }
-   
-    size_t bits_count_remainder;
-    if ( nelems == 0 ) { bits_count_remainder = 0; }
-    else {  bits_count_remainder = ( bits_count) % ( sizeof(uint64_t) * 8); }
-
-    for ( uint64_t *s = array; s < array + nelems; s ++) {
-        // Needs to check for bubble up
-        if ( s == (array + nelems - 1)) {
-            uint64_t checkvalue = ((uint64_t) 0 - 1) >> ( sizeof(uint64_t) * 8 - bits_count_remainder);
-                
-            if ( *s == checkvalue ) {
-                // Overflow simulation
-                memset(array, 0, sizeof(array[nelems]));
-                break;
-            }
-        }
-        (*s)++;
-        if ( s == 0 ) {
-            // Bubble up the add
-            continue;
-        }
-        break;
-    }
-}
-
-
-
-
-
-
-
-
 void
 pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
 {
@@ -194,68 +150,27 @@ pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
 
 
 void
-boolean_pack_into_uint64_array(bool value,
-                               uint64_t *array,
-                               size_t array_bits_count,
-                               size_t bit_index )
+pcalc_encoded_compute_with_value(struct ast_token_queue *queue,
+                                 struct symbol_table *symtable,
+                                 struct ast_truth_table_packed *ast_ttp )
 {
-    assert(bit_index < array_bits_count );
-    size_t index = bit_index / ( sizeof(array[0]) * 8);
-    size_t mask = array[index] & ~((size_t)1 << ((size_t)bit_index - index * sizeof(array[0]) * 8));
-    array[index] = mask | (size_t)value << ((size_t)bit_index - index * sizeof(array[0]) * 8);
-#if 0
-    printf("bi: %zu | index: %zx | mask: %zx | array[index]: %zx\n",
-           bit_index, index, mask, array[index]);
+    assert(ast_ttp->num_bits > 0);
+
+    struct ast_token_stack stack;
+    stack.num_tokens = 0;
+# if 0
+    assert_msg(0, "The stack should be provided from the caller");
 #endif
 
-}
-
-
-
-bool
-boolean_unpack_from_uint64_array( uint64_t *array,
-                                  size_t array_bits_count,
-                                  size_t bit_index)
-{
-    assert(bit_index < array_bits_count );
-    size_t index = bit_index / ( sizeof(array[0]) * 8);
-    size_t local_bit_index = ((size_t)bit_index - index * sizeof(array[0]) * 8);
-    size_t mask = ( (size_t) 1 << local_bit_index);
-    bool result = (array[index] &  mask) >> local_bit_index;
-#if 0
-        printf("bi: %zu | index: %zx | local_bit_index: %zd | mask: %zx | result: %d\n",
-               bit_index, index, local_bit_index, mask, result);
-#endif
-
-    return false;
-}
-
-bool
-pcalc_encoded_compute_with_value(Token *queue,
-                                 size_t queuesize,
-                                 stb_sdict *d,
-                                 uint64_t *array,
-                                 size_t array_bits_count )
-{
-    assert(array_bits_count > 0);
-    
-    bool *stack = calloc(queuesize, 1);
-    // assert_msg(0, "The stack should be provided from the caller");
-    
-    size_t stack_top = 0;
-    if ( stack ) {
-        for ( size_t it = 0; it < queuesize; it ++) {
-            Token *t = & (queue[it]);
+    // In the future this if will check for valid allocation
+    if ( stack.tokens ) {
+        for ( size_t it = 0; it < queue->num_tokens; it ++) {
+            Token *t = & (queue->tokens[it]);
             if ( t->type == TT_IDENTIFIER ) {
-                char temp = t->text[t->text_len];
-                t->text[t->text_len] = 0;
-                size_t bit_index = (size_t) stb_sdict_get(d, t->text);
-                t->text[t->text_len] = temp;
-                
-                bool value = boolean_unpack_from_uint64_array( array,
-                                                               array_bits_count,
-                                                               bit_index );
-                
+                size_t bit_index = symbol_table_get_identifier_value(symtable, t);
+
+                bool value = ast_truth_table_unpack_bool( ast_ttp,
+                                                          bit_index);
             } else {
                 // Token is an operator: Needs to perform the operation
                 //                       and push it into the stack
@@ -263,14 +178,8 @@ pcalc_encoded_compute_with_value(Token *queue,
                 
             }
             
-        }
-        
-        free(stack);
-        return true;
-    } else {
-        return false;
+        }        
     }
-
 }
 
 void
@@ -312,11 +221,6 @@ ast_truth_table_packed_alloc_from_symtable(struct symbol_table *symtable)
     assert(result);
 
     result->num_bits = symbol_table_num_ids(symtable);
-    /* allocates some uint64_t based on the count and encode */
-    /*     all possible booleans in there; */
-
-    
-
 
     return result;
 }
@@ -343,17 +247,10 @@ bruteforce_solve(struct ast_token_queue *queue)
 #       endif
             // Use the value right here and compute
             {
-#           if 0
-                pcalc_encoded_compute_with_value(queue->tokens, queue->num_tokens, d, data, stb_sdict_count(d));
-#           endif
-                assert_msg(0, "Need to refactor above line and function");
+                pcalc_encoded_compute_with_value(queue, & symtable, ast_ttp );
             }
 
-#       if 0
-            bool_uint64_array_encoded_add( data,
-                                           stb_sdict_count(d) );
-#       endif
-            assert_msg(0, "Need to refactor above line and function");
+            ast_truth_table_packed_increment(ast_ttp );
         }
 
 
