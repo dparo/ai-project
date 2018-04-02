@@ -148,6 +148,12 @@ pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
     }
 }
 
+void
+pcalc_perform_operation_from_queue( struct ast_token_queue *queue,
+                                    struct ast_computation_stack *stack)
+{
+    
+}
 
 void
 pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
@@ -161,17 +167,21 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
 
     // In the future this if will check for valid allocation
     if ( stack.bools ) {
-        for ( size_t it = 0; it < queue->num_tokens; it ++) {
-            Token *t = & (queue->tokens[it]);
+        Token *t;
+        size_t it;
+    
+        ast_token_queue_for(it, *queue, t) {
             if ( t->type == TT_IDENTIFIER ) {
                 size_t bit_index = symbol_table_get_identifier_value(symtable, t);
 
                 bool value = ast_truth_table_unpack_bool( ast_ttp,
                                                           bit_index);
+                ast_computation_stack_push( & stack, value );
                 
             } else {
                 // Token is an operator: Needs to perform the operation
                 //                       and push it into the stack
+                pcalc_perform_operation_from_queue( queue, & stack) ;
             }
             
         }        
@@ -185,14 +195,12 @@ pcalc_build_symbol_table_from_queue(struct ast_token_queue *queue,
     Token *t;
     size_t it;
     
-    for ( it = 0, t = queue->tokens; it < queue->num_tokens;
-          t = & (queue->tokens[++it])) {
+    ast_token_queue_for(it, *queue, t) {
         if ( t->type == TT_IDENTIFIER ) {
             //null terminate;
             symbol_table_add_identifier(symtable, t);
         }
-    }   
-
+    }
 }
 
 
@@ -331,11 +339,16 @@ int main( int argc, char **argv)
     
 parse_end: {
     }
-    
-    for ( size_t i = 0; i < queue.num_tokens; i++ ) {
-        log_token(& (queue.tokens[i]));
-    }
 
+    Token *t;
+    size_t it;
+    
+    ast_token_queue_for(it, queue, t) {
+        if ( t->type == TT_IDENTIFIER ) {
+            //null terminate;
+            log_token(t);
+        }
+    }
 
     printf("Running bruteforce method\n");
 

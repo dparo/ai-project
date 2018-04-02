@@ -146,6 +146,12 @@ ast_computation_stack_pop_value_addr(struct ast_computation_stack *stack)
 
 
 
+#define ast_token_queue_for( iterator, queue, token)        \
+    for (((iterator) = 0), ((token) = (queue).tokens);      \
+         ((iterator) < (queue).num_tokens);             \
+         ((token) = & ((queue).tokens[++(iterator)])))      \
+    if (true)
+
 
 void
 ast_token_queue_push(struct ast_token_queue *queue,
