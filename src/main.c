@@ -260,7 +260,7 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
     stack.num_bits = 0;
 
     // In the future this if will check for valid allocation
-    if ( stack.bools ) {
+    if ( stack.bits ) {
         Token *t;
         size_t it;
     

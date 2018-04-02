@@ -49,7 +49,7 @@ struct ast_token_stack {
     size_t num_tokens;
 };
 
-typedef uint32_t ast_packed_bool;
+typedef uint8_t ast_packed_bool;
 
 struct ast_computation_stack {
 #define AST_COMPUTATION_STACK_MAX_NUMBITS 1024
@@ -57,7 +57,6 @@ struct ast_computation_stack {
     BOOL_PACKED_ARRAY_NELEMS(AST_COMPUTATION_STACK_MAX_NUMBITS, sizeof(ast_packed_bool))
 
     ast_packed_bool bits[AST_COMPUTATION_STACK_MAX_NELEMS];
-    bool bools[AST_COMPUTATION_STACK_MAX_NUMBITS];
     size_t num_bits;
 };
 
@@ -89,6 +88,24 @@ struct ast_token_queue {
 #define PCALC_UTILS_C_IMPLEMENTED
 //#######################################################
 
+
+static inline void
+ast_computation_stack_pack_bool( struct ast_computation_stack *stack,
+                                 bool v,
+                                 size_t bit_index )
+{
+    BOOL_PACK_INTO_ARRAY(v, bit_index, stack->bits,
+                         AST_COMPUTATION_STACK_MAX_NELEMS, ast_packed_bool);
+}
+
+static bool
+ast_computation_stack_unpack_bool ( struct ast_computation_stack *stack,
+                                    size_t bit_index )
+{
+    bool result = BOOL_UNPACK_FROM_ARRAY(bit_index, stack->bits,
+                                         AST_COMPUTATION_STACK_MAX_NELEMS, ast_packed_bool);
+    return result;
+}
 
 static inline size_t
 ast_truth_table_numelems(struct ast_truth_table_packed *ast_ttp)
@@ -154,7 +171,8 @@ ast_computation_stack_push(struct ast_computation_stack *stack,
                            bool v)
 {
     assert(stack->num_bits != AST_COMPUTATION_STACK_MAX_NUMBITS);
-    stack->bools[(stack->num_bits) ++] = v;
+    ast_computation_stack_pack_bool(stack, v, (stack->num_bits));
+    (stack->num_bits)++;
 }
 
 
@@ -162,33 +180,34 @@ bool
 ast_computation_stack_peek_value(struct ast_computation_stack *stack)
 {
     assert(stack->num_bits);
-    return stack->bools[stack->num_bits - 1];
+    bool result = ast_computation_stack_unpack_bool(stack, (stack->num_bits) - 1);
+#if __DEBUG
+    bool result2 = BOOL_UNPACK_FROM_ARRAY(stack->num_bits - 1, stack->bits,
+                                          AST_COMPUTATION_STACK_MAX_NELEMS, ast_packed_bool);
+    assert( result == result2);
+#endif
+    return result;
 }
 
 void
 ast_computation_stack_pop(struct ast_computation_stack *stack)
 {
     assert(stack->num_bits);
-    (stack->num_bits) --;
+    --(stack->num_bits);
 }
 
 bool
 ast_computation_stack_pop_value(struct ast_computation_stack *stack)
 {
     assert(stack->num_bits);
-    bool result = stack->bools[--(stack->num_bits)];
-    return result;
-}
+    --(stack->num_bits);
+    bool result = ast_computation_stack_unpack_bool(stack, stack->num_bits);
 
-
-
-// Highly discouraged pointer may point to invalid
-// memory after a new push
-bool*
-ast_computation_stack_pop_value_addr(struct ast_computation_stack *stack)
-{
-    assert(stack->num_bits);
-    bool *result = &(stack->bools[--(stack->num_bits)]);
+#if __DEBUG
+    bool result2 = BOOL_UNPACK_FROM_ARRAY(stack->num_bits, stack->bits,
+                                          AST_COMPUTATION_STACK_MAX_NELEMS, ast_packed_bool);
+    assert(result == result2);
+#endif
     return result;
 }
 
@@ -386,10 +405,16 @@ ast_truth_table_packed_dbglog(struct ast_truth_table_packed *ast_ttp)
 void
 ast_computation_stack_dbglog(struct ast_computation_stack *stack)
 {
-    size_t nelems = stack->num_bits;
     printf("AST_COMPUTATION_STACK_DBG_LOG: ");
-    for ( size_t i = 0; i < nelems; i ++ ) {
-        printf(" %d |", stack->bools[i]);        
+    for ( size_t i = 0; i < stack->num_bits; i ++ ) {
+        bool v = ast_computation_stack_unpack_bool(stack, i);
+#if __DEBUG
+        bool v1 = BOOL_UNPACK_FROM_ARRAY(i, stack->bits,
+                                         AST_COMPUTATION_STACK_MAX_NELEMS, ast_packed_bool);
+
+        assert ( v == v1);
+#endif
+        printf(" %d |", v);
     }
     printf("\n");
 }
