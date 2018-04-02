@@ -15,7 +15,6 @@
 #include   "platform.c"
 
 
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -51,8 +50,6 @@ void log_token (Token *token)
 {
      printf("%.*s\tline_number=%d\tcolumn=%d\n", token->text_len, token->text, token->line_num, token->column);
 }
-
-
 
 
 bool
@@ -126,7 +123,6 @@ pcalc_greater_or_eq_precedence(Token *sample,
         invalid_code_path();
     } break;
     }
-    
 
     return result;
 }
@@ -148,22 +144,24 @@ pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
     }
 }
 
+
+
 void
 pcalc_perform_operation_from_queue( Token *t,
-                                    struct ast_computation_stack *stack)
+                                    struct ast_computation_stack *stack )
 {
     bool result = 0;
     bool v1 = 0;
     bool v2 = 0;
 
-#define CHECK_1OPERANDS(stack) do {                  \
-        if (! (((stack).num_bools) >= 1 )) {    \
-            goto not_enough_operands;           \
+#define CHECK_1OPERANDS(stack)                    \
+    do { if (! (((stack).num_bools) >= 1 )) {     \
+            goto not_enough_operands;             \
         } } while (0)
 
-#define CHECK_2OPERANDS(stack) do {             \
-        if (!( ((stack).num_bools) >= 2 )) {    \
-            goto not_enough_operands;           \
+#define CHECK_2OPERANDS(stack)                    \
+    do { if (!( ((stack).num_bools) >= 2 )) {     \
+            goto not_enough_operands;             \
         } } while (0)
    
     switch (t->type) {
@@ -216,6 +214,8 @@ pcalc_perform_operation_from_queue( Token *t,
     }
     
     return;
+
+    
 not_enough_operands: {
         assert_msg(0, "Operator needs more operand, not found enough inside the stack");
         return;
@@ -223,6 +223,30 @@ not_enough_operands: {
 
 #undef CHECK_1OPERANDS
 #undef CHECK_2OPERANDS
+}
+
+bool
+token_constant_to_bool( Token *t,
+                        bool *out )
+{
+    bool result = false;
+    assert(t->type == TT_CONSTANT);
+    char temp = t->text[t->text_len];
+    t->text[t->text_len] = 0; {
+        char *endptr = NULL;
+        unsigned long int lli =  strtoul (t->text, &endptr, 10);
+
+        if ( endptr == NULL || *endptr == '\0') {
+            // Valid Character
+            result = true;
+            *out = (lli == 0) ? 0 : 1;            
+        } else {
+            result = false;
+            *out = 0;
+        }
+    }
+    t->text[t->text_len] = temp;
+    return result;
 }
 
 void
@@ -241,12 +265,18 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
         size_t it;
     
         ast_token_queue_for(it, *queue, t) {
-            if ( t->type == TT_IDENTIFIER ) {
-                size_t bit_index = symbol_table_get_identifier_value(symtable, t);
+            if ( t->type == TT_IDENTIFIER  || t->type == TT_CONSTANT) {
+                bool value;
+                if ( t->type == TT_IDENTIFIER ) {
+                    size_t bit_index = symbol_table_get_identifier_value(symtable, t);
 
-                bool value = ast_truth_table_unpack_bool( ast_ttp,
-                                                          bit_index);
-                // printf(" bit_index: %zx | unpacked bool: %d\n", bit_index, value);
+                    value = ast_truth_table_unpack_bool( ast_ttp,
+                                                              bit_index);
+                    // printf(" bit_index: %zx | unpacked bool: %d\n", bit_index, value);
+                } else if (t->type == TT_CONSTANT ) {
+                    bool s = token_constant_to_bool( t, & value );
+                    assert_msg( s == true, "Passed constant was not a valid boolean");
+                }
                 ast_computation_stack_push( & stack, value );
                 
             } else {
@@ -263,8 +293,8 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
 }
 
 void
-pcalc_build_symbol_table_from_queue(struct ast_token_queue *queue,
-                                    struct symbol_table *symtable)
+pcalc_build_symbol_table_from_queue ( struct ast_token_queue *queue,
+                                      struct symbol_table *symtable )
 {
     Token *t;
     size_t it;
@@ -276,8 +306,6 @@ pcalc_build_symbol_table_from_queue(struct ast_token_queue *queue,
         }
     }
 }
-
-
 
 
 void
@@ -322,7 +350,7 @@ int main( int argc, char **argv)
     platform_init();
     UNUSED(argc), UNUSED(argv);
     char code [] =
-        "(!A && B ) || C && (G <-> D)"
+        "((!A && B ) || C && (G <-> D) <-> F)"
         "\0\0\0\0\0\0";
     
     
@@ -339,10 +367,7 @@ int main( int argc, char **argv)
     struct ast_token_stack stack = {0};
     struct ast_token_queue queue = {0};
     
-    
-    
-
-     
+      
     // NOTE: Maybe better error handling because even the push_state can throw an error
     //       Maybe set a locked variable inside the tokenizer for critical stuff
     //       that will inevitably inject more complexity on the library side
