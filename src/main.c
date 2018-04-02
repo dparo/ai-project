@@ -133,10 +133,10 @@ pcalc_greater_or_eq_precedence(Token *sample,
 
 
 
-
 void
 pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
 {
+
     int it1 = 0, it2 = 0;
     char *k;
     void *v;
@@ -146,7 +146,6 @@ pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
         stb_sdict_set(symtable->dict, k, v);
         printf("k : %s | v: %zu\n", k, (size_t) v);
     }
-    
 }
 
 void

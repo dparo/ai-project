@@ -125,9 +125,9 @@ __inline__ static void __debug_break(char* file, i32 line)
 
 
 #if defined __DEBUG
-#define TEST_FUNCTION(test)                            \
-    static bool ___first_time_called___ = false;       \
-    if ( ((test) == true) && (___first_time_called___ == false) )
+/* Note keep this in one liner to make the __LINE__ macro expansion work */
+#define TEST_FUNCTION(test)                                             \
+    static bool CONCAT(___first_time_called___, __LINE__) = false; if ( ((test) == true) && (CONCAT(___first_time_called___, __LINE__) == false) )  { CONCAT(___first_time_called___, __LINE__) = true; goto CONCAT(___exec___, __LINE__); } if (0)CONCAT(___exec___, __LINE__):
 #else
 #define TEST_FUNCTION(...)
 #endif
