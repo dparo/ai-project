@@ -375,8 +375,8 @@ int main( int argc, char **argv)
         "((!A && B ) || C && (G <-> D) <-> F)"
         "\0\0\0\0\0\0";
 
-    char *code = huge_code;
-    size_t codesize = sizeof(huge_code);
+    char *code = small_code;
+    size_t codesize = sizeof(small_code);
     
     Token token = Empty_Token;
     bool done = false;
