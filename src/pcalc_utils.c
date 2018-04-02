@@ -160,6 +160,33 @@ symbol_table_get_identifier_value( struct symbol_table *symtable,
 }
 
 
+size_t
+ast_truth_table_packed_compute_required_size( size_t required_num_of_bits )
+{
+    assert(required_num_of_bits);
+    return (required_num_of_bits - 1) /
+        (sizeof(ast_truth_value_packed) * 8) * sizeof(ast_truth_value_packed) + sizeof(ast_truth_value_packed);
+}
+
+
+struct ast_truth_table_packed*
+ast_truth_table_packed_alloc_from_symtable(struct symbol_table *symtable)
+{
+    struct ast_truth_table_packed* result;
+
+    size_t allocationsize =
+        ast_truth_table_packed_compute_required_size(symbol_table_num_ids(symtable));
+    assert(allocationsize);
+
+    result = calloc(allocationsize, 1);
+    assert(result);
+
+    result->num_bits = symbol_table_num_ids(symtable);
+
+    return result;
+}
+
+
 void
 ast_truth_table_pack_bool( struct ast_truth_table_packed *ast_ttp,
                            bool value,
@@ -228,8 +255,24 @@ ast_truth_table_packed_generate_next_combination(struct ast_truth_table_packed *
         break;
     }
 }
-                           
-                           
+
+static inline size_t
+ast_truth_table_numelems(struct ast_truth_table_packed *ast_ttp)
+{
+    assert(ast_ttp->num_bits);
+    return ( ast_ttp->num_bits - 1 ) / ( sizeof(ast_truth_value_packed) * 8)
+        + 1;
+}
+
+void
+ast_truth_table_packed_dbglog(struct ast_truth_table_packed *ast_ttp)
+{
+    size_t nelems = ast_truth_table_numelems(ast_ttp);
+    for ( size_t i = 0; i < nelems; i ++ ) {
+        printf(" %zx |", ast_ttp->bits[i]);
+    }
+    printf("\n");
+}
 
 
 #endif /* PCALC_UTILS_C_IMPL */

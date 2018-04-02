@@ -197,30 +197,7 @@ pcalc_build_symbol_table_from_queue(struct ast_token_queue *queue,
 }
 
 
-size_t
-ast_truth_table_packed_compute_required_size( size_t required_num_of_bits )
-{
-    assert(required_num_of_bits);
-    return (required_num_of_bits - 1) /
-        (sizeof(ast_truth_value_packed) * 8) * sizeof(ast_truth_value_packed) + sizeof(ast_truth_value_packed);
-}
 
-struct ast_truth_table_packed*
-ast_truth_table_packed_alloc_from_symtable(struct symbol_table *symtable)
-{
-    struct ast_truth_table_packed* result;
-
-    size_t allocationsize =
-        ast_truth_table_packed_compute_required_size(symbol_table_num_ids(symtable));
-    assert(allocationsize);
-
-    result = calloc(allocationsize, 1);
-    assert(result);
-
-    result->num_bits = symbol_table_num_ids(symtable);
-
-    return result;
-}
 
 void
 bruteforce_solve(struct ast_token_queue *queue)
@@ -240,7 +217,7 @@ bruteforce_solve(struct ast_token_queue *queue)
 
         for (size_t i = 0; i < max_it; i ++ ) {
 #       if 0
-            printf("%zx\n", data[0]);
+            ast_truth_table_packed_dbglog(ast_ttp);
 #       endif
             // Use the value right here and compute
             {
