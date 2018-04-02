@@ -146,6 +146,7 @@ pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
         stb_sdict_set(symtable->dict, k, v);
         printf("k : %s | v: %zu\n", k, (size_t) v);
     }
+    
 }
 
 void

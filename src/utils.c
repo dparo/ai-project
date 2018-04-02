@@ -122,6 +122,16 @@ __inline__ static void __debug_break(char* file, i32 line)
     raise(SIGTRAP);
 }
 
+
+
+#if defined __DEBUG
+#define TEST_FUNCTION(test)                            \
+    static bool ___first_time_called___ = false;       \
+    if ( ((test) == true) && (___first_time_called___ == false) )
+#else
+#define TEST_FUNCTION(...)
+#endif
+
 #define debug_break() __debug_break( __FILE__, __LINE__)
 
 #    else
