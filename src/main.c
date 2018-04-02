@@ -140,7 +140,7 @@ pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
         v = (void*) ((size_t)it2);
         it2 ++ ;
         stb_sdict_set(symtable->dict, k, v);
-        printf("k : %s | v: %zu\n", k, (size_t) v);
+        //printf("k : %s | v: %zu\n", k, (size_t) v);
     }
 }
 
@@ -249,6 +249,14 @@ token_constant_to_bool( Token *t,
     return result;
 }
 
+
+static inline void
+pcalc_print_tabular(void)
+{
+    printf("\t");
+}
+
+
 void
 pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
                                   struct symbol_table *symtable,
@@ -277,6 +285,9 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
                     bool s = token_constant_to_bool( t, & value );
                     assert_msg( s == true, "Passed constant was not a valid boolean");
                 }
+
+                printf("%d", value);
+                pcalc_print_tabular();
                 ast_computation_stack_push( & stack, value );
                 
             } else {
@@ -354,7 +365,11 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
         
         size_t numberof_operands = pcalc_number_of_operands_for_operator(t);
         assert_msg(index >= numberof_operands, "Inconsistent formula");
-        printf("(");
+        if ( index == queue->num_tokens - 1) {
+            printf("result = (");
+        } else {
+            printf("(");
+        }
         printf_token_text(t);
 
         for( size_t it = 1; it <= numberof_operands; it++ ) {
@@ -365,18 +380,11 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
     }
 }
 
-static inline void
-pcalc_print_tabular(void)
-{
-    printf("\t\t");
-}
 
 void
 pcalc_printf_computation_header(struct symbol_table *symtable,
                                 struct ast_token_queue *queue)
 {
-    size_t max_it = 1 << symbol_table_num_ids(symtable);
-
     int s_it;
     char *key;
     void *value; (void) value;
@@ -396,8 +404,27 @@ pcalc_printf_computation_header(struct symbol_table *symtable,
         
     
     printf("\n");
+    printf("\n");
 }
 
+void
+pcalc_printf_variables_combination( struct symbol_table *symtable,
+                                    struct ast_truth_table_packed *ast_ttp )
+{
+    int s_it;
+    char *key;
+    void *value; (void) value;
+
+    int it = 0;
+    char *k;
+    void *v;
+    ast_symbol_table_for(it, symtable, k, v) {
+        size_t index = (size_t) v;
+        bool bool_value = ast_truth_table_unpack_bool(ast_ttp, index);
+        printf("%d", bool_value);
+        pcalc_print_tabular();
+    }
+}
 
 void
 bruteforce_solve(struct ast_token_queue *queue)
@@ -417,13 +444,16 @@ bruteforce_solve(struct ast_token_queue *queue)
         
         size_t max_it = 1 << symbol_table_num_ids(& symtable);
 
+
         for (size_t i = 0; i < max_it; i ++ ) {
 #       if 0
             ast_truth_table_packed_dbglog(& ast_ttp);
 #       endif
             // Use the value right here and compute
+            pcalc_printf_variables_combination( &symtable, & ast_ttp );
             {
                 pcalc_encoded_compute_with_value(queue, & symtable, & ast_ttp );
+                printf("\n");
             }
 
             ast_truth_table_packed_generate_next_combination(& ast_ttp );
@@ -558,17 +588,15 @@ parse_end: {
 
     Token *t;
     size_t it;
-    
+
+#if 0
     ast_token_queue_for(it, queue, t) {
         log_token(t);
     }
-
-    printf("Running bruteforce method\n");
+#endif
 
     bruteforce_solve(& queue);
     
-    
-    puts("Exiting application");
     return 0;
 
 }
