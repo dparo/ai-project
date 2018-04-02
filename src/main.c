@@ -149,10 +149,82 @@ pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
 }
 
 void
-pcalc_perform_operation_from_queue( struct ast_token_queue *queue,
+pcalc_perform_operation_from_queue( Token *t,
                                     struct ast_computation_stack *stack)
 {
+    bool result = 0;
+    bool v1 = 0;
+    bool v2 = 0;
+
+#define CHECK_1OPERANDS(stack) do {                  \
+        if (! (((stack).num_bools) >= 1 )) {    \
+            goto not_enough_operands;           \
+        } } while (0)
+
+#define CHECK_2OPERANDS(stack) do {             \
+        if (!( ((stack).num_bools) >= 2 )) {    \
+            goto not_enough_operands;           \
+        } } while (0)
+
+//        "(!A && B ) || C"
     
+    switch (t->type) {
+    case TT_PUNCT_BOTHDIR_ARROW: {
+        CHECK_2OPERANDS(*stack);
+        v2 = ast_computation_stack_pop_value(stack);
+        v1 = ast_computation_stack_pop_value(stack);
+        result = (v1 && v2) || !((v1 || v2));
+        ast_computation_stack_push(stack, result);
+    } break;
+    case TT_PUNCT_ARROW: {
+        CHECK_2OPERANDS(*stack);
+        v2 = ast_computation_stack_pop_value(stack);
+        v1 = ast_computation_stack_pop_value(stack);
+        result = true;
+        if ( v1 == true && v2 == false ) { result = false;}
+        ast_computation_stack_push(stack, result);
+    } break;
+
+    case TT_PUNCT_LOGICAL_AND:
+    case TT_PUNCT_BITWISE_AND: {
+        CHECK_2OPERANDS(*stack);
+        v2 = ast_computation_stack_pop_value(stack);
+        v1 = ast_computation_stack_pop_value(stack);
+        result = v1 && v2;
+        ast_computation_stack_push(stack, result);
+    } break;
+
+    case TT_PUNCT_LOGICAL_OR:
+    case TT_PUNCT_BITWISE_OR: {
+        CHECK_2OPERANDS(*stack);
+        v2 = ast_computation_stack_pop_value(stack);
+        v1 = ast_computation_stack_pop_value(stack);
+        result = v1 || v2;
+        ast_computation_stack_push(stack, result);
+    } break;
+
+    case TT_PUNCT_LOGICAL_NOT:
+    case TT_PUNCT_BITWISE_NOT: {
+        CHECK_1OPERANDS(*stack);
+        v1 = ast_computation_stack_pop_value(stack);
+        result = !v1;
+        ast_computation_stack_push(stack, result);
+    } break;
+        
+
+    default: {
+        assert_msg(0, "Operator is not supported");
+    } break;
+    }
+    
+    return;
+not_enough_operands: {
+        assert_msg(0, "Operator needs more operand, not found enough inside the stack");
+        return;
+    }
+
+#undef CHECK_1OPERANDS
+#undef CHECK_2OPERANDS
 }
 
 void
@@ -176,15 +248,20 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
 
                 bool value = ast_truth_table_unpack_bool( ast_ttp,
                                                           bit_index);
+                // printf(" bit_index: %zx | unpacked bool: %d\n", bit_index, value);
                 ast_computation_stack_push( & stack, value );
                 
             } else {
                 // Token is an operator: Needs to perform the operation
                 //                       and push it into the stack
-                pcalc_perform_operation_from_queue( queue, & stack) ;
+                pcalc_perform_operation_from_queue( t, & stack ) ;
+                assert_msg(stack.num_bools == 1, "Stack should remain with 1 value only");
+                printf("### Result: %d\n", ast_computation_stack_peek_value(& stack));
             }
             
-        }        
+        }
+        assert_msg(stack.num_bools == 1, "Stack should remain with 1 value only");
+        printf("### Final Result: %d\n", ast_computation_stack_pop_value(& stack));
     }
 }
 
@@ -223,7 +300,7 @@ bruteforce_solve(struct ast_token_queue *queue)
         size_t max_it = 1 << symbol_table_num_ids(& symtable);
 
         for (size_t i = 0; i < max_it; i ++ ) {
-#       if 0
+#       if 1
             ast_truth_table_packed_dbglog(ast_ttp);
 #       endif
             // Use the value right here and compute
@@ -248,7 +325,7 @@ int main( int argc, char **argv)
     platform_init();
     UNUSED(argc), UNUSED(argv);
     char code [] =
-        "( !A | B ) <-> ( C & !B  || !D | E | F| G)"
+        "(!A && B ) || C"
         "\0\0\0\0\0\0";
     
     
@@ -344,10 +421,7 @@ parse_end: {
     size_t it;
     
     ast_token_queue_for(it, queue, t) {
-        if ( t->type == TT_IDENTIFIER ) {
-            //null terminate;
-            log_token(t);
-        }
+        log_token(t);
     }
 
     printf("Running bruteforce method\n");

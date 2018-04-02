@@ -111,10 +111,10 @@ ast_computation_stack_push(struct ast_computation_stack *stack,
 
 
 bool
-ast_computation_stack_peek_addr(struct ast_computation_stack *stack)
+ast_computation_stack_peek_value(struct ast_computation_stack *stack)
 {
     assert(stack->num_bools);
-    return &(stack->bools[stack->num_bools - 1]);
+    return stack->bools[stack->num_bools - 1];
 }
 
 void
@@ -273,7 +273,7 @@ ast_truth_table_unpack_bool( struct ast_truth_table_packed *ast_ttp,
                bit_index, index, local_bit_index, mask, result);
 #endif
 
-    return false;
+    return result;
 }
 
 void
@@ -326,6 +326,18 @@ ast_truth_table_packed_dbglog(struct ast_truth_table_packed *ast_ttp)
     size_t nelems = ast_truth_table_numelems(ast_ttp);
     for ( size_t i = 0; i < nelems; i ++ ) {
         printf(" %zx |", ast_ttp->bits[i]);
+    }
+    printf("\n");
+}
+
+
+void
+ast_computation_stack_dbglog(struct ast_computation_stack *stack)
+{
+    size_t nelems = stack->num_bools;
+    printf("AST_COMPUTATION_STACK_DBG_LOG: ");
+    for ( size_t i = 0; i < nelems; i ++ ) {
+        printf(" %d |", stack->bools[i]);
     }
     printf("\n");
 }
