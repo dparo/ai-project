@@ -155,12 +155,12 @@ pcalc_perform_operation_from_queue( Token *t,
     bool v2 = 0;
 
 #define CHECK_1OPERANDS(stack)                    \
-    do { if (! (((stack).num_bools) >= 1 )) {     \
+    do { if (! (((stack).num_bits) >= 1 )) {     \
             goto not_enough_operands;             \
         } } while (0)
 
 #define CHECK_2OPERANDS(stack)                    \
-    do { if (!( ((stack).num_bools) >= 2 )) {     \
+    do { if (!( ((stack).num_bits >= 2 ))) {      \
             goto not_enough_operands;             \
         } } while (0)
    
@@ -257,7 +257,7 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
     assert(ast_ttp->num_bits > 0);
 
     struct ast_computation_stack stack;
-    stack.num_bools = 0;
+    stack.num_bits = 0;
 
     // In the future this if will check for valid allocation
     if ( stack.bools ) {
@@ -283,12 +283,12 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
                 // Token is an operator: Needs to perform the operation
                 //                       and push it into the stack
                 pcalc_perform_operation_from_queue( t, & stack ) ;
-                printf("### Result: %d\n", ast_computation_stack_peek_value(& stack));
+                // printf("### Result: %d\n", ast_computation_stack_peek_value(& stack));
             }
             
         }
-        assert_msg(stack.num_bools == 1, "Stack should remain with 1 value only");
-        printf("### Final Result: %d\n", ast_computation_stack_pop_value(& stack));
+        assert_msg(stack.num_bits == 1, "Stack should remain with 1 value only");
+        //printf("### Final Result: %d\n", ast_computation_stack_pop_value(& stack));
     }
 }
 
@@ -317,27 +317,24 @@ bruteforce_solve(struct ast_token_queue *queue)
     pcalc_build_symbol_table_from_queue(queue, &symtable);
     pcalc_symbol_table_preprocess_ids(& symtable);
     
-    struct ast_truth_table_packed *ast_ttp =
-        ast_truth_table_packed_alloc_from_symtable(& symtable);
+    struct ast_truth_table_packed ast_ttp;
+    ast_truth_table_packed_alloc_from_symtable(&  ast_ttp, & symtable);
 
-    if ( ast_ttp ) {
+    if ( ast_ttp.bits && ast_ttp.num_bits ) {
 
         size_t max_it = 1 << symbol_table_num_ids(& symtable);
 
         for (size_t i = 0; i < max_it; i ++ ) {
 #       if 1
-            ast_truth_table_packed_dbglog(ast_ttp);
+            ast_truth_table_packed_dbglog(& ast_ttp);
 #       endif
             // Use the value right here and compute
             {
-                pcalc_encoded_compute_with_value(queue, & symtable, ast_ttp );
+                pcalc_encoded_compute_with_value(queue, & symtable, & ast_ttp );
             }
 
-            ast_truth_table_packed_generate_next_combination(ast_ttp );
+            ast_truth_table_packed_generate_next_combination(& ast_ttp );
         }
-
-
-        free(ast_ttp);
     }
 }
 
@@ -345,20 +342,47 @@ bruteforce_solve(struct ast_token_queue *queue)
 #define TEST_C_IMPL
 #include "test.c"
 
+void
+test_packing(void)
+{
+#if 0
+#define BITS_COUNT 140
+#define BITS_ELEMS ((BITS_COUNT - sizeof(datatype)) / (sizeof(ast_packed_bool) * 8) + sizeof(datatype))
+    assert(BITS_ELEMS == 3);
+#endif
+}
+
 int main( int argc, char **argv)
 {
+# if 1
+    test_packing();
+#endif
     platform_init();
     UNUSED(argc), UNUSED(argv);
-    char code [] =
+    char huge_code [] =
+        "((!A && B ) || C && (G <-> D) <-> F) || "
+        "a1 | a2 | a3 | a4 | a5 | a6 | a7 | a8 | a9 | a10 | a11 |"
+        "a12 | a13 | a14 | a15 | a16 | a17 | a18 | a19 | a20 | a21 | a22 |"
+        "a23 | a24 | a25 | a26 | a27 | a28 | a29 | a30 | a31 | a32 | a33 |"
+        "a34 | a35 | a36 | a37 | a38 | a39 | a40 | a41 | a42 | a43 | a44 |"
+        "a45 | a46 | a47 | a48 | a49 | a50 | a51 | a52 | a53 | a54 | a55 |"
+        "a56 | a57 | a58 | a59 | a60 | a61 | a62 | a63 | a64 | a65 | a66 |"
+        "a67 | a68 | a69 | a70 | a | b | c | d | e | f | g |"
+        "h | i | j | k | l | m | n | o | p | q | r"
+        "\0\0\0\0\0\0";
+
+    char small_code[] =
         "((!A && B ) || C && (G <-> D) <-> F)"
         "\0\0\0\0\0\0";
-    
+
+    char *code = huge_code;
+    size_t codesize = sizeof(huge_code);
     
     Token token = Empty_Token;
     bool done = false;
     Tokenizer tknzr;
     tokenizer_init_from_memory( &tknzr, code,
-                                sizeof(code),
+                                codesize,
                                 "*code*");
 
     // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
