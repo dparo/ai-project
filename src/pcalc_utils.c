@@ -49,7 +49,7 @@ struct ast_token_stack {
     size_t num_tokens;
 };
 
-typedef uint8_t ast_packed_bool;
+typedef uint32_t ast_packed_bool;
 
 struct ast_computation_stack {
 #define AST_COMPUTATION_STACK_MAX_NUMBITS 1024
@@ -310,11 +310,12 @@ ast_truth_table_unpack_bool( struct ast_truth_table_packed *ast_ttp,
                              size_t bit_index)
 {
     assert(bit_index < ast_ttp->num_bits );
+    bool result;
 #if __DEBUG
     size_t index = bit_index / ( sizeof(ast_packed_bool) * 8);
     size_t local_bit_index = ((size_t)bit_index - index * sizeof(ast_packed_bool) * 8);
     size_t mask = ( (size_t) 1 << local_bit_index);
-    bool result = (ast_ttp->bits[index] &  mask) >> local_bit_index;
+    result = (ast_ttp->bits[index] &  mask) >> local_bit_index;
 
 #endif
     bool temp = BOOL_UNPACK_FROM_ARRAY(bit_index, ast_ttp->bits,
