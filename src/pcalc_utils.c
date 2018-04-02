@@ -358,6 +358,7 @@ ast_truth_table_packed_generate_next_combination(struct ast_truth_table_packed *
                 
             if ( *s == checkvalue ) {
                 // Overflow simulation
+                assert(sizeof(array[nelems]) == ast_truth_table_size(ast_ttp));
                 memset(array, 0, sizeof(array[nelems]));
                 break;
             }
