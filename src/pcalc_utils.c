@@ -26,6 +26,12 @@ struct ast_token_stack {
     size_t num_tokens;
 };
 
+struct ast_computation_stack {
+    #define AST_COMPUTATION_STACK_MAX_BOOLS_COUNT 1024
+    bool bools[AST_COMPUTATION_STACK_MAX_BOOLS_COUNT];
+    size_t num_bools;
+};
+
 typedef uint64_t ast_truth_value_packed;
 
 struct ast_truth_table_packed {
@@ -91,6 +97,50 @@ ast_token_stack_pop_value_addr(struct ast_token_stack *stack)
 {
     assert(stack->num_tokens);
     Token *result = &(stack->tokens[--(stack->num_tokens)]);
+    return result;
+}
+
+
+void
+ast_computation_stack_push(struct ast_computation_stack *stack,
+                           bool v)
+{
+    assert(stack->num_bools != AST_COMPUTATION_STACK_MAX_BOOLS_COUNT);
+    stack->bools[(stack->num_bools) ++] = v;
+}
+
+
+bool
+ast_computation_stack_peek_addr(struct ast_computation_stack *stack)
+{
+    assert(stack->num_bools);
+    return &(stack->bools[stack->num_bools - 1]);
+}
+
+void
+ast_computation_stack_pop(struct ast_computation_stack *stack)
+{
+    assert(stack->num_bools);
+    (stack->num_bools) --;
+}
+
+bool
+ast_computation_stack_pop_value(struct ast_computation_stack *stack)
+{
+    assert(stack->num_bools);
+    bool result = stack->bools[--(stack->num_bools)];
+    return result;
+}
+
+
+
+// Highly discouraged pointer may point to invalid
+// memory after a new push
+bool*
+ast_computation_stack_pop_value_addr(struct ast_computation_stack *stack)
+{
+    assert(stack->num_bools);
+    bool *result = &(stack->bools[--(stack->num_bools)]);
     return result;
 }
 

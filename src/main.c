@@ -156,11 +156,11 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
 {
     assert(ast_ttp->num_bits > 0);
 
-    struct ast_token_stack stack;
-    stack.num_tokens = 0;
+    struct ast_computation_stack stack;
+    stack.num_bools = 0;
 
     // In the future this if will check for valid allocation
-    if ( stack.tokens ) {
+    if ( stack.bools ) {
         for ( size_t it = 0; it < queue->num_tokens; it ++) {
             Token *t = & (queue->tokens[it]);
             if ( t->type == TT_IDENTIFIER ) {
@@ -168,11 +168,10 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
 
                 bool value = ast_truth_table_unpack_bool( ast_ttp,
                                                           bit_index);
+                
             } else {
                 // Token is an operator: Needs to perform the operation
                 //                       and push it into the stack
-
-                
             }
             
         }        
