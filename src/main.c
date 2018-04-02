@@ -165,9 +165,7 @@ pcalc_perform_operation_from_queue( Token *t,
         if (!( ((stack).num_bools) >= 2 )) {    \
             goto not_enough_operands;           \
         } } while (0)
-
-//        "(!A && B ) || C"
-    
+   
     switch (t->type) {
     case TT_PUNCT_BOTHDIR_ARROW: {
         CHECK_2OPERANDS(*stack);
@@ -255,7 +253,6 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
                 // Token is an operator: Needs to perform the operation
                 //                       and push it into the stack
                 pcalc_perform_operation_from_queue( t, & stack ) ;
-                assert_msg(stack.num_bools == 1, "Stack should remain with 1 value only");
                 printf("### Result: %d\n", ast_computation_stack_peek_value(& stack));
             }
             
@@ -325,7 +322,7 @@ int main( int argc, char **argv)
     platform_init();
     UNUSED(argc), UNUSED(argv);
     char code [] =
-        "(!A && B ) || C"
+        "(!A && B ) || C && (G <-> D)"
         "\0\0\0\0\0\0";
     
     
