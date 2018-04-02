@@ -181,11 +181,6 @@ ast_computation_stack_peek_value(struct ast_computation_stack *stack)
 {
     assert(stack->num_bits);
     bool result = ast_computation_stack_unpack_bool(stack, (stack->num_bits) - 1);
-#if __DEBUG
-    bool result2 = BOOL_UNPACK_FROM_ARRAY(stack->num_bits - 1, stack->bits,
-                                          AST_COMPUTATION_STACK_MAX_NELEMS, ast_packed_bool);
-    assert( result == result2);
-#endif
     return result;
 }
 
@@ -202,12 +197,6 @@ ast_computation_stack_pop_value(struct ast_computation_stack *stack)
     assert(stack->num_bits);
     --(stack->num_bits);
     bool result = ast_computation_stack_unpack_bool(stack, stack->num_bits);
-
-#if __DEBUG
-    bool result2 = BOOL_UNPACK_FROM_ARRAY(stack->num_bits, stack->bits,
-                                          AST_COMPUTATION_STACK_MAX_NELEMS, ast_packed_bool);
-    assert(result == result2);
-#endif
     return result;
 }
 
@@ -215,10 +204,19 @@ ast_computation_stack_pop_value(struct ast_computation_stack *stack)
 
 #define ast_token_queue_for( iterator, queue, token)        \
     for (((iterator) = 0), ((token) = (queue).tokens);      \
-         ((iterator) < (queue).num_tokens);             \
+         ((iterator) < (queue).num_tokens);                 \
          ((token) = & ((queue).tokens[++(iterator)])))      \
-    if (true)
+        if (true)
 
+#define ast_token_queue_for_bwd( iterator, queue, token)              \
+    for (( (iterator) = ((queue).num_tokens - 1)),                    \
+             ((token) = (queue).tokens + (queue).num_tokens - 1);     \
+         (iterator) >= 0;                                             \
+         ((token) = & ((queue).tokens[--(iterator)])))                \
+        if (true)
+
+#define ast_symbol_table_for(iterator, symtable, key, value)            \
+    stb_sdict_for((symtable)->dict, (iterator), (key), (value))         \
 
 void
 ast_token_queue_push(struct ast_token_queue *queue,
@@ -263,7 +261,6 @@ symbol_table_add_identifier(struct symbol_table *symtable,
 
     // restore null termination
     t->text[t->text_len] = temp;
-
 }
 
 
@@ -284,8 +281,8 @@ symbol_table_get_identifier_value( struct symbol_table *symtable,
 
 
 void
-ast_truth_table_packed_alloc_from_symtable(struct ast_truth_table_packed *ast_ttp,
-                                           struct symbol_table *symtable)
+ast_truth_table_packed_init_from_symtable(struct ast_truth_table_packed *ast_ttp,
+                                          struct symbol_table *symtable)
 {
     assert(symbol_table_num_ids(symtable) < AST_TRUTH_TABLE_MAX_NUMBITS);
     ast_ttp->num_bits = symbol_table_num_ids(symtable);
@@ -335,8 +332,8 @@ ast_truth_table_unpack_bool( struct ast_truth_table_packed *ast_ttp,
     size_t local_bit_index = ((size_t)bit_index - index * sizeof(ast_packed_bool) * 8);
     size_t mask = ( (size_t) 1 << local_bit_index);
     result = (ast_ttp->bits[index] &  mask) >> local_bit_index;
-
 #endif
+    
     bool temp = BOOL_UNPACK_FROM_ARRAY(bit_index, ast_ttp->bits,
                                        ast_truth_table_numelems(ast_ttp),
                                        ast_packed_bool);
@@ -408,12 +405,6 @@ ast_computation_stack_dbglog(struct ast_computation_stack *stack)
     printf("AST_COMPUTATION_STACK_DBG_LOG: ");
     for ( size_t i = 0; i < stack->num_bits; i ++ ) {
         bool v = ast_computation_stack_unpack_bool(stack, i);
-#if __DEBUG
-        bool v1 = BOOL_UNPACK_FROM_ARRAY(i, stack->bits,
-                                         AST_COMPUTATION_STACK_MAX_NELEMS, ast_packed_bool);
-
-        assert ( v == v1);
-#endif
         printf(" %d |", v);
     }
     printf("\n");

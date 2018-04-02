@@ -136,7 +136,7 @@ pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
     int it1 = 0, it2 = 0;
     char *k;
     void *v;
-    stb_sdict_for(symtable->dict, it1, k, v) {
+    ast_symbol_table_for(it1, symtable, k, v) {
         v = (void*) ((size_t)it2);
         it2 ++ ;
         stb_sdict_set(symtable->dict, k, v);
@@ -154,14 +154,14 @@ pcalc_perform_operation_from_queue( Token *t,
     bool v1 = 0;
     bool v2 = 0;
 
-#define CHECK_1OPERANDS(stack)                    \
-    do { if (! (((stack).num_bits) >= 1 )) {     \
-            goto not_enough_operands;             \
+#define CHECK_1OPERANDS(stack)                  \
+    do { if (! (((stack).num_bits) >= 1 )) {    \
+            goto not_enough_operands;           \
         } } while (0)
 
-#define CHECK_2OPERANDS(stack)                    \
-    do { if (!( ((stack).num_bits >= 2 ))) {      \
-            goto not_enough_operands;             \
+#define CHECK_2OPERANDS(stack)                  \
+    do { if (!( ((stack).num_bits >= 2 ))) {    \
+            goto not_enough_operands;           \
         } } while (0)
    
     switch (t->type) {
@@ -298,13 +298,104 @@ pcalc_build_symbol_table_from_queue ( struct ast_token_queue *queue,
 {
     Token *t;
     size_t it;
-    
     ast_token_queue_for(it, *queue, t) {
         if ( t->type == TT_IDENTIFIER ) {
             //null terminate;
             symbol_table_add_identifier(symtable, t);
         }
     }
+}
+
+void
+printf_token_text(Token *token)
+{
+    printf("%.*s", token->text_len, token->text);
+}
+
+
+size_t
+pcalc_number_of_operands_for_operator(Token *t)
+{
+    switch (t->type) {
+    case TT_PUNCT_BOTHDIR_ARROW:
+    case TT_PUNCT_ARROW:
+    case TT_PUNCT_LOGICAL_AND:
+    case TT_PUNCT_BITWISE_AND:
+    case TT_PUNCT_LOGICAL_OR:
+    case TT_PUNCT_BITWISE_OR: {
+        return 2;
+    }break;
+
+    case TT_PUNCT_LOGICAL_NOT:
+    case TT_PUNCT_BITWISE_NOT: {
+        return 1;
+    } break;
+
+    default: {
+        assert_msg(0, "Not supported operator");
+        return 0;
+    } break;
+    }
+    return 0;
+}
+
+
+void
+pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
+                                  size_t index)
+{
+    Token *t = &(queue->tokens[index]);
+    if ( t->type == TT_IDENTIFIER || t->type == TT_CONSTANT ) {
+        printf_token_text(t);
+        return;
+    } else {
+
+        assert(prop_calc_token_is_operator(t));
+        
+        size_t numberof_operands = pcalc_number_of_operands_for_operator(t);
+        assert_msg(index >= numberof_operands, "Inconsistent formula");
+        printf("(");
+        printf_token_text(t);
+
+        for( size_t it = 1; it <= numberof_operands; it++ ) {
+            printf(" ");
+            pcalc_printf_subformula_recursive(queue, index - it);
+        }
+        printf(")");
+    }
+}
+
+static inline void
+pcalc_print_tabular(void)
+{
+    printf("\t\t");
+}
+
+void
+pcalc_printf_computation_header(struct symbol_table *symtable,
+                                struct ast_token_queue *queue)
+{
+    size_t max_it = 1 << symbol_table_num_ids(symtable);
+
+    int s_it;
+    char *key;
+    void *value; (void) value;
+    ast_symbol_table_for(s_it, symtable, key, value) {
+        printf("%s", key);
+        pcalc_print_tabular();
+    }
+    Token *t;
+    size_t q_it;
+
+    ast_token_queue_for(q_it, *queue, t) {
+        if ( prop_calc_token_is_operator(t) ) {
+            pcalc_printf_subformula_recursive(queue, q_it);
+            pcalc_print_tabular();
+        }
+    }
+        
+    
+    printf("\n");
 }
 
 
@@ -318,14 +409,16 @@ bruteforce_solve(struct ast_token_queue *queue)
     pcalc_symbol_table_preprocess_ids(& symtable);
     
     struct ast_truth_table_packed ast_ttp;
-    ast_truth_table_packed_alloc_from_symtable(&  ast_ttp, & symtable);
+    ast_truth_table_packed_init_from_symtable(&  ast_ttp, & symtable);
 
     if ( ast_ttp.bits && ast_ttp.num_bits ) {
 
+        pcalc_printf_computation_header(& symtable, queue);
+        
         size_t max_it = 1 << symbol_table_num_ids(& symtable);
 
         for (size_t i = 0; i < max_it; i ++ ) {
-#       if 1
+#       if 0
             ast_truth_table_packed_dbglog(& ast_ttp);
 #       endif
             // Use the value right here and compute
