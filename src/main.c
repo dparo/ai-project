@@ -286,15 +286,14 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
                     assert_msg( s == true, "Passed constant was not a valid boolean");
                 }
 
-                printf("%d", value);
-                pcalc_print_tabular();
                 ast_computation_stack_push( & stack, value );
                 
             } else {
                 // Token is an operator: Needs to perform the operation
                 //                       and push it into the stack
                 pcalc_perform_operation_from_queue( t, & stack ) ;
-                // printf("### Result: %d\n", ast_computation_stack_peek_value(& stack));
+                printf("%d", ast_computation_stack_peek_value(& stack));
+                pcalc_print_tabular();
             }
             
         }
@@ -495,7 +494,11 @@ int main( int argc, char **argv)
         "\0\0\0\0\0\0";
 
     char small_code[] =
+#if 0
+        "!A"
+# else
         "((!A && B ) || C && (G <-> D) <-> F)"
+#endif
         "\0\0\0\0\0\0";
 
     char *code = small_code;
