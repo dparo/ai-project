@@ -493,13 +493,18 @@ int main( int argc, char **argv)
         "h | i | j | k | l | m | n | o | p | q | r"
         "\0\0\0\0\0\0";
 
+
+    assert_msg(0, "F <-> 1 | G     this formula does not extract symbols correctly");
     char small_code[] =
-#if 0
-        "!A"
+#if 1
+        "F <-> 1 | G"
 # else
         "((!A && B ) || C && (G <-> D) <-> F)"
 #endif
         "\0\0\0\0\0\0";
+
+
+
 
     char *code = small_code;
     size_t codesize = sizeof(small_code);
