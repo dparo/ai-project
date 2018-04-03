@@ -350,33 +350,34 @@ pcalc_number_of_operands_for_operator(Token *t)
 }
 
 
-void
+// returns the index of the last read elem
+size_t
 pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
                                   size_t index)
 {
     Token *t = &(queue->tokens[index]);
     if ( t->type == TT_IDENTIFIER || t->type == TT_CONSTANT ) {
         printf_token_text(t);
-        return;
-    } else {
-
+        return index;
+    } else if (prop_calc_token_is_operator(t)) {
         assert(prop_calc_token_is_operator(t));
         
         size_t numberof_operands = pcalc_number_of_operands_for_operator(t);
         assert_msg(index >= numberof_operands, "Inconsistent formula");
-        if ( index == queue->num_tokens - 1) {
-            printf("result = (");
-        } else {
-            printf("(");
-        }
+
+        printf(index == (queue->num_tokens - 1) ? "result = (" : "(");
         printf_token_text(t);
 
         for( size_t it = 1; it <= numberof_operands; it++ ) {
             printf(" ");
-            pcalc_printf_subformula_recursive(queue, index - it);
+            index = pcalc_printf_subformula_recursive(queue, index - 1);
         }
         printf(")");
+        return index;
+    } else {
+        invalid_code_path("");
     }
+    return index;
 }
 
 
@@ -499,7 +500,7 @@ int main( int argc, char **argv)
     /* assert_msg(0, "F <-> (1 | G)     even this one"); */
     char small_code[] =
 #if 1
-        "F & (C | G)"
+        "F | (G  & a)"
 # else
         "((!A && B ) || C && (G <-> D) <-> F)"
 #endif
@@ -535,7 +536,7 @@ int main( int argc, char **argv)
             assert_msg(0, "We got an error boys");
         }    
 
-        //log_token(& token);
+        // log_token(& token);
 
         {
             if (token.type == TT_CONSTANT ||
@@ -599,10 +600,11 @@ parse_end: {
     Token *t;
     size_t it;
 
-#if 0
+#if 1
     ast_token_queue_for(it, queue, t) {
         log_token(t);
     }
+    printf("\n\n");
 #endif
 
     bruteforce_solve(& queue);
