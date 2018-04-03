@@ -495,12 +495,9 @@ int main( int argc, char **argv)
         "\0\0\0\0\0\0";
 
 
-    /* assert_msg(0, "F <-> 1 | G     this formula does not extract symbols correctly"); */
-    /* (void)"It only happens with constant"; */
-    /* assert_msg(0, "F <-> (1 | G)     even this one"); */
     char small_code[] =
 #if 1
-        "F | (G  & a)"
+        "F & (~0  | B)"
 # else
         "((!A && B ) || C && (G <-> D) <-> F)"
 #endif
@@ -600,7 +597,7 @@ parse_end: {
     Token *t;
     size_t it;
 
-#if 1
+#if 0
     ast_token_queue_for(it, queue, t) {
         log_token(t);
     }
