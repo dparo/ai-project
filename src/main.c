@@ -465,21 +465,10 @@ bruteforce_solve(struct ast_token_queue *queue)
 #define TEST_C_IMPL
 #include "test.c"
 
-void
-test_packing(void)
-{
-#if 0
-#define BITS_COUNT 140
-#define BITS_ELEMS ((BITS_COUNT - sizeof(datatype)) / (sizeof(ast_packed_bool) * 8) + sizeof(datatype))
-    assert(BITS_ELEMS == 3);
-#endif
-}
+
 
 int main( int argc, char **argv)
 {
-# if 1
-    test_packing();
-#endif
     platform_init();
     UNUSED(argc), UNUSED(argv);
     char huge_code [] =
