@@ -1,6 +1,7 @@
 * Note interessanti / Link Utili
   - https://pdfs.semanticscholar.org/0d03/82bf09f3054b957e4cc2271b3db4ab492260.pdf
   - https://www.jair.org/media/298/live-298-1558-jair.pdf
+  - https://en.wikipedia.org/wiki/Truth_table
 
 ** Implementazione di un risolutore
    - https://en.wikipedia.org/wiki/Shunting-yard_algorithm
