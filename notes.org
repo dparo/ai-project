@@ -6,6 +6,7 @@
 
 ** Implementazione di un risolutore
    - https://en.wikipedia.org/wiki/Shunting-yard_algorithm
+   - http://wcipeg.com/wiki/Shunting_yard_algorithm
    - https://en.wikipedia.org/wiki/Boolean_satisfiability_problem
    - https://en.wikipedia.org/wiki/DPLL_algorithm
    - http://logictools.org/propositional.html
