@@ -647,7 +647,41 @@ parse_end: {
 }
 
 
-int main( int argc, char **argv)
+#include <readline/readline.h>
+#include <readline/history.h>
+
+
+// the formula is null terminated with necessary space for null termination
+void
+user_interact(char **formula, size_t *formula_size)
+{
+    // Maybe continue asking for more input if last character is like `\`
+    // in a loop and concatenate to previous string
+    char *string = readline ("\nInput formula to compute: \n\t");
+    enum { EXTRA_SPACE_FOR_NULL_TERMINATION = 5};
+    size_t len = 0;
+    size_t size = 0;
+    if ( string ) {
+        len = strlen(string);
+        size = len + EXTRA_SPACE_FOR_NULL_TERMINATION;
+        void * temp = realloc(string, size);
+        if ( temp ) { string = temp; }
+        else { fprintf(stderr, "Failed Reading user input\n"); }
+    } else { fprintf(stderr, "Failed Reading user input\n"); }
+
+    if ( string ) {
+        memset(string + len, 0, EXTRA_SPACE_FOR_NULL_TERMINATION);
+        *formula = string;
+        *formula_size = size;
+    }
+
+    if (string && string[0] != '\0') {
+        add_history(string); // NOTE: Returns void
+    }
+}
+
+int
+main( int argc, char **argv)
 {
     platform_init();
     UNUSED(argc), UNUSED(argv);
@@ -674,30 +708,23 @@ int main( int argc, char **argv)
     enum { EXTRA_SPACE_FOR_NULL_TERMINATION = 5};
     char *readres = NULL;
 
-#if 1
+    	
+    char *formula = NULL;
+    size_t formula_size;
+
+
+    
+#if 0
     pcalc_process(small_code, sizeof(small_code));
 #else
-    while (printf("Input formula to compute: "),
-           (readres = fgets(input_line,
-                            sizeof(input_line) - EXTRA_SPACE_FOR_NULL_TERMINATION,
-                            stdin))) {
-
-        printf("size: %zu\n", sizeof(input_line) - EXTRA_SPACE_FOR_NULL_TERMINATION);
-        if (readres != input_line) {
-            break;
+    while ( 1 ) {
+        if ( formula ) { free(formula); formula_size = 0; }
+        user_interact(& formula, & formula_size);
+        if ( formula ) {
+            printf("\n\n\n");
+            pcalc_process(formula, formula_size);
         }
-        input_line_len = strnlen(input_line, sizeof(input_line));
-        assert(input_line_len + EXTRA_SPACE_FOR_NULL_TERMINATION < sizeof(input_line));
-        memset(input_line + input_line_len, 0, EXTRA_SPACE_FOR_NULL_TERMINATION);
-
-        size_t input_line_size = input_line_len + EXTRA_SPACE_FOR_NULL_TERMINATION;
-        pcalc_process(input_line, input_line_size);
     }
-    if ( readres == NULL ) {
-        fprintf(stderr, "Failed to read the input lines\n");
-    }
-    
-    return 0;
 #endif
 }
 
