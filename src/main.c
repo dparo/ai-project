@@ -382,7 +382,7 @@ pcalc_number_of_operands_for_operator(Token *t)
     case TT_PUNCT_EQUAL_EQUAL:
     case TT_PUNCT_COMMA: {
         return 2;
-    }break;
+    } break;
 
     case TT_PUNCT_LOGICAL_NOT:
     case TT_PUNCT_BITWISE_NOT: {
@@ -650,10 +650,31 @@ int main( int argc, char **argv)
         "\0\0\0\0\0\0";
 
 
-    pcalc_process(small_code, sizeof(small_code));
+    char input_line[4096];
+    size_t input_line_len = 0;
+    enum { EXTRA_SPACE_FOR_NULL_TERMINATION = 5};
+    char *readres = NULL;
 
+    while (printf("Input formula to compute: "),
+           (readres = fgets(input_line,
+                            sizeof(input_line) - EXTRA_SPACE_FOR_NULL_TERMINATION,
+                            stdin))) {
 
+        printf("size: %zu\n", sizeof(input_line) - EXTRA_SPACE_FOR_NULL_TERMINATION);
+        if (readres != input_line) {
+            break;
+        }
+        input_line_len = strnlen(input_line, sizeof(input_line));
+        assert(input_line_len + EXTRA_SPACE_FOR_NULL_TERMINATION < sizeof(input_line));
+        memset(input_line + input_line_len, 0, EXTRA_SPACE_FOR_NULL_TERMINATION);
 
+        size_t input_line_size = input_line_len + EXTRA_SPACE_FOR_NULL_TERMINATION;
+        pcalc_process(input_line, input_line_size);
+            
+    }
+    if ( readres == NULL ) {
+        fprintf(stderr, "Failed to read the input lines\n");
+    }
     
     return 0;
 
