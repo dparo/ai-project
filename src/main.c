@@ -399,14 +399,13 @@ pcalc_number_of_operands_for_operator(Token *t)
 
 
 // returns the index of the last read elem
-size_t
+void
 pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
                                   size_t index)
 {
     Token *t = &(queue->tokens[index]);
     if ( t->type == TT_IDENTIFIER || t->type == TT_CONSTANT ) {
         printf_token_text(t);
-        return index;
     } else if (prop_calc_token_is_operator(t)) {
         assert(prop_calc_token_is_operator(t));
         
@@ -418,14 +417,38 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
 
         for( size_t it = 1; it <= numberof_operands; it++ ) {
             printf(" ");
-            index = pcalc_printf_subformula_recursive(queue, index - 1);
+
+            // Fixes order of the operands on the queue, A & B, in the queue
+            // becomes { [0] = A, [2] = B, [3] = &} Which means that to know
+            // the position of the first operand i need to process recursively
+            // the second operand. This do { } while fixes this problem but
+            // introduces more iteration loops. To make it more efficient
+            // SInce we probably will always have operators up to 3 operands
+            // while looping for the first operand we can store the postion
+            // of the first 2 to cut down on the number of iterations
+            size_t newindex = index; {
+                if ( index ) { newindex = index - 1; }
+                size_t operand_num = numberof_operands;
+                do {
+                    /* printf("| newindex: %zu | operand_num: %zu\n", */
+                    /*        newindex, operand_num); */
+                    Token *t = &(queue->tokens[newindex]);
+                    if ( operand_num == (it) ) {
+                        break;
+                    }
+                    if (prop_calc_token_is_operator(t)) {
+                        operand_num += pcalc_number_of_operands_for_operator(t);
+                    } else {
+                        operand_num--;
+                    }
+                } while( newindex != 0 ? newindex-- : 0);
+            };
+            pcalc_printf_subformula_recursive(queue, newindex);
         }
         printf(")");
-        return index;
     } else {
         invalid_code_path("");
     }
-    return index;
 }
 
 
@@ -643,7 +666,7 @@ int main( int argc, char **argv)
 
     char small_code[] =
 #if 1
-        "A, B, C"
+        "(A & B) | C <-> D"
 # else
         "((!A && B ) || C && (G <-> D) <-> F)"
 #endif
@@ -655,6 +678,9 @@ int main( int argc, char **argv)
     enum { EXTRA_SPACE_FOR_NULL_TERMINATION = 5};
     char *readres = NULL;
 
+#if 1
+    pcalc_process(small_code, sizeof(small_code));
+#else
     while (printf("Input formula to compute: "),
            (readres = fgets(input_line,
                             sizeof(input_line) - EXTRA_SPACE_FOR_NULL_TERMINATION,
@@ -670,14 +696,13 @@ int main( int argc, char **argv)
 
         size_t input_line_size = input_line_len + EXTRA_SPACE_FOR_NULL_TERMINATION;
         pcalc_process(input_line, input_line_size);
-            
     }
     if ( readres == NULL ) {
         fprintf(stderr, "Failed to read the input lines\n");
     }
     
     return 0;
-
+#endif
 }
 
 
