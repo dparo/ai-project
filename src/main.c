@@ -143,88 +143,51 @@ pcalc_perform_operation_from_queue( Token *t,
     bool result = 0;
     bool v1 = 0;
     bool v2 = 0;
+    uint numofoperands = operator_numofoperands(t);
+    if (! ((stack->num_bits) >= (operator_numofoperands(t)) )) {
+        goto not_enough_operands;                                 
+    }
 
-#define CHECK_REQUIRED_NUM_OF_OPERANDS(t, stack)   \
-    do { if (! (((stack).num_bits) >= (operator_numofoperands(t)) )) {  \
-            goto not_enough_operands;                                   \
-        } } while (0)
+    bool v[3]; 
+    assert_msg( numofoperands < ARRAY_LEN(v),
+                "STATIC ASSERT: Language will support at most 3 operands for operators");
     
+    for ( uint i = 0; i < numofoperands; i ++ ) {
+        v[i] = ast_computation_stack_pop_value(stack);
+    }
+
+    // NOTE v[0] Contains the last operand v[numberofoperands-1] contains the first operand
+
     switch (t->type) {
-    case TT_PUNCT_BOTHDIR_ARROW: {
-        CHECK_REQUIRED_NUM_OF_OPERANDS(t, *stack);
-        v2 = ast_computation_stack_pop_value(stack);
-        v1 = ast_computation_stack_pop_value(stack);
-        result = (v1 && v2) || !((v1 || v2));
-        ast_computation_stack_push(stack, result);
-    } break;
-    case TT_PUNCT_ARROW: {
-        CHECK_REQUIRED_NUM_OF_OPERANDS(t, *stack);
-        v2 = ast_computation_stack_pop_value(stack);
-        v1 = ast_computation_stack_pop_value(stack);
-        result = true;
-        if ( v1 == true && v2 == false ) { result = false;}
-        ast_computation_stack_push(stack, result);
-    } break;
+    case TT_PUNCT_BOTHDIR_ARROW: { result = (v[0] && v[1]) || !((v[0] || v[1])); } break;
+    case TT_PUNCT_ARROW: { result = (v[0] == true && v[1] == false ) ? false : true; } break;
 
     case TT_PUNCT_LOGICAL_AND:
-    case TT_PUNCT_BITWISE_AND: {
-        CHECK_REQUIRED_NUM_OF_OPERANDS(t, *stack);
-        v2 = ast_computation_stack_pop_value(stack);
-        v1 = ast_computation_stack_pop_value(stack);
-        result = v1 && v2;
-        ast_computation_stack_push(stack, result);
-    } break;
+    case TT_PUNCT_BITWISE_AND: { result = v[0] && v[1]; } break;
 
     case TT_PUNCT_LOGICAL_OR:
-    case TT_PUNCT_BITWISE_OR: {
-        CHECK_REQUIRED_NUM_OF_OPERANDS(t, *stack);
-        v2 = ast_computation_stack_pop_value(stack);
-        v1 = ast_computation_stack_pop_value(stack);
-        result = v1 || v2;
-        ast_computation_stack_push(stack, result);
-    } break;
+    case TT_PUNCT_BITWISE_OR: { result = v[0] || v[1]; } break;
 
     case TT_PUNCT_LOGICAL_NOT:
-    case TT_PUNCT_BITWISE_NOT: {
-        CHECK_REQUIRED_NUM_OF_OPERANDS(t, *stack);
-        v1 = ast_computation_stack_pop_value(stack);
-        result = !v1;
-        ast_computation_stack_push(stack, result);
-    } break;
+    case TT_PUNCT_BITWISE_NOT: { result = !v[0]; } break;
 
     case TT_PUNCT_EQUAL:
-    case TT_PUNCT_EQUAL_EQUAL: {
-        CHECK_REQUIRED_NUM_OF_OPERANDS(t, *stack);
-        v2 = ast_computation_stack_pop_value(stack);
-        v1 = ast_computation_stack_pop_value(stack);
-        result = (v1 == v2);
-        ast_computation_stack_push(stack, result);
-    } break;
+    case TT_PUNCT_EQUAL_EQUAL: { result = (v[0] == v[1]); } break;
 
-    case TT_PUNCT_COMMA: {
-        CHECK_REQUIRED_NUM_OF_OPERANDS(t, *stack);
-        v2 = ast_computation_stack_pop_value(stack);
-        v1 = ast_computation_stack_pop_value(stack);
-        result = (v2); // or (v1, v2)
-        ast_computation_stack_push(stack, result);
-    } break;
-
+    case TT_PUNCT_COMMA: { result = (v[0]); } break; /* // or (v[0], v[1]) c-alike comma */
 
     default: {
-        assert_msg(0, "Operator is not supported");
+        assert_msg(0, "Invalid code path we should assert before when we require "
+            "the number of operands in operator_numofoperands");
     } break;
     }
     
+    ast_computation_stack_push(stack, result);
     return;
-
-    
 not_enough_operands: {
         assert_msg(0, "Operator needs more operand, not found enough inside the stack");
         return;
     }
-
-#undef CHECK_1OPERANDS
-#undef CHECK_2OPERANDS
 }
 
 bool
@@ -586,7 +549,7 @@ user_interact(char **formula, size_t *formula_size)
 {
     // Maybe continue asking for more input if last character is like `\`
     // in a loop and concatenate to previous string
-    char *string = readline ("[Input formula to compute]$ ");
+    char *string = readline ("Input formula to compute:\n    [>] ");
     enum { EXTRA_SPACE_FOR_NULL_TERMINATION = 5};
     size_t len = 0;
     size_t size = 0;
