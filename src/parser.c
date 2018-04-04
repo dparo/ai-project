@@ -1,5 +1,5 @@
-#ifndef PROP_CALC_C_INCLUDE
-#define PROP_CALC_C_INCLUDE
+#ifndef PARSER_C_INCLUDE
+#define PARSER_C_INCLUDE
 
 #include "utils.c"
 #include "platform.c"
@@ -196,6 +196,21 @@ typedef struct Tokenizer {
 
 
 
+
+static inline int
+token_txt_cmp(Token *t, char *string)
+{
+    return strncmp(string, t->text, t->text_len);
+}
+
+
+void log_token (Token *token);
+
+
+bool
+token_is_operator(Token *t);
+
+
 void
 tokenizer_init (Tokenizer* tok, char* filename );
 
@@ -235,9 +250,9 @@ bool
 compare_next_token_to (Tokenizer *tknzr, char * token_text );
 
 // #######################################################################
-#endif /* PROP_CALC_C_INCLUDE */
-#if !defined PROP_CALC_C_IMPLEMENTED && defined PROP_CALC_C_IMPL
-#define PROP_CALC_C_IMPLEMENTED
+#endif /* PARSER_C_INCLUDE */
+#if !defined PARSER_C_IMPLEMENTED && defined PARSER_C_IMPL
+#define PARSER_C_IMPLEMENTED
 // #######################################################################
 
 
@@ -1495,4 +1510,27 @@ compare_next_token_to (Tokenizer *tknzr, char * token_text )
 }
 
 
-#endif /* PROP_CALC_C_IMPL */
+
+
+void log_token (Token *token)
+{
+     printf("%.*s\tline_number=%d\tcolumn=%d\n", token->text_len, token->text, token->line_num, token->column);
+}
+
+
+
+bool
+token_is_operator(Token *t)
+{
+    bool result = true;
+    if ( t->type > TT_PUNCT_ENUM_OPERATORS_START_MARKER &&
+         t->type < TT_PUNCT_ENUM_OPERATORS_END_MARKER ) {
+        result = true;
+    } else {
+        result = false;
+    }
+    return result;
+}
+
+
+#endif /* PARSER_C_IMPL */

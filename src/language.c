@@ -106,25 +106,6 @@ op_eq_precedence(Token *sample,
 }
 
 
-
-
-void
-symtable_preprocess_ids ( struct symtable *symtable )
-{
-
-    int it1 = 0, it2 = 0;
-    char *k;
-    void *v;
-    ast_symtable_for(it1, symtable, k, v) {
-        v = (void*) ((size_t)it2);
-        it2 ++ ;
-        stb_sdict_set(symtable->dict, k, v);
-        //printf("k : %s | v: %zu\n", k, (size_t) v);
-    }
-}
-
-
-
 uint
 operator_numofoperands(Token *t)
 {

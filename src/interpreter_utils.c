@@ -1,5 +1,5 @@
-#ifndef PCALC_UTILS_C_INCLUDE
-#define PCALC_UTILS_C_INCLUDE
+#ifndef INTERPRETER_UTILS_C_INCLUDE
+#define INTERPRETER_UTILS_C_INCLUDE
 
 
 
@@ -82,9 +82,9 @@ struct ast {
 
 
 //#######################################################
-#endif /* PCALC_UTILS_C_INCLUDE */
-#if !defined PCALC_UTILS_C_IMPLEMENTED && defined PCALC_UTILS_C_IMPL
-#define PCALC_UTILS_C_IMPLEMENTED
+#endif /* INTERPRETER_UTILS_C_INCLUDE */
+#if !defined INTERPRETER_UTILS_C_IMPLEMENTED && defined INTERPRETER_UTILS_C_IMPL
+#define INTERPRETER_UTILS_C_IMPLEMENTED
 //#######################################################
 
 
@@ -410,5 +410,5 @@ vm_stack_dbglog(struct vm_stack *vm)
 }
 
 
-#endif /* PCALC_UTILS_C_IMPL */
+#endif /* INTERPRETER_UTILS_C_IMPL */
 
