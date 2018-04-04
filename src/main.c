@@ -67,31 +67,34 @@ token_is_operator(Token *t)
     return result;
 }
 
+static struct operator_infos {
+    int precedence;
+    uint numofoperands;
+} ops[] = {
+    [TT_PUNCT_COMMA] = { 100, 2 },
+    
+    [TT_PUNCT_BOTHDIR_ARROW] = { 5, 2 },
+    [TT_PUNCT_ARROW] = { 5, 2 },
+    [TT_PUNCT_LOGICAL_AND] = { 4, 2 },
+    [TT_PUNCT_BITWISE_AND] = { 4, 2 },
+    [TT_PUNCT_LOGICAL_OR] = { 3, 2 },
+    [TT_PUNCT_BITWISE_OR] = { 3, 2 },
+    [TT_PUNCT_LOGICAL_NOT] = { 2, 1 },
+    [TT_PUNCT_BITWISE_NOT] = { 2, 1 },
+    [TT_PUNCT_EQUAL] = { 1, 2 },
+    [TT_PUNCT_EQUAL_EQUAL] = { 1, 2 },
+    
+    
+    // Not valid set of types operators.
+    [0 ... TT_PUNCT_ENUM_OPERATORS_START_MARKER] = { -1, 0 },
+    [TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS ... TT_PUNCT_ENUM_LAST_VALUE ] = { -1, 0 },
+};
 
 int
 operator_precedence(Token *t)
 {
     assert(token_is_operator(t));
-    int precedence[] = {
-        [TT_PUNCT_COMMA] = 100,
-        
-        [TT_PUNCT_BOTHDIR_ARROW] = 5,
-        [TT_PUNCT_ARROW] = 5,
-        [TT_PUNCT_LOGICAL_AND] = 4,
-        [TT_PUNCT_BITWISE_AND] = 4,
-        [TT_PUNCT_LOGICAL_OR] = 3,
-        [TT_PUNCT_BITWISE_OR] = 3,
-        [TT_PUNCT_LOGICAL_NOT] = 2,
-        [TT_PUNCT_BITWISE_NOT] = 2,
-        [TT_PUNCT_EQUAL] = 1,
-        [TT_PUNCT_EQUAL_EQUAL] = 1,
-
-
-        // Not valid set of types operators.
-        [0 ... TT_PUNCT_ENUM_OPERATORS_START_MARKER] = -1,
-        [TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS ... TT_PUNCT_ENUM_LAST_VALUE ] = -1,
-    };
-    return precedence[t->type];
+    return ops[t->type].precedence;
 }
 
 bool
@@ -109,7 +112,7 @@ greater_or_eq_precedence(Token *sample,
 
 
 void
-pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
+symbol_table_preprocess_ids ( struct symbol_table *symtable )
 {
 
     int it1 = 0, it2 = 0;
@@ -125,6 +128,14 @@ pcalc_symbol_table_preprocess_ids ( struct symbol_table *symtable )
 
 
 
+uint
+operator_numofoperands(Token *t)
+{
+    assert(token_is_operator(t));
+    return ops[t->type].numofoperands;
+    return 0;
+}
+
 void
 pcalc_perform_operation_from_queue( Token *t,
                                     struct ast_computation_stack *stack )
@@ -133,26 +144,21 @@ pcalc_perform_operation_from_queue( Token *t,
     bool v1 = 0;
     bool v2 = 0;
 
-#define CHECK_1OPERANDS(stack)                  \
-    do { if (! (((stack).num_bits) >= 1 )) {    \
-            goto not_enough_operands;           \
+#define CHECK_REQUIRED_NUM_OF_OPERANDS(t, stack)   \
+    do { if (! (((stack).num_bits) >= (operator_numofoperands(t)) )) {  \
+            goto not_enough_operands;                                   \
         } } while (0)
-
-#define CHECK_2OPERANDS(stack)                  \
-    do { if (!( ((stack).num_bits >= 2 ))) {    \
-            goto not_enough_operands;           \
-        } } while (0)
-   
+    
     switch (t->type) {
     case TT_PUNCT_BOTHDIR_ARROW: {
-        CHECK_2OPERANDS(*stack);
+        CHECK_REQUIRED_NUM_OF_OPERANDS(t, *stack);
         v2 = ast_computation_stack_pop_value(stack);
         v1 = ast_computation_stack_pop_value(stack);
         result = (v1 && v2) || !((v1 || v2));
         ast_computation_stack_push(stack, result);
     } break;
     case TT_PUNCT_ARROW: {
-        CHECK_2OPERANDS(*stack);
+        CHECK_REQUIRED_NUM_OF_OPERANDS(t, *stack);
         v2 = ast_computation_stack_pop_value(stack);
         v1 = ast_computation_stack_pop_value(stack);
         result = true;
@@ -162,7 +168,7 @@ pcalc_perform_operation_from_queue( Token *t,
 
     case TT_PUNCT_LOGICAL_AND:
     case TT_PUNCT_BITWISE_AND: {
-        CHECK_2OPERANDS(*stack);
+        CHECK_REQUIRED_NUM_OF_OPERANDS(t, *stack);
         v2 = ast_computation_stack_pop_value(stack);
         v1 = ast_computation_stack_pop_value(stack);
         result = v1 && v2;
@@ -171,7 +177,7 @@ pcalc_perform_operation_from_queue( Token *t,
 
     case TT_PUNCT_LOGICAL_OR:
     case TT_PUNCT_BITWISE_OR: {
-        CHECK_2OPERANDS(*stack);
+        CHECK_REQUIRED_NUM_OF_OPERANDS(t, *stack);
         v2 = ast_computation_stack_pop_value(stack);
         v1 = ast_computation_stack_pop_value(stack);
         result = v1 || v2;
@@ -180,7 +186,7 @@ pcalc_perform_operation_from_queue( Token *t,
 
     case TT_PUNCT_LOGICAL_NOT:
     case TT_PUNCT_BITWISE_NOT: {
-        CHECK_1OPERANDS(*stack);
+        CHECK_REQUIRED_NUM_OF_OPERANDS(t, *stack);
         v1 = ast_computation_stack_pop_value(stack);
         result = !v1;
         ast_computation_stack_push(stack, result);
@@ -188,7 +194,7 @@ pcalc_perform_operation_from_queue( Token *t,
 
     case TT_PUNCT_EQUAL:
     case TT_PUNCT_EQUAL_EQUAL: {
-        CHECK_2OPERANDS(*stack);
+        CHECK_REQUIRED_NUM_OF_OPERANDS(t, *stack);
         v2 = ast_computation_stack_pop_value(stack);
         v1 = ast_computation_stack_pop_value(stack);
         result = (v1 == v2);
@@ -196,7 +202,7 @@ pcalc_perform_operation_from_queue( Token *t,
     } break;
 
     case TT_PUNCT_COMMA: {
-        CHECK_2OPERANDS(*stack);
+        CHECK_REQUIRED_NUM_OF_OPERANDS(t, *stack);
         v2 = ast_computation_stack_pop_value(stack);
         v1 = ast_computation_stack_pop_value(stack);
         result = (v2); // or (v1, v2)
@@ -299,7 +305,7 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
 }
 
 void
-pcalc_build_symbol_table_from_queue ( struct ast_token_queue *queue,
+build_symbol_table_from_queue ( struct ast_token_queue *queue,
                                       struct symbol_table *symtable )
 {
     Token *t;
@@ -319,34 +325,6 @@ printf_token_text(Token *token)
 }
 
 
-size_t
-pcalc_number_of_operands_for_operator(Token *t)
-{
-    switch (t->type) {
-    case TT_PUNCT_BOTHDIR_ARROW:
-    case TT_PUNCT_ARROW:
-    case TT_PUNCT_LOGICAL_AND:
-    case TT_PUNCT_BITWISE_AND:
-    case TT_PUNCT_LOGICAL_OR:
-    case TT_PUNCT_BITWISE_OR:
-    case TT_PUNCT_EQUAL:
-    case TT_PUNCT_EQUAL_EQUAL:
-    case TT_PUNCT_COMMA: {
-        return 2;
-    } break;
-
-    case TT_PUNCT_LOGICAL_NOT:
-    case TT_PUNCT_BITWISE_NOT: {
-        return 1;
-    } break;
-
-    default: {
-        assert_msg(0, "Not supported operator");
-        return 0;
-    } break;
-    }
-    return 0;
-}
 
 
 // returns the index of the last read elem
@@ -360,13 +338,13 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
     } else if (token_is_operator(t)) {
         assert(token_is_operator(t));
         
-        size_t numberof_operands = pcalc_number_of_operands_for_operator(t);
-        assert_msg(index >= numberof_operands, "Inconsistent formula");
+        uint numofoperands = operator_numofoperands(t);
+        assert_msg(index >= numofoperands, "Inconsistent formula");
 
         printf(index == (queue->num_tokens - 1) ? "result: (" : "(");
         printf_token_text(t);
 
-        for( size_t it = 1; it <= numberof_operands; it++ ) {
+        for( size_t it = 1; it <= numofoperands; it++ ) {
             printf(" ");
 
             // Fixes order of the operands on the queue, A & B, in the queue
@@ -379,7 +357,7 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
             // of the first 2 to cut down on the number of iterations
             size_t newindex = index; {
                 if ( index ) { newindex = index - 1; }
-                size_t operand_num = numberof_operands;
+                uint operand_num = numofoperands;
                 do {
                     /* printf("| newindex: %zu | operand_num: %zu\n", */
                     /*        newindex, operand_num); */
@@ -388,7 +366,7 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
                         break;
                     }
                     if (token_is_operator(t)) {
-                        operand_num += pcalc_number_of_operands_for_operator(t);
+                        operand_num += operator_numofoperands(t);
                     } else {
                         operand_num--;
                     }
@@ -454,8 +432,8 @@ bruteforce_solve(struct ast_token_queue *queue)
     struct symbol_table symtable = symbol_table_new();
 
 
-    pcalc_build_symbol_table_from_queue(queue, &symtable);
-    pcalc_symbol_table_preprocess_ids(& symtable);
+    build_symbol_table_from_queue(queue, &symtable);
+    symbol_table_preprocess_ids(& symtable);
     
     struct ast_truth_table_packed ast_ttp;
     ast_truth_table_packed_init_from_symtable(&  ast_ttp, & symtable);
