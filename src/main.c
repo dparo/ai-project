@@ -77,6 +77,7 @@ static struct operator_infos {
     uint numofoperands;
     enum operator_associativity associativity;
 } ops[] = {
+    [TT_PUNCT_SEMICOLON] = { 200, 1, RIGHT_ASSOCIATIVE },
     [TT_PUNCT_COMMA] = { 100, 2, LEFT_ASSOCIATIVE },
     
     [TT_PUNCT_BOTHDIR_ARROW] = { 5, 2, LEFT_ASSOCIATIVE },

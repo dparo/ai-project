@@ -50,7 +50,11 @@ enum Token_Type {
      TT_PUNCT_GREATER_OR_EQUAL,
      TT_PUNCT_LESS_OR_EQUAL,
 
+     TT_PUNCT_SEMICOLON, // ;
 
+
+
+     
      TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS, // marker
      // enums that follows this marker are parsed but not implemented
      // semantically
@@ -87,7 +91,6 @@ enum Token_Type {
 
      TT_PUNCT_DOT,
 
-     TT_PUNCT_SEMICOLON, // ;
      TT_PUNCT_COLON,     // :
 
 
