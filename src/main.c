@@ -93,17 +93,17 @@ static struct operator_infos {
     [TT_PUNCT_COMMA] = { 100, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     
     [TT_PUNCT_BOTHDIR_ARROW] = { 5, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_ARROW] = { 5, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_LOGICAL_AND] = { 4, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_BITWISE_AND] = { 4, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_LOGICAL_OR] = { 3, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_BITWISE_OR] = { 3, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_LOGICAL_NOT] = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
-    [TT_PUNCT_BITWISE_NOT] = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
-    [TT_PUNCT_EQUAL] = { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_EQUAL_EQUAL] = { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_ARROW]         = { 5, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_LOGICAL_AND]   = { 4, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_BITWISE_AND]   = { 4, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_LOGICAL_OR]    = { 3, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_BITWISE_OR]    = { 3, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_LOGICAL_NOT]   = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
+    [TT_PUNCT_BITWISE_NOT]   = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
+    [TT_PUNCT_EQUAL]         = { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_EQUAL_EQUAL]   = { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     
-    [TT_PUNCT_SEMICOLON] = { 200, 2, LEFT_ASSOCIATIVE_OP, POSTFIX_OP },
+    [TT_PUNCT_SEMICOLON] = { 200, 2, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
     
     // Not valid set of types operators.
     [0 ... TT_PUNCT_ENUM_OPERATORS_START_MARKER] = { -1, 0, LEFT_ASSOCIATIVE_OP, INFIX_OP },
@@ -235,7 +235,8 @@ pcalc_perform_operation_from_queue( Token *t,
     case TT_PUNCT_EQUAL_EQUAL: { result = (v[0] == v[1]); } break;
 
     case TT_PUNCT_COMMA: { result = (v[0]); } break; /* // or (v[0], v[1]) c-alike comma */
-
+    case TT_PUNCT_SEMICOLON: { result = 0; } break; /* // or (v[0], v[1]) c-alike comma */
+        
     default: {
         assert_msg(0, "Invalid code path we should assert before when we require "
             "the number of operands in operator_numofoperands");
@@ -319,8 +320,7 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
                 pcalc_perform_operation_from_queue( t, & stack ) ;
                 printf("%d", ast_computation_stack_peek_value(& stack));
                 pcalc_print_tabular();
-            }
-            
+            }            
         }
         assert_msg(stack.num_bits == 1, "Stack should remain with 1 value only, malformed formula");
         //printf("### Final Result: %d\n", ast_computation_stack_pop_value(& stack));
@@ -355,6 +355,7 @@ void
 pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
                                   size_t index)
 {
+    
     Token *t = &(queue->tokens[index]);
     if ( t->type == TT_IDENTIFIER || t->type == TT_CONSTANT ) {
         printf_token_text(t);
@@ -375,7 +376,7 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
             // the position of the first operand i need to process recursively
             // the second operand. This do { } while fixes this problem but
             // introduces more iteration loops. To make it more efficient
-            // SInce we probably will always have operators up to 3 operands
+            // Since we probably will always have operators up to 3 operands
             // while looping for the first operand we can store the postion
             // of the first 2 to cut down on the number of iterations
             size_t newindex = index; {
@@ -562,7 +563,7 @@ pcalc_process( char *code, size_t codesize )
                 while ( ( (stack.num_tokens) != 0 && (peek = ast_token_stack_peek_addr(&stack)))
                         && ( peek->type != TT_PUNCT_OPEN_PAREN)) {
                     ast_token_queue_push( &queue, peek);
-                    ast_token_stack_pop( & stack);
+                    ast_token_stack_pop( & stack );
                 }
                 if ( stack.num_tokens == 0 ) {
                     if ( peek && peek->type != TT_PUNCT_OPEN_PAREN ) {
