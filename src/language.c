@@ -109,13 +109,13 @@ op_eq_precedence(Token *sample,
 
 
 void
-symbol_table_preprocess_ids ( struct symbol_table *symtable )
+symtable_preprocess_ids ( struct symtable *symtable )
 {
 
     int it1 = 0, it2 = 0;
     char *k;
     void *v;
-    ast_symbol_table_for(it1, symtable, k, v) {
+    ast_symtable_for(it1, symtable, k, v) {
         v = (void*) ((size_t)it2);
         it2 ++ ;
         stb_sdict_set(symtable->dict, k, v);

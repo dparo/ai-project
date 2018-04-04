@@ -39,7 +39,7 @@
       >> ((size_t)(bit_index) - ((size_t)(((size_t)bit_index) / ( sizeof(typeof_arraymember) * 8))) * sizeof(typeof_arraymember) * 8))) \
 
 
-struct symbol_table {
+struct symtable {
     stb_sdict *dict;
 };
 
@@ -49,26 +49,26 @@ struct token_stack {
     size_t num_tokens;
 };
 
-typedef uint8_t ast_packed_bool;
+typedef uint8_t packed_bool;
 
-struct ast_computation_stack {
-#define AST_COMPUTATION_STACK_MAX_NUMBITS 1024
-#define AST_COMPUTATION_STACK_MAX_NELEMS \
-    BOOL_PACKED_ARRAY_NELEMS(AST_COMPUTATION_STACK_MAX_NUMBITS, sizeof(ast_packed_bool))
+struct vm_stack {
+#define VM_STACK_MAX_NUMBITS 1024
+#define VM_STACK_MAX_NELEMS \
+    BOOL_PACKED_ARRAY_NELEMS(VM_STACK_MAX_NUMBITS, sizeof(packed_bool))
 
-    ast_packed_bool bits[AST_COMPUTATION_STACK_MAX_NELEMS];
+    packed_bool bits[VM_STACK_MAX_NELEMS];
     size_t num_bits;
 };
 
 
 
-struct ast_truth_table_packed {
-#define AST_TRUTH_TABLE_MAX_NUMBITS 1024
-#define AST_TRUTH_TABLE_MAX_NUMELEMS \
-    BOOL_PACKED_ARRAY_NELEMS(AST_TRUTH_TABLE_MAX_NUMBITS, sizeof(ast_packed_bool))
+struct vm_inputs {
+#define VM_INPUTS_MAX_NUMBITS 1024
+#define VM_INPUTS_MAX_NUMELEMS \
+    BOOL_PACKED_ARRAY_NELEMS(VM_INPUTS_MAX_NUMBITS, sizeof(packed_bool))
     // Flexible array member
-    ast_packed_bool bits[AST_TRUTH_TABLE_MAX_NUMELEMS];
-    size_t num_bits;
+    packed_bool inputs[VM_INPUTS_MAX_NUMELEMS];
+    size_t num_inputs;
 };
 
     
@@ -89,35 +89,35 @@ struct ast {
 
 
 static inline void
-ast_computation_stack_pack_bool( struct ast_computation_stack *stack,
+vm_stack_pack_bool( struct vm_stack *stack,
                                  bool v,
-                                 size_t bit_index )
+                                 size_t input_index )
 {
-    BOOL_PACK_INTO_ARRAY(v, bit_index, stack->bits,
-                         AST_COMPUTATION_STACK_MAX_NELEMS, ast_packed_bool);
+    BOOL_PACK_INTO_ARRAY(v, input_index, stack->bits,
+                         VM_STACK_MAX_NELEMS, packed_bool);
 }
 
 static bool
-ast_computation_stack_unpack_bool ( struct ast_computation_stack *stack,
-                                    size_t bit_index )
+vm_stack_unpack_bool ( struct vm_stack *stack,
+                       size_t input_index )
 {
-    bool result = BOOL_UNPACK_FROM_ARRAY(bit_index, stack->bits,
-                                         AST_COMPUTATION_STACK_MAX_NELEMS, ast_packed_bool);
+    bool result = BOOL_UNPACK_FROM_ARRAY(input_index, stack->bits,
+                                         VM_STACK_MAX_NELEMS, packed_bool);
     return result;
 }
 
 static inline size_t
-ast_truth_table_numelems(struct ast_truth_table_packed *ast_ttp)
+vm_inputs_numelems(struct vm_inputs *vmi)
 {
-    assert(ast_ttp->num_bits);
-    return ( ast_ttp->num_bits - 1 ) / ( sizeof(ast_packed_bool) * 8)
+    assert(vmi->num_inputs);
+    return ( vmi->num_inputs - 1 ) / ( sizeof(packed_bool) * 8)
         + 1;
 }
 static inline size_t
-ast_truth_table_size(struct ast_truth_table_packed *ast_ttp)
+vm_inputs_size(struct vm_inputs *vmi)
 {
-    assert(ast_ttp->num_bits);
-    return ast_truth_table_numelems(ast_ttp) * sizeof(ast_packed_bool);
+    assert(vmi->num_inputs);
+    return vm_inputs_numelems(vmi) * sizeof(packed_bool);
 }
 
 
@@ -166,36 +166,36 @@ token_stack_pop_value_addr(struct token_stack *stack)
 
 
 void
-ast_computation_stack_push(struct ast_computation_stack *stack,
+vm_stack_push(struct vm_stack *stack,
                            bool v)
 {
-    assert(stack->num_bits != AST_COMPUTATION_STACK_MAX_NUMBITS);
-    ast_computation_stack_pack_bool(stack, v, (stack->num_bits));
+    assert(stack->num_bits != VM_STACK_MAX_NUMBITS);
+    vm_stack_pack_bool(stack, v, (stack->num_bits));
     (stack->num_bits)++;
 }
 
 
 bool
-ast_computation_stack_peek_value(struct ast_computation_stack *stack)
+vm_stack_peek_value(struct vm_stack *stack)
 {
     assert(stack->num_bits);
-    bool result = ast_computation_stack_unpack_bool(stack, (stack->num_bits) - 1);
+    bool result = vm_stack_unpack_bool(stack, (stack->num_bits) - 1);
     return result;
 }
 
 void
-ast_computation_stack_pop(struct ast_computation_stack *stack)
+vm_stack_pop(struct vm_stack *stack)
 {
     assert(stack->num_bits);
     --(stack->num_bits);
 }
 
 bool
-ast_computation_stack_pop_value(struct ast_computation_stack *stack)
+vm_stack_pop_value(struct vm_stack *stack)
 {
     assert(stack->num_bits);
     --(stack->num_bits);
-    bool result = ast_computation_stack_unpack_bool(stack, stack->num_bits);
+    bool result = vm_stack_unpack_bool(stack, stack->num_bits);
     return result;
 }
 
@@ -214,7 +214,7 @@ ast_computation_stack_pop_value(struct ast_computation_stack *stack)
          ((token) = & ((ast).tokens[--(iterator)])))                \
         if (true)
 
-#define ast_symbol_table_for(iterator, symtable, key, value)            \
+#define ast_symtable_for(iterator, symtable, key, value)            \
     stb_sdict_for((symtable)->dict, (iterator), (key), (value))         \
 
 void
@@ -227,10 +227,10 @@ ast_push(struct ast *ast,
 
 
 
-struct symbol_table
-symbol_table_new(void)
+struct symtable
+symtable_new(void)
 {
-    struct symbol_table result = { 0 };
+    struct symtable result = { 0 };
     result.dict = stb_sdict_new(1);
     assert(result.dict);
     return result;
@@ -238,7 +238,7 @@ symbol_table_new(void)
 
 
 size_t
-symbol_table_num_ids ( struct symbol_table *symtable )
+symtable_num_ids ( struct symtable *symtable )
 {
     int result = stb_sdict_count(symtable->dict);
     assert(result >= 0);
@@ -246,7 +246,7 @@ symbol_table_num_ids ( struct symbol_table *symtable )
 }
 
 void
-symbol_table_add_identifier(struct symbol_table *symtable,
+symtable_add_identifier(struct symtable *symtable,
                             Token *t)
 {
     assert(symtable && symtable->dict);
@@ -264,7 +264,7 @@ symbol_table_add_identifier(struct symbol_table *symtable,
 
 
 size_t
-symbol_table_get_identifier_value( struct symbol_table *symtable,
+symtable_get_identifier_value( struct symtable *symtable,
                                    Token *t )
 {
     assert(symtable && symtable->dict);
@@ -280,62 +280,62 @@ symbol_table_get_identifier_value( struct symbol_table *symtable,
 
 
 void
-ast_truth_table_packed_init_from_symtable(struct ast_truth_table_packed *ast_ttp,
-                                          struct symbol_table *symtable)
+vm_inputs_init_from_symtable(struct vm_inputs *vmi,
+                             struct symtable *symtable)
 {
-    assert(symbol_table_num_ids(symtable) < AST_TRUTH_TABLE_MAX_NUMBITS);
-    ast_ttp->num_bits = symbol_table_num_ids(symtable);
+    assert(symtable_num_ids(symtable) < VM_INPUTS_MAX_NUMBITS);
+    vmi->num_inputs = symtable_num_ids(symtable);
     // assert_msg(0, "Wrong size for memset");
-    memset(ast_ttp->bits, 0, ast_truth_table_size(ast_ttp));
+    memset(vmi->inputs, 0, vm_inputs_size(vmi));
 }
 
 
 void
-ast_truth_table_pack_bool( struct ast_truth_table_packed *ast_ttp,
-                           bool value,
-                           size_t bit_index )
+vm_inputs_pack_bool( struct vm_inputs *vmi,
+                     bool value,
+                     size_t input_index )
 {
-    assert(bit_index < ast_ttp->num_bits );
+    assert(input_index < vmi->num_inputs );
 # if __DEBUG
-    size_t index = bit_index / ( sizeof(ast_packed_bool) * 8);
-    size_t mask = ast_ttp->bits[index] & ~((size_t)1 << ((size_t)bit_index - index * sizeof(ast_packed_bool) * 8));
-    ast_ttp->bits[index] = mask | (size_t)value << ((size_t)bit_index - index * sizeof(ast_packed_bool) * 8);
+    size_t index = input_index / ( sizeof(packed_bool) * 8);
+    size_t mask = vmi->inputs[index] & ~((size_t)1 << ((size_t)input_index - index * sizeof(packed_bool) * 8));
+    vmi->inputs[index] = mask | (size_t)value << ((size_t)input_index - index * sizeof(packed_bool) * 8);
 
     { // TODO: The above code has moved in the BOOL_PACK_IN_ARRAY define
         // should check that both the ways to do it are identical
-        ast_packed_bool temp = ast_ttp->bits[index];
+        packed_bool temp = vmi->inputs[index];
 #endif
-        BOOL_PACK_INTO_ARRAY( value, bit_index, ast_ttp->bits,
-                            ast_truth_table_numelems(ast_ttp),
-                            ast_packed_bool );
+        BOOL_PACK_INTO_ARRAY( value, input_index, vmi->inputs,
+                            vm_inputs_numelems(vmi),
+                            packed_bool );
 #if __DEBUG
-        assert ( temp == (bit_index / ( sizeof(ast_packed_bool) * 8)));
+        assert ( temp == (input_index / ( sizeof(packed_bool) * 8)));
     }
 #endif
     
 #if 0
-    printf("bi: %zu | index: %zx | mask: %zx | ast_ttp->bits[index]: %zx\n",
-           bit_index, index, mask, ast_ttp->bits[index]);
+    printf("bi: %zu | index: %zx | mask: %zx | vmi->inputs[index]: %zx\n",
+           input_index, index, mask, vmi->inputs[index]);
 #endif
 }
 
 
 bool
-ast_truth_table_unpack_bool( struct ast_truth_table_packed *ast_ttp,
-                             size_t bit_index)
+vm_inputs_unpack_bool( struct vm_inputs *vmi,
+                             size_t input_index)
 {
-    assert(bit_index < ast_ttp->num_bits );
+    assert(input_index < vmi->num_inputs );
     bool result;
 #if __DEBUG
-    size_t index = bit_index / ( sizeof(ast_packed_bool) * 8);
-    size_t local_bit_index = ((size_t)bit_index - index * sizeof(ast_packed_bool) * 8);
-    size_t mask = ( (size_t) 1 << local_bit_index);
-    result = (ast_ttp->bits[index] &  mask) >> local_bit_index;
+    size_t index = input_index / ( sizeof(packed_bool) * 8);
+    size_t local_input_index = ((size_t)input_index - index * sizeof(packed_bool) * 8);
+    size_t mask = ( (size_t) 1 << local_input_index);
+    result = (vmi->inputs[index] &  mask) >> local_input_index;
 #endif
     
-    bool temp = BOOL_UNPACK_FROM_ARRAY(bit_index, ast_ttp->bits,
-                                       ast_truth_table_numelems(ast_ttp),
-                                       ast_packed_bool);
+    bool temp = BOOL_UNPACK_FROM_ARRAY(input_index, vmi->inputs,
+                                       vm_inputs_numelems(vmi),
+                                       packed_bool);
 #if __DEBUG
     assert(result == temp);
 #endif
@@ -343,37 +343,37 @@ ast_truth_table_unpack_bool( struct ast_truth_table_packed *ast_ttp,
 
     
 #if 0
-        printf("bi: %zu | index: %zx | local_bit_index: %zd | mask: %zx | result: %d\n",
-               bit_index, index, local_bit_index, mask, result);
+        printf("bi: %zu | index: %zx | local_input_index: %zd | mask: %zx | result: %d\n",
+               input_index, index, local_input_index, mask, result);
 #endif
 
     return result;
 }
 
 void
-ast_truth_table_packed_generate_next_combination(struct ast_truth_table_packed *ast_ttp )
+vm_inputs_generate_next_combination(struct vm_inputs *vmi )
 {
-    assert(ast_ttp->num_bits > 0);
+    assert(vmi->num_inputs > 0);
 
-    ast_packed_bool *array= ast_ttp->bits;
-    size_t bits_count = ast_ttp->num_bits;
+    packed_bool *array= vmi->inputs;
+    size_t bits_count = vmi->num_inputs;
     
     size_t nelems;
     if ( bits_count == 0 ) { nelems = 0; }
-    else { nelems = ((bits_count - 1) / (sizeof(ast_packed_bool) * 8)) + 1; }
+    else { nelems = ((bits_count - 1) / (sizeof(packed_bool) * 8)) + 1; }
    
     size_t bits_count_remainder;
     if ( nelems == 0 ) { bits_count_remainder = 0; }
-    else {  bits_count_remainder = ( bits_count) % ( sizeof(ast_packed_bool) * 8); }
+    else {  bits_count_remainder = ( bits_count) % ( sizeof(packed_bool) * 8); }
 
-    for ( ast_packed_bool *s = array; s < array + nelems; s ++) {
+    for ( packed_bool *s = array; s < array + nelems; s ++) {
         // Needs to check for bubble up
         if ( s == (array + nelems - 1)) {
-            ast_packed_bool checkvalue = ((ast_packed_bool) 0 - 1) >> ( sizeof(ast_packed_bool) * 8 - bits_count_remainder);
+            packed_bool checkvalue = ((packed_bool) 0 - 1) >> ( sizeof(packed_bool) * 8 - bits_count_remainder);
                 
             if ( *s == checkvalue ) {
                 // Overflow simulation
-                assert(sizeof(array[nelems]) == ast_truth_table_size(ast_ttp));
+                assert(sizeof(array[nelems]) == vm_inputs_size(vmi));
                 memset(array, 0, sizeof(array[nelems]));
                 break;
             }
@@ -388,22 +388,22 @@ ast_truth_table_packed_generate_next_combination(struct ast_truth_table_packed *
 }
 
 void
-ast_truth_table_packed_dbglog(struct ast_truth_table_packed *ast_ttp)
+vm_inputs_dbglog(struct vm_inputs *vmi)
 {
-    size_t nelems = ast_truth_table_numelems(ast_ttp);
+    size_t nelems = vm_inputs_numelems(vmi);
     for ( size_t i = 0; i < nelems; i ++ ) {
-        printf(" %zx |", (size_t)ast_ttp->bits[i]);
+        printf(" %zx |", (size_t)vmi->inputs[i]);
     }
     printf("\n");
 }
 
 
 void
-ast_computation_stack_dbglog(struct ast_computation_stack *stack)
+vm_stack_dbglog(struct vm_stack *vm)
 {
-    printf("AST_COMPUTATION_STACK_DBG_LOG: ");
-    for ( size_t i = 0; i < stack->num_bits; i ++ ) {
-        bool v = ast_computation_stack_unpack_bool(stack, i);
+    printf("VM_STACK_DBG_LOG: ");
+    for ( size_t i = 0; i < vm->num_bits; i ++ ) {
+        bool v = vm_stack_unpack_bool(vm, i);
         printf(" %d |", v);
     }
     printf("\n");

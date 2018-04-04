@@ -73,9 +73,8 @@ token_is_operator(Token *t)
 }
 
 struct interpreter {
-    struct ast_computation_stack cs;
+    struct vm_stack vm;
     struct ast ast;
-    
 };
 
 #define LANGUAGE_C_IMPL
@@ -83,13 +82,13 @@ struct interpreter {
 
 void
 eval_operator( Token *t,
-               struct ast_computation_stack *stack )
+               struct vm_stack *vm )
 {
     bool result = 0;
     bool v1 = 0;
     bool v2 = 0;
     uint numofoperands = operator_numofoperands(t);
-    if (! ((stack->num_bits) >= (operator_numofoperands(t)) )) {
+    if (! ((vm->num_bits) >= (operator_numofoperands(t)) )) {
         goto not_enough_operands;                                 
     }
 
@@ -98,7 +97,7 @@ eval_operator( Token *t,
                 "STATIC ASSERT: Language will support at most 3 operands for operators");
     
     for ( uint i = 0; i < numofoperands; i ++ ) {
-        v[i] = ast_computation_stack_pop_value(stack);
+        v[i] = vm_stack_pop_value(vm);
     }
 
     // NOTE v[0] Contains the last operand v[numberofoperands-1] contains the first operand
@@ -128,7 +127,7 @@ eval_operator( Token *t,
     } break;
     }
     
-    ast_computation_stack_push(stack, result);
+    vm_stack_push(vm, result);
     return;
 not_enough_operands: {
         assert_msg(0, "Operator needs more operand, not found enough inside the stack");
@@ -162,7 +161,7 @@ token_constant_to_bool( Token *t,
 
 
 static inline void
-pcalc_print_tabular(void)
+print_tab(void)
 {
     printf("\t");
 }
@@ -170,12 +169,12 @@ pcalc_print_tabular(void)
 
 void
 pcalc_encoded_compute_with_value( struct ast *ast,
-                                  struct symbol_table *symtable,
-                                  struct ast_truth_table_packed *ast_ttp )
+                                  struct symtable *symtable,
+                                  struct vm_inputs *vmi )
 {
-    assert(ast_ttp->num_bits > 0);
+    assert(vmi->num_inputs > 0);
 
-    struct ast_computation_stack stack;
+    struct vm_stack stack;
     stack.num_bits = 0;
 
     // In the future this if will check for valid allocation
@@ -187,9 +186,9 @@ pcalc_encoded_compute_with_value( struct ast *ast,
             if ( t->type == TT_IDENTIFIER  || t->type == TT_CONSTANT) {
                 bool value;
                 if ( t->type == TT_IDENTIFIER ) {
-                    size_t bit_index = symbol_table_get_identifier_value(symtable, t);
+                    size_t bit_index = symtable_get_identifier_value(symtable, t);
 
-                    value = ast_truth_table_unpack_bool( ast_ttp,
+                    value = vm_inputs_unpack_bool( vmi,
                                                          bit_index );
                     // printf(" bit_index: %zx | unpacked bool: %d\n", bit_index, value);
                 } else if (t->type == TT_CONSTANT ) {
@@ -197,31 +196,31 @@ pcalc_encoded_compute_with_value( struct ast *ast,
                     assert_msg( s == true, "Passed constant was not a valid boolean, or it was way too big");
                 }
 
-                ast_computation_stack_push( & stack, value );
+                vm_stack_push( & stack, value );
                 
             } else {
                 // Token is an operator: Needs to perform the operation
                 //                       and push it into the stack
                 eval_operator( t, & stack ) ;
-                printf("%d", ast_computation_stack_peek_value(& stack));
-                pcalc_print_tabular();
+                printf("%d", vm_stack_peek_value(& stack));
+                print_tab();
             }            
         }
         assert_msg(stack.num_bits == 1, "Stack should remain with 1 value only, malformed formula");
-        //printf("### Final Result: %d\n", ast_computation_stack_pop_value(& stack));
+        //printf("### Final Result: %d\n", vm_stack_pop_value(& stack));
     }
 }
 
 void
-build_symbol_table_from_queue ( struct ast *ast,
-                                struct symbol_table *symtable )
+build_symtable_from_queue ( struct ast *ast,
+                                struct symtable *symtable )
 {
     Token *t;
     size_t it;
     ast_for(it, *ast, t) {
         if ( t->type == TT_IDENTIFIER ) {
             //null terminate;
-            symbol_table_add_identifier(symtable, t);
+            symtable_add_identifier(symtable, t);
         }
     }
 }
@@ -291,15 +290,15 @@ pcalc_printf_subformula_recursive(struct ast *ast,
 
 
 void
-pcalc_printf_computation_header(struct symbol_table *symtable,
+pcalc_printf_computation_header(struct symtable *symtable,
                                 struct ast *ast)
 {
     int s_it;
     char *key;
     void *value; (void) value;
-    ast_symbol_table_for(s_it, symtable, key, value) {
+    ast_symtable_for(s_it, symtable, key, value) {
         printf("%s", key);
-        pcalc_print_tabular();
+        print_tab();
     }
     
     Token *t;
@@ -307,7 +306,7 @@ pcalc_printf_computation_header(struct symbol_table *symtable,
     ast_for(it, *ast, t) {
         if ( token_is_operator(t) ) {
             pcalc_printf_subformula_recursive(ast, it);
-            pcalc_print_tabular();
+            print_tab();
         }
     }
         
@@ -317,8 +316,8 @@ pcalc_printf_computation_header(struct symbol_table *symtable,
 }
 
 void
-pcalc_printf_variables_combination( struct symbol_table *symtable,
-                                    struct ast_truth_table_packed *ast_ttp )
+pcalc_printf_variables_combination( struct symtable *symtable,
+                                    struct vm_inputs *vmi )
 {
     int s_it;
     char *key;
@@ -327,45 +326,45 @@ pcalc_printf_variables_combination( struct symbol_table *symtable,
     int it = 0;
     char *k;
     void *v;
-    ast_symbol_table_for(it, symtable, k, v) {
+    ast_symtable_for(it, symtable, k, v) {
         size_t index = (size_t) v;
-        bool bool_value = ast_truth_table_unpack_bool(ast_ttp, index);
+        bool bool_value = vm_inputs_unpack_bool(vmi, index);
         printf("%d", bool_value);
-        pcalc_print_tabular();
+        print_tab();
     }
 }
 
 void
 bruteforce_solve(struct ast *ast)
 {
-    struct symbol_table symtable = symbol_table_new();
+    struct symtable symtable = symtable_new();
 
 
-    build_symbol_table_from_queue(ast, &symtable);
-    symbol_table_preprocess_ids(& symtable);
+    build_symtable_from_queue(ast, &symtable);
+    symtable_preprocess_ids(& symtable);
     
-    struct ast_truth_table_packed ast_ttp;
-    ast_truth_table_packed_init_from_symtable(&  ast_ttp, & symtable);
+    struct vm_inputs vmi;
+    vm_inputs_init_from_symtable(&  vmi, & symtable);
 
-    if ( ast_ttp.bits && ast_ttp.num_bits ) {
+    if ( vmi.inputs && vmi.num_inputs ) {
 
         pcalc_printf_computation_header(& symtable, ast);
         
-        size_t max_it = 1 << symbol_table_num_ids(& symtable);
+        size_t max_it = 1 << symtable_num_ids(& symtable);
 
 
         for (size_t i = 0; i < max_it; i ++ ) {
 #       if 0
-            ast_truth_table_packed_dbglog(& ast_ttp);
+            vm_inputs_dbglog(& vmi);
 #       endif
             // Use the value right here and compute
-            pcalc_printf_variables_combination( &symtable, & ast_ttp );
+            pcalc_printf_variables_combination( &symtable, & vmi );
             {
-                pcalc_encoded_compute_with_value(ast, & symtable, & ast_ttp );
+                pcalc_encoded_compute_with_value(ast, & symtable, & vmi );
                 printf("\n");
             }
 
-            ast_truth_table_packed_generate_next_combination(& ast_ttp );
+            vm_inputs_generate_next_combination(& vmi );
         }
     }
 }
@@ -388,7 +387,7 @@ ast_dbglog(struct ast *ast)
     ast_for(it, *ast, t) {
         if ( token_is_operator(t) ) {
             pcalc_printf_subformula_recursive(ast, it);
-            pcalc_print_tabular();
+            print_tab();
         }
     }
 }
