@@ -90,7 +90,8 @@ pcalc_greater_or_eq_precedence(Token *sample,
         if ( sample->type == TT_PUNCT_BOTHDIR_ARROW ||
              sample->type == TT_PUNCT_ARROW ||
              sample->type == TT_PUNCT_EQUAL ||
-             sample->type == TT_PUNCT_EQUAL_EQUAL) {
+             sample->type == TT_PUNCT_EQUAL_EQUAL ||
+             sample->type == TT_PUNCT_COMMA ) {
             result = false;
         } else {
             result = true;
@@ -104,7 +105,8 @@ pcalc_greater_or_eq_precedence(Token *sample,
              sample->type == TT_PUNCT_LOGICAL_AND ||
              sample->type == TT_PUNCT_BITWISE_AND ||
              sample->type == TT_PUNCT_EQUAL ||
-             sample->type == TT_PUNCT_EQUAL_EQUAL) {
+             sample->type == TT_PUNCT_EQUAL_EQUAL ||
+             sample->type == TT_PUNCT_COMMA) {
             result = false;
         } else {
             result = true;
@@ -118,7 +120,8 @@ pcalc_greater_or_eq_precedence(Token *sample,
         if ( sample->type == TT_PUNCT_LOGICAL_NOT ||
              sample->type == TT_PUNCT_BITWISE_NOT  ||
              sample->type == TT_PUNCT_EQUAL ||
-             sample->type == TT_PUNCT_EQUAL_EQUAL) {
+             sample->type == TT_PUNCT_EQUAL_EQUAL ||
+             sample->type == TT_PUNCT_COMMA) {
             result = true;
         } else {
             result = false;
@@ -128,13 +131,22 @@ pcalc_greater_or_eq_precedence(Token *sample,
     case TT_PUNCT_EQUAL:
     case TT_PUNCT_EQUAL_EQUAL: {
         if ( sample->type == TT_PUNCT_EQUAL ||
-             sample->type == TT_PUNCT_EQUAL_EQUAL ) {
+             sample->type == TT_PUNCT_EQUAL_EQUAL ||
+             sample->type == TT_PUNCT_COMMA) {
             result = true;
         } else {
             result = false;
         }
     } break;
-        
+
+    case TT_PUNCT_COMMA: {
+        if ( sample->type == TT_PUNCT_COMMA) {
+            result = true;
+        } else {
+            result = false;
+        }
+    } break;
+
     default: {
         invalid_code_path();
     } break;
@@ -229,6 +241,14 @@ pcalc_perform_operation_from_queue( Token *t,
         v2 = ast_computation_stack_pop_value(stack);
         v1 = ast_computation_stack_pop_value(stack);
         result = (v1 == v2);
+        ast_computation_stack_push(stack, result);
+    } break;
+
+    case TT_PUNCT_COMMA: {
+        CHECK_2OPERANDS(*stack);
+        v2 = ast_computation_stack_pop_value(stack);
+        v1 = ast_computation_stack_pop_value(stack);
+        result = (v1 , v2);
         ast_computation_stack_push(stack, result);
     } break;
 
@@ -359,7 +379,8 @@ pcalc_number_of_operands_for_operator(Token *t)
     case TT_PUNCT_LOGICAL_OR:
     case TT_PUNCT_BITWISE_OR:
     case TT_PUNCT_EQUAL:
-    case TT_PUNCT_EQUAL_EQUAL: {
+    case TT_PUNCT_EQUAL_EQUAL:
+    case TT_PUNCT_COMMA: {
         return 2;
     }break;
 
@@ -513,7 +534,7 @@ int main( int argc, char **argv)
 
     char small_code[] =
 #if 1
-        "F = 1 & 0"
+        "A & B"
 # else
         "((!A && B ) || C && (G <-> D) <-> F)"
 #endif
@@ -613,7 +634,7 @@ parse_end: {
     Token *t;
     size_t it;
 
-#if 0
+#if 1
     ast_token_queue_for(it, queue, t) {
         log_token(t);
     }
