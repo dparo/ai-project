@@ -88,7 +88,9 @@ pcalc_greater_or_eq_precedence(Token *sample,
     case TT_PUNCT_LOGICAL_AND:
     case TT_PUNCT_BITWISE_AND: {
         if ( sample->type == TT_PUNCT_BOTHDIR_ARROW ||
-             sample->type == TT_PUNCT_ARROW ) {
+             sample->type == TT_PUNCT_ARROW ||
+             sample->type == TT_PUNCT_EQUAL ||
+             sample->type == TT_PUNCT_EQUAL_EQUAL) {
             result = false;
         } else {
             result = true;
@@ -100,7 +102,9 @@ pcalc_greater_or_eq_precedence(Token *sample,
         if ( sample->type == TT_PUNCT_BOTHDIR_ARROW ||
              sample->type == TT_PUNCT_ARROW ||
              sample->type == TT_PUNCT_LOGICAL_AND ||
-             sample->type == TT_PUNCT_BITWISE_AND) {
+             sample->type == TT_PUNCT_BITWISE_AND ||
+             sample->type == TT_PUNCT_EQUAL ||
+             sample->type == TT_PUNCT_EQUAL_EQUAL) {
             result = false;
         } else {
             result = true;
@@ -112,7 +116,19 @@ pcalc_greater_or_eq_precedence(Token *sample,
     case TT_PUNCT_LOGICAL_NOT:
     case TT_PUNCT_BITWISE_NOT: {
         if ( sample->type == TT_PUNCT_LOGICAL_NOT ||
-             sample->type == TT_PUNCT_BITWISE_NOT ) {
+             sample->type == TT_PUNCT_BITWISE_NOT  ||
+             sample->type == TT_PUNCT_EQUAL ||
+             sample->type == TT_PUNCT_EQUAL_EQUAL) {
+            result = true;
+        } else {
+            result = false;
+        }
+    } break;
+
+    case TT_PUNCT_EQUAL:
+    case TT_PUNCT_EQUAL_EQUAL: {
+        if ( sample->type == TT_PUNCT_EQUAL ||
+             sample->type == TT_PUNCT_EQUAL_EQUAL ) {
             result = true;
         } else {
             result = false;
@@ -206,7 +222,16 @@ pcalc_perform_operation_from_queue( Token *t,
         result = !v1;
         ast_computation_stack_push(stack, result);
     } break;
-        
+
+    case TT_PUNCT_EQUAL:
+    case TT_PUNCT_EQUAL_EQUAL: {
+        CHECK_2OPERANDS(*stack);
+        v2 = ast_computation_stack_pop_value(stack);
+        v1 = ast_computation_stack_pop_value(stack);
+        result = (v1 == v2);
+        ast_computation_stack_push(stack, result);
+    } break;
+
 
     default: {
         assert_msg(0, "Operator is not supported");
@@ -332,7 +357,9 @@ pcalc_number_of_operands_for_operator(Token *t)
     case TT_PUNCT_LOGICAL_AND:
     case TT_PUNCT_BITWISE_AND:
     case TT_PUNCT_LOGICAL_OR:
-    case TT_PUNCT_BITWISE_OR: {
+    case TT_PUNCT_BITWISE_OR:
+    case TT_PUNCT_EQUAL:
+    case TT_PUNCT_EQUAL_EQUAL: {
         return 2;
     }break;
 
@@ -365,7 +392,7 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
         size_t numberof_operands = pcalc_number_of_operands_for_operator(t);
         assert_msg(index >= numberof_operands, "Inconsistent formula");
 
-        printf(index == (queue->num_tokens - 1) ? "result = (" : "(");
+        printf(index == (queue->num_tokens - 1) ? "result: (" : "(");
         printf_token_text(t);
 
         for( size_t it = 1; it <= numberof_operands; it++ ) {
@@ -486,7 +513,7 @@ int main( int argc, char **argv)
 
     char small_code[] =
 #if 1
-        "F & (~0  | B)"
+        "F = 1 & 0"
 # else
         "((!A && B ) || C && (G <-> D) <-> F)"
 #endif
