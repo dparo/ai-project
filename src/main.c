@@ -52,6 +52,11 @@ void log_token (Token *token)
 }
 
 
+static inline int
+token_txt_cmp(Token *t, char *string)
+{
+    return strncmp(string, t->text, t->text_len);
+}
 
 
 bool
@@ -67,34 +72,42 @@ token_is_operator(Token *t)
     return result;
 }
 enum operator_associativity {
-    NON_ASSOCIATIVE,
-    RIGHT_ASSOCIATIVE,
-    LEFT_ASSOCIATIVE,
+    NON_ASSOCIATIVE_OP,
+    RIGHT_ASSOCIATIVE_OP,
+    LEFT_ASSOCIATIVE_OP,
+};
+
+enum operator_prefixing {
+    PREFIX_OP,
+    INFIX_OP,
+    POSTFIX_OP,
 };
 
 static struct operator_infos {
     int precedence;
     uint numofoperands;
     enum operator_associativity associativity;
+    enum operator_prefixing prefixing;
 } ops[] = {
-    [TT_PUNCT_SEMICOLON] = { 200, 1, RIGHT_ASSOCIATIVE },
-    [TT_PUNCT_COMMA] = { 100, 2, LEFT_ASSOCIATIVE },
+
+    [TT_PUNCT_COMMA] = { 100, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     
-    [TT_PUNCT_BOTHDIR_ARROW] = { 5, 2, LEFT_ASSOCIATIVE },
-    [TT_PUNCT_ARROW] = { 5, 2, LEFT_ASSOCIATIVE },
-    [TT_PUNCT_LOGICAL_AND] = { 4, 2, LEFT_ASSOCIATIVE },
-    [TT_PUNCT_BITWISE_AND] = { 4, 2, LEFT_ASSOCIATIVE },
-    [TT_PUNCT_LOGICAL_OR] = { 3, 2, LEFT_ASSOCIATIVE },
-    [TT_PUNCT_BITWISE_OR] = { 3, 2, LEFT_ASSOCIATIVE },
-    [TT_PUNCT_LOGICAL_NOT] = { 2, 1, LEFT_ASSOCIATIVE },
-    [TT_PUNCT_BITWISE_NOT] = { 2, 1, LEFT_ASSOCIATIVE },
-    [TT_PUNCT_EQUAL] = { 1, 2, LEFT_ASSOCIATIVE },
-    [TT_PUNCT_EQUAL_EQUAL] = { 1, 2, LEFT_ASSOCIATIVE },
+    [TT_PUNCT_BOTHDIR_ARROW] = { 5, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_ARROW] = { 5, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_LOGICAL_AND] = { 4, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_BITWISE_AND] = { 4, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_LOGICAL_OR] = { 3, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_BITWISE_OR] = { 3, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_LOGICAL_NOT] = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
+    [TT_PUNCT_BITWISE_NOT] = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
+    [TT_PUNCT_EQUAL] = { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_EQUAL_EQUAL] = { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     
+    [TT_PUNCT_SEMICOLON] = { 200, 2, LEFT_ASSOCIATIVE_OP, POSTFIX_OP },
     
     // Not valid set of types operators.
-    [0 ... TT_PUNCT_ENUM_OPERATORS_START_MARKER] = { -1, 0, LEFT_ASSOCIATIVE },
-    [TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS ... TT_PUNCT_ENUM_LAST_VALUE ] = { -1, 0, LEFT_ASSOCIATIVE },
+    [0 ... TT_PUNCT_ENUM_OPERATORS_START_MARKER] = { -1, 0, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS ... TT_PUNCT_ENUM_LAST_VALUE ] = { -1, 0, LEFT_ASSOCIATIVE_OP, INFIX_OP },
 };
 
 int
@@ -107,8 +120,31 @@ operator_precedence(Token *t)
 bool
 op_is_left_associative(Token *t)
 {
-    return (ops[t->type].associativity == LEFT_ASSOCIATIVE);
+    assert(token_is_operator(t));
+    return (ops[t->type].associativity == LEFT_ASSOCIATIVE_OP);
 }
+
+bool
+is_prefix_operator(Token *t)
+{
+    assert(token_is_operator(t));
+    return (ops[t->type].prefixing == PREFIX_OP);
+}
+
+bool
+is_postfix_operator(Token *t)
+{
+    assert(token_is_operator(t));
+    return (ops[t->type].prefixing == POSTFIX_OP);
+}
+
+bool
+is_infix_operator(Token *t)
+{
+    assert(token_is_operator(t));
+    return (ops[t->type].prefixing == INFIX_OP);
+}
+
 
 bool
 op_greater_precedence(Token *sample,
@@ -268,7 +304,7 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
                     size_t bit_index = symbol_table_get_identifier_value(symtable, t);
 
                     value = ast_truth_table_unpack_bool( ast_ttp,
-                                                              bit_index);
+                                                         bit_index );
                     // printf(" bit_index: %zx | unpacked bool: %d\n", bit_index, value);
                 } else if (t->type == TT_CONSTANT ) {
                     bool s = token_constant_to_bool( t, & value );
@@ -293,7 +329,7 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
 
 void
 build_symbol_table_from_queue ( struct ast_token_queue *queue,
-                                      struct symbol_table *symtable )
+                                struct symbol_table *symtable )
 {
     Token *t;
     size_t it;
@@ -455,7 +491,7 @@ bruteforce_solve(struct ast_token_queue *queue)
 
 
 void
-pcalc_process( char *code, size_t codesize)
+pcalc_process( char *code, size_t codesize )
 {
     assert(    code[codesize - 1] == '\0'
             && code[codesize - 2] == '\0'
@@ -475,7 +511,6 @@ pcalc_process( char *code, size_t codesize)
     // operator stack
     struct ast_token_stack stack = {0};
     struct ast_token_queue queue = {0};
-    
       
     // NOTE: Maybe better error handling because even the push_state can throw an error
     //       Maybe set a locked variable inside the tokenizer for critical stuff
@@ -489,6 +524,13 @@ pcalc_process( char *code, size_t codesize)
 
         // log_token(& token);
 
+        // Extensions ->
+        //   Postfix operators do an uncoditional push onto
+        //                 ast_token_queue_push(&queue, &token)
+        // 
+        // Prefix operators do an uncoditional push onto    ???(Needs testing)???
+        //                   ast_token_stack_push(&stack, &token);
+        
         // Shunting-yard algorithm
         // @NOTE: Does not handle functions
         {
@@ -496,16 +538,23 @@ pcalc_process( char *code, size_t codesize)
                 token.type == TT_IDENTIFIER ) {
                 ast_token_queue_push(&queue, &token);
             } /* else if ( is function ) */
-            else if ( token_is_operator(& token )) {
-                Token *peek = NULL;
-                while ( ( (stack.num_tokens) != 0 && (peek = ast_token_stack_peek_addr(&stack)))
-                        && ( ((op_greater_precedence(peek, & token))
-                              || (op_eq_precedence(peek, &token) && op_is_left_associative(peek)))
-                             && (peek->type != TT_PUNCT_OPEN_PAREN))) {
-                    ast_token_queue_push( &queue, peek);
-                    ast_token_stack_pop( & stack);
+            else if ( token_is_operator(& token)) {
+                if ( is_prefix_operator(& token)) {
+                    ast_token_stack_push(&stack, &token);
+                } else if (is_postfix_operator(& token)) {
+                    ast_token_queue_push(&queue, &token);
+                } else {
+                    assert(is_infix_operator(&token));
+                    Token *peek = NULL;
+                    while ( ( (stack.num_tokens) != 0 && (peek = ast_token_stack_peek_addr(&stack)))
+                            && ( ((op_greater_precedence(peek, & token))
+                                  || (op_eq_precedence(peek, &token) && op_is_left_associative(peek)))
+                                 && (peek->type != TT_PUNCT_OPEN_PAREN))) {
+                        ast_token_queue_push( &queue, peek);
+                        ast_token_stack_pop( & stack);
+                    }
+                    ast_token_stack_push( & stack, & token);
                 }
-                ast_token_stack_push( & stack, & token);
             } else if ( token.type == TT_PUNCT_OPEN_PAREN ) {
                 ast_token_stack_push( & stack, & token);
             } else if (token.type == TT_PUNCT_CLOSE_PAREN ) {
@@ -554,14 +603,22 @@ parse_end: {
     Token *t;
     size_t it;
 
-#if 0
+#if 1
     ast_token_queue_for(it, queue, t) {
         log_token(t);
     }
     printf("\n\n");
-#endif
+    ast_token_queue_for(it, queue, t) {
+        if ( token_is_operator(t) ) {
+            pcalc_printf_subformula_recursive(& queue, it);
+            pcalc_print_tabular();
+        }
+    }
 
+#endif
+#if 0
     bruteforce_solve(& queue);
+#endif
 
 }
 
