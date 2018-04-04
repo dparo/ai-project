@@ -66,28 +66,34 @@ token_is_operator(Token *t)
     }
     return result;
 }
+enum operator_associativity {
+    NON_ASSOCIATIVE,
+    RIGHT_ASSOCIATIVE,
+    LEFT_ASSOCIATIVE,
+};
 
 static struct operator_infos {
     int precedence;
     uint numofoperands;
+    enum operator_associativity associativity;
 } ops[] = {
-    [TT_PUNCT_COMMA] = { 100, 2 },
+    [TT_PUNCT_COMMA] = { 100, 2, LEFT_ASSOCIATIVE },
     
-    [TT_PUNCT_BOTHDIR_ARROW] = { 5, 2 },
-    [TT_PUNCT_ARROW] = { 5, 2 },
-    [TT_PUNCT_LOGICAL_AND] = { 4, 2 },
-    [TT_PUNCT_BITWISE_AND] = { 4, 2 },
-    [TT_PUNCT_LOGICAL_OR] = { 3, 2 },
-    [TT_PUNCT_BITWISE_OR] = { 3, 2 },
-    [TT_PUNCT_LOGICAL_NOT] = { 2, 1 },
-    [TT_PUNCT_BITWISE_NOT] = { 2, 1 },
-    [TT_PUNCT_EQUAL] = { 1, 2 },
-    [TT_PUNCT_EQUAL_EQUAL] = { 1, 2 },
+    [TT_PUNCT_BOTHDIR_ARROW] = { 5, 2, LEFT_ASSOCIATIVE },
+    [TT_PUNCT_ARROW] = { 5, 2, LEFT_ASSOCIATIVE },
+    [TT_PUNCT_LOGICAL_AND] = { 4, 2, LEFT_ASSOCIATIVE },
+    [TT_PUNCT_BITWISE_AND] = { 4, 2, LEFT_ASSOCIATIVE },
+    [TT_PUNCT_LOGICAL_OR] = { 3, 2, LEFT_ASSOCIATIVE },
+    [TT_PUNCT_BITWISE_OR] = { 3, 2, LEFT_ASSOCIATIVE },
+    [TT_PUNCT_LOGICAL_NOT] = { 2, 1, LEFT_ASSOCIATIVE },
+    [TT_PUNCT_BITWISE_NOT] = { 2, 1, LEFT_ASSOCIATIVE },
+    [TT_PUNCT_EQUAL] = { 1, 2, LEFT_ASSOCIATIVE },
+    [TT_PUNCT_EQUAL_EQUAL] = { 1, 2, LEFT_ASSOCIATIVE },
     
     
     // Not valid set of types operators.
-    [0 ... TT_PUNCT_ENUM_OPERATORS_START_MARKER] = { -1, 0 },
-    [TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS ... TT_PUNCT_ENUM_LAST_VALUE ] = { -1, 0 },
+    [0 ... TT_PUNCT_ENUM_OPERATORS_START_MARKER] = { -1, 0, LEFT_ASSOCIATIVE },
+    [TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS ... TT_PUNCT_ENUM_LAST_VALUE ] = { -1, 0, LEFT_ASSOCIATIVE },
 };
 
 int
@@ -98,14 +104,31 @@ operator_precedence(Token *t)
 }
 
 bool
-greater_or_eq_precedence(Token *sample,
-                         Token *tested )
+op_is_left_associative(Token *t)
+{
+    return (ops[t->type].associativity == LEFT_ASSOCIATIVE);
+}
+
+bool
+op_greater_precedence(Token *sample,
+                   Token *tested )
 {
     int p1 = operator_precedence(sample);
     int p2 = operator_precedence(tested);
     assert(p1 >= 0);
     assert(p2 >= 0);
-    return p1 <= p2;
+    return p1 < p2;
+}
+
+bool
+op_eq_precedence(Token *sample,
+                 Token *tested )
+{
+    int p1 = operator_precedence(sample);
+    int p2 = operator_precedence(tested);
+    assert(p1 >= 0);
+    assert(p2 >= 0);
+    return p1 == p2;
 }
 
 
@@ -465,6 +488,8 @@ pcalc_process( char *code, size_t codesize)
 
         // log_token(& token);
 
+        // Shunting-yard algorithm
+        // @NOTE: Does not handle functions
         {
             if (token.type == TT_CONSTANT ||
                 token.type == TT_IDENTIFIER ) {
@@ -473,8 +498,9 @@ pcalc_process( char *code, size_t codesize)
             else if ( token_is_operator(& token )) {
                 Token *peek = NULL;
                 while ( ( (stack.num_tokens) != 0 && (peek = ast_token_stack_peek_addr(&stack)))
-                        && ( greater_or_eq_precedence(peek, & token)
-                             && peek->type != TT_PUNCT_OPEN_PAREN)) {
+                        && ( ((op_greater_precedence(peek, & token))
+                              || (op_eq_precedence(peek, &token) && op_is_left_associative(peek)))
+                             && (peek->type != TT_PUNCT_OPEN_PAREN))) {
                     ast_token_queue_push( &queue, peek);
                     ast_token_stack_pop( & stack);
                 }
