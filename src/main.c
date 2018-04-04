@@ -657,7 +657,7 @@ user_interact(char **formula, size_t *formula_size)
 {
     // Maybe continue asking for more input if last character is like `\`
     // in a loop and concatenate to previous string
-    char *string = readline ("\nInput formula to compute: \n\t");
+    char *string = readline ("[Input formula to compute]$ ");
     enum { EXTRA_SPACE_FOR_NULL_TERMINATION = 5};
     size_t len = 0;
     size_t size = 0;
@@ -719,6 +719,7 @@ main( int argc, char **argv)
 #else
     while ( 1 ) {
         if ( formula ) { free(formula); formula_size = 0; }
+        printf("\n\n");
         user_interact(& formula, & formula_size);
         if ( formula ) {
             printf("\n\n\n");
