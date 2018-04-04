@@ -43,9 +43,9 @@ struct symbol_table {
     stb_sdict *dict;
 };
 
-struct ast_token_stack {
-#define AST_TOKEN_STACK_MAX_TOKENS_COUNT 1024
-    Token tokens[AST_TOKEN_STACK_MAX_TOKENS_COUNT];
+struct token_stack {
+#define TOKEN_STACK_MAX_TOKENS_COUNT 1024
+    Token tokens[TOKEN_STACK_MAX_TOKENS_COUNT];
     size_t num_tokens;
 };
 
@@ -73,11 +73,10 @@ struct ast_truth_table_packed {
 
     
 
-struct ast_token_queue {
-#define AST_TOKEN_QUEUE_MAX_TOKENS_COUNT 1024
-    Token tokens[AST_TOKEN_QUEUE_MAX_TOKENS_COUNT];
+struct ast {
+#define AST_MAX_TOKENS_COUNT 1024
+    Token tokens[AST_MAX_TOKENS_COUNT];
     size_t num_tokens;
-
 };
 
 
@@ -123,30 +122,30 @@ ast_truth_table_size(struct ast_truth_table_packed *ast_ttp)
 
 
 void
-ast_token_stack_push(struct ast_token_stack *stack,
+token_stack_push(struct token_stack *stack,
                      Token *token)
 {
-    assert(stack->num_tokens != AST_TOKEN_STACK_MAX_TOKENS_COUNT);
+    assert(stack->num_tokens != TOKEN_STACK_MAX_TOKENS_COUNT);
     stack->tokens[(stack->num_tokens) ++] = *token;
 }
 
 
 Token*
-ast_token_stack_peek_addr(struct ast_token_stack *stack)
+token_stack_peek_addr(struct token_stack *stack)
 {
     assert(stack->num_tokens);
     return &(stack->tokens[stack->num_tokens - 1]);
 }
 
 void
-ast_token_stack_pop(struct ast_token_stack *stack)
+token_stack_pop(struct token_stack *stack)
 {
     assert(stack->num_tokens);
     (stack->num_tokens) --;
 }
 
 Token
-ast_token_stack_pop_value(struct ast_token_stack *stack)
+token_stack_pop_value(struct token_stack *stack)
 {
     assert(stack->num_tokens);
     Token result = stack->tokens[--(stack->num_tokens)];
@@ -158,7 +157,7 @@ ast_token_stack_pop_value(struct ast_token_stack *stack)
 // Highly discouraged pointer may point to invalid
 // memory after a new push
 Token*
-ast_token_stack_pop_value_addr(struct ast_token_stack *stack)
+token_stack_pop_value_addr(struct token_stack *stack)
 {
     assert(stack->num_tokens);
     Token *result = &(stack->tokens[--(stack->num_tokens)]);
@@ -202,28 +201,28 @@ ast_computation_stack_pop_value(struct ast_computation_stack *stack)
 
 
 
-#define ast_token_queue_for( iterator, queue, token)        \
-    for (((iterator) = 0), ((token) = (queue).tokens);      \
-         ((iterator) < (queue).num_tokens);                 \
-         ((token) = & ((queue).tokens[++(iterator)])))      \
+#define ast_for( iterator, ast, token)        \
+    for (((iterator) = 0), ((token) = (ast).tokens);      \
+         ((iterator) < (ast).num_tokens);                 \
+         ((token) = & ((ast).tokens[++(iterator)])))      \
         if (true)
 
-#define ast_token_queue_for_bwd( iterator, queue, token)              \
-    for (( (iterator) = ((queue).num_tokens - 1)),                    \
-             ((token) = (queue).tokens + (queue).num_tokens - 1);     \
+#define ast_for_bwd( iterator, ast, token)                          \
+    for (( (iterator) = ((ast).num_tokens - 1)),                    \
+             ((token) = (ast).tokens + (ast).num_tokens - 1);     \
          (iterator) >= 0;                                             \
-         ((token) = & ((queue).tokens[--(iterator)])))                \
+         ((token) = & ((ast).tokens[--(iterator)])))                \
         if (true)
 
 #define ast_symbol_table_for(iterator, symtable, key, value)            \
     stb_sdict_for((symtable)->dict, (iterator), (key), (value))         \
 
 void
-ast_token_queue_push(struct ast_token_queue *queue,
-                     Token *token)
+ast_push(struct ast *ast,
+         Token *token)
 {
-    assert(queue->num_tokens != AST_TOKEN_QUEUE_MAX_TOKENS_COUNT);
-    queue->tokens[(queue->num_tokens) ++] = *token;
+    assert(ast->num_tokens != AST_MAX_TOKENS_COUNT);
+    ast->tokens[(ast->num_tokens) ++] = *token;
 }
 
 

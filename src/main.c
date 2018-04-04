@@ -71,134 +71,19 @@ token_is_operator(Token *t)
     }
     return result;
 }
-enum operator_associativity {
-    NON_ASSOCIATIVE_OP,
-    RIGHT_ASSOCIATIVE_OP,
-    LEFT_ASSOCIATIVE_OP,
+
+struct interpreter {
+    struct ast_computation_stack cs;
+    struct ast ast;
+    
 };
 
-enum operator_prefixing {
-    PREFIX_OP,
-    INFIX_OP,
-    POSTFIX_OP,
-};
-
-static struct operator_infos {
-    int precedence;
-    uint numofoperands;
-    enum operator_associativity associativity;
-    enum operator_prefixing prefixing;
-} ops[] = {
-
-    [TT_PUNCT_COMMA] = { 100, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    
-    [TT_PUNCT_BOTHDIR_ARROW] = { 5, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_ARROW]         = { 5, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_LOGICAL_AND]   = { 4, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_BITWISE_AND]   = { 4, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_LOGICAL_OR]    = { 3, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_BITWISE_OR]    = { 3, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_LOGICAL_NOT]   = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
-    [TT_PUNCT_BITWISE_NOT]   = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
-    [TT_PUNCT_EQUAL]         = { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_EQUAL_EQUAL]   = { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    
-    [TT_PUNCT_SEMICOLON] = { 200, 2, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
-    
-    // Not valid set of types operators.
-    [0 ... TT_PUNCT_ENUM_OPERATORS_START_MARKER] = { -1, 0, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS ... TT_PUNCT_ENUM_LAST_VALUE ] = { -1, 0, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-};
-
-int
-operator_precedence(Token *t)
-{
-    assert(token_is_operator(t));
-    return ops[t->type].precedence;
-}
-
-bool
-op_is_left_associative(Token *t)
-{
-    assert(token_is_operator(t));
-    return (ops[t->type].associativity == LEFT_ASSOCIATIVE_OP);
-}
-
-bool
-is_prefix_operator(Token *t)
-{
-    assert(token_is_operator(t));
-    return (ops[t->type].prefixing == PREFIX_OP);
-}
-
-bool
-is_postfix_operator(Token *t)
-{
-    assert(token_is_operator(t));
-    return (ops[t->type].prefixing == POSTFIX_OP);
-}
-
-bool
-is_infix_operator(Token *t)
-{
-    assert(token_is_operator(t));
-    return (ops[t->type].prefixing == INFIX_OP);
-}
-
-
-bool
-op_greater_precedence(Token *sample,
-                   Token *tested )
-{
-    int p1 = operator_precedence(sample);
-    int p2 = operator_precedence(tested);
-    assert(p1 >= 0);
-    assert(p2 >= 0);
-    return p1 < p2;
-}
-
-bool
-op_eq_precedence(Token *sample,
-                 Token *tested )
-{
-    int p1 = operator_precedence(sample);
-    int p2 = operator_precedence(tested);
-    assert(p1 >= 0);
-    assert(p2 >= 0);
-    return p1 == p2;
-}
-
-
-
+#define LANGUAGE_C_IMPL
+#include "language.c"
 
 void
-symbol_table_preprocess_ids ( struct symbol_table *symtable )
-{
-
-    int it1 = 0, it2 = 0;
-    char *k;
-    void *v;
-    ast_symbol_table_for(it1, symtable, k, v) {
-        v = (void*) ((size_t)it2);
-        it2 ++ ;
-        stb_sdict_set(symtable->dict, k, v);
-        //printf("k : %s | v: %zu\n", k, (size_t) v);
-    }
-}
-
-
-
-uint
-operator_numofoperands(Token *t)
-{
-    assert(token_is_operator(t));
-    return ops[t->type].numofoperands;
-    return 0;
-}
-
-void
-pcalc_perform_operation_from_queue( Token *t,
-                                    struct ast_computation_stack *stack )
+eval_operator( Token *t,
+               struct ast_computation_stack *stack )
 {
     bool result = 0;
     bool v1 = 0;
@@ -284,7 +169,7 @@ pcalc_print_tabular(void)
 
 
 void
-pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
+pcalc_encoded_compute_with_value( struct ast *ast,
                                   struct symbol_table *symtable,
                                   struct ast_truth_table_packed *ast_ttp )
 {
@@ -298,7 +183,7 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
         Token *t;
         size_t it;
     
-        ast_token_queue_for(it, *queue, t) {
+        ast_for(it, *ast, t) {
             if ( t->type == TT_IDENTIFIER  || t->type == TT_CONSTANT) {
                 bool value;
                 if ( t->type == TT_IDENTIFIER ) {
@@ -317,7 +202,7 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
             } else {
                 // Token is an operator: Needs to perform the operation
                 //                       and push it into the stack
-                pcalc_perform_operation_from_queue( t, & stack ) ;
+                eval_operator( t, & stack ) ;
                 printf("%d", ast_computation_stack_peek_value(& stack));
                 pcalc_print_tabular();
             }            
@@ -328,12 +213,12 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
 }
 
 void
-build_symbol_table_from_queue ( struct ast_token_queue *queue,
+build_symbol_table_from_queue ( struct ast *ast,
                                 struct symbol_table *symtable )
 {
     Token *t;
     size_t it;
-    ast_token_queue_for(it, *queue, t) {
+    ast_for(it, *ast, t) {
         if ( t->type == TT_IDENTIFIER ) {
             //null terminate;
             symbol_table_add_identifier(symtable, t);
@@ -352,11 +237,11 @@ printf_token_text(Token *token)
 
 // returns the index of the last read elem
 void
-pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
+pcalc_printf_subformula_recursive(struct ast *ast,
                                   size_t index)
 {
     
-    Token *t = &(queue->tokens[index]);
+    Token *t = &(ast->tokens[index]);
     if ( t->type == TT_IDENTIFIER || t->type == TT_CONSTANT ) {
         printf_token_text(t);
     } else if (token_is_operator(t)) {
@@ -365,7 +250,7 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
         uint numofoperands = operator_numofoperands(t);
         assert_msg(index >= numofoperands, "Inconsistent formula");
 
-        printf(index == (queue->num_tokens - 1) ? "result: (" : "(");
+        printf(index == (ast->num_tokens - 1) ? "result: (" : "(");
         printf_token_text(t);
 
         for( size_t it = 1; it <= numofoperands; it++ ) {
@@ -385,7 +270,7 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
                 do {
                     /* printf("| newindex: %zu | operand_num: %zu\n", */
                     /*        newindex, operand_num); */
-                    Token *t = &(queue->tokens[newindex]);
+                    Token *t = &(ast->tokens[newindex]);
                     if ( operand_num == (it) ) {
                         break;
                     }
@@ -396,7 +281,7 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
                     }
                 } while( newindex != 0 ? newindex-- : newindex);
             };
-            pcalc_printf_subformula_recursive(queue, newindex);
+            pcalc_printf_subformula_recursive(ast, newindex);
         }
         printf(")");
     } else {
@@ -407,7 +292,7 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
 
 void
 pcalc_printf_computation_header(struct symbol_table *symtable,
-                                struct ast_token_queue *queue)
+                                struct ast *ast)
 {
     int s_it;
     char *key;
@@ -416,12 +301,12 @@ pcalc_printf_computation_header(struct symbol_table *symtable,
         printf("%s", key);
         pcalc_print_tabular();
     }
+    
     Token *t;
-    size_t q_it;
-
-    ast_token_queue_for(q_it, *queue, t) {
+    size_t it;
+    ast_for(it, *ast, t) {
         if ( token_is_operator(t) ) {
-            pcalc_printf_subformula_recursive(queue, q_it);
+            pcalc_printf_subformula_recursive(ast, it);
             pcalc_print_tabular();
         }
     }
@@ -451,12 +336,12 @@ pcalc_printf_variables_combination( struct symbol_table *symtable,
 }
 
 void
-bruteforce_solve(struct ast_token_queue *queue)
+bruteforce_solve(struct ast *ast)
 {
     struct symbol_table symtable = symbol_table_new();
 
 
-    build_symbol_table_from_queue(queue, &symtable);
+    build_symbol_table_from_queue(ast, &symtable);
     symbol_table_preprocess_ids(& symtable);
     
     struct ast_truth_table_packed ast_ttp;
@@ -464,7 +349,7 @@ bruteforce_solve(struct ast_token_queue *queue)
 
     if ( ast_ttp.bits && ast_ttp.num_bits ) {
 
-        pcalc_printf_computation_header(& symtable, queue);
+        pcalc_printf_computation_header(& symtable, ast);
         
         size_t max_it = 1 << symbol_table_num_ids(& symtable);
 
@@ -476,7 +361,7 @@ bruteforce_solve(struct ast_token_queue *queue)
             // Use the value right here and compute
             pcalc_printf_variables_combination( &symtable, & ast_ttp );
             {
-                pcalc_encoded_compute_with_value(queue, & symtable, & ast_ttp );
+                pcalc_encoded_compute_with_value(ast, & symtable, & ast_ttp );
                 printf("\n");
             }
 
@@ -490,14 +375,32 @@ bruteforce_solve(struct ast_token_queue *queue)
 #include "test.c"
 
 
+void
+ast_dbglog(struct ast *ast)
+{
+    Token *t;
+    size_t it;
+
+    ast_for(it, *ast, t) {
+        log_token(t);
+    }
+    printf("\n\n");
+    ast_for(it, *ast, t) {
+        if ( token_is_operator(t) ) {
+            pcalc_printf_subformula_recursive(ast, it);
+            pcalc_print_tabular();
+        }
+    }
+}
 
 void
-pcalc_process( char *code, size_t codesize )
+build_ast_queue( struct ast *ast,
+                 char *code, size_t codesize )
 {
     assert(    code[codesize - 1] == '\0'
-            && code[codesize - 2] == '\0'
-            && code[codesize - 3] == '\0'
-            && code[codesize - 4] == '\0' );
+               && code[codesize - 2] == '\0'
+               && code[codesize - 3] == '\0'
+               && code[codesize - 4] == '\0' );
 
     
     Token token = Empty_Token;
@@ -510,8 +413,7 @@ pcalc_process( char *code, size_t codesize )
     // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 
     // operator stack
-    struct ast_token_stack stack = {0};
-    struct ast_token_queue queue = {0};
+    struct token_stack stack = {0};
       
     // NOTE: Maybe better error handling because even the push_state can throw an error
     //       Maybe set a locked variable inside the tokenizer for critical stuff
@@ -527,7 +429,7 @@ pcalc_process( char *code, size_t codesize )
 
         // Extensions ->
         //   Postfix operators do an uncoditional push onto
-        //                 ast_token_queue_push(&queue, &token)
+        //                 ast_token_queue_push(queue, &token)
         // 
         // Prefix operators do an uncoditional push onto    ???(Needs testing)???
         //                   ast_token_stack_push(&stack, &token);
@@ -537,33 +439,33 @@ pcalc_process( char *code, size_t codesize )
         {
             if (token.type == TT_CONSTANT ||
                 token.type == TT_IDENTIFIER ) {
-                ast_token_queue_push(&queue, &token);
+                ast_push(ast, &token);
             } /* else if ( is function ) */
             else if ( token_is_operator(& token)) {
                 if ( is_prefix_operator(& token)) {
-                    ast_token_stack_push(&stack, &token);
+                    token_stack_push(&stack, &token);
                 } else if (is_postfix_operator(& token)) {
-                    ast_token_queue_push(&queue, &token);
+                    ast_push(ast, &token);
                 } else {
                     assert(is_infix_operator(&token));
                     Token *peek = NULL;
-                    while ( ( (stack.num_tokens) != 0 && (peek = ast_token_stack_peek_addr(&stack)))
+                    while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))
                             && ( ((op_greater_precedence(peek, & token))
                                   || (op_eq_precedence(peek, &token) && op_is_left_associative(peek)))
                                  && (peek->type != TT_PUNCT_OPEN_PAREN))) {
-                        ast_token_queue_push( &queue, peek);
-                        ast_token_stack_pop( & stack);
+                        ast_push(ast, peek);
+                        token_stack_pop( & stack);
                     }
-                    ast_token_stack_push( & stack, & token);
+                    token_stack_push( & stack, & token);
                 }
             } else if ( token.type == TT_PUNCT_OPEN_PAREN ) {
-                ast_token_stack_push( & stack, & token);
+                token_stack_push( & stack, & token);
             } else if (token.type == TT_PUNCT_CLOSE_PAREN ) {
                 Token *peek = NULL;
-                while ( ( (stack.num_tokens) != 0 && (peek = ast_token_stack_peek_addr(&stack)))
+                while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))
                         && ( peek->type != TT_PUNCT_OPEN_PAREN)) {
-                    ast_token_queue_push( &queue, peek);
-                    ast_token_stack_pop( & stack );
+                    ast_push( ast, peek);
+                    token_stack_pop( & stack );
                 }
                 if ( stack.num_tokens == 0 ) {
                     if ( peek && peek->type != TT_PUNCT_OPEN_PAREN ) {
@@ -573,7 +475,7 @@ pcalc_process( char *code, size_t codesize )
                     }
                 } else {
                     // pop the closed paren from the stack
-                    ast_token_stack_pop( & stack);
+                    token_stack_pop( & stack);
                 }
             }
         }
@@ -587,40 +489,27 @@ pcalc_process( char *code, size_t codesize )
     /* 		pop the operator from the operator stack onto the output queue. */
 
     Token *peek = NULL;
-    while ( ( (stack.num_tokens) != 0 && (peek = ast_token_stack_peek_addr(&stack)))) {
+    while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))) {
         if ( peek->type == TT_PUNCT_OPEN_PAREN ||
              peek->type == TT_PUNCT_CLOSE_PAREN ) {
             fprintf(stderr, "Mismatched parens\n");
             goto parse_end;
         }
-        ast_token_queue_push( & queue, peek);
-        ast_token_stack_pop ( & stack );
+        ast_push( ast, peek);
+        token_stack_pop ( & stack );
     }
 
     
 parse_end: {
     }
 
-    Token *t;
-    size_t it;
+}
 
-#if 1
-    ast_token_queue_for(it, queue, t) {
-        log_token(t);
-    }
-    printf("\n\n");
-    ast_token_queue_for(it, queue, t) {
-        if ( token_is_operator(t) ) {
-            pcalc_printf_subformula_recursive(& queue, it);
-            pcalc_print_tabular();
-        }
-    }
 
-#endif
-#if 0
-    bruteforce_solve(& queue);
-#endif
-
+void
+eval_ast(struct ast *ast )
+{
+    bruteforce_solve(ast);
 }
 
 
@@ -662,52 +551,31 @@ main( int argc, char **argv)
 {
     platform_init();
     UNUSED(argc), UNUSED(argv);
-    char huge_code [] =
-        "((!A && B ) || C && (G <-> D) <-> F) || "
-        "a1 | a2 | a3 | a4 | a5 | a6 | a7 | a8 | a9 | a10 | a11 |"
-        "a12 | a13 | a14 | a15 | a16 | a17 | a18 | a19 | a20 | a21 | a22 |"
-        "a23 | a24 | a25 | a26 | a27 | a28 | a29 | a30 | a31 | a32 | a33 |"
-        "a34 | a35 | a36 | a37 | a38 | a39 | a40 | a41 | a42 | a43 | a44 |"
-        "a45 | a46 | a47 | a48 | a49 | a50 | a51 | a52 | a53 | a54 | a55 |"
-        "a56 | a57 | a58 | a59 | a60 | a61 | a62 | a63 | a64 | a65 | a66 |"
-        "a67 | a68 | a69 | a70 | a | b | c | d | e | f | g |"
-        "h | i | j | k | l | m | n | o | p | q | r"
-        "\0\0\0\0\0\0";
-
-
-    char small_code[] =
-        "((!A && B ) || C && (G <-> D) <-> F)"
-        "\0\0\0\0\0\0";
 
 
     char input_line[4096];
     size_t input_line_len = 0;
     enum { EXTRA_SPACE_FOR_NULL_TERMINATION = 5};
     char *readres = NULL;
-
     	
     char *formula = NULL;
     size_t formula_size;
 
 
+    struct ast ast = {0};
     
-#if 0
-    pcalc_process(small_code, sizeof(small_code));
-#else
     while ( 1 ) {
         if ( formula ) { free(formula); formula_size = 0; }
         printf("\n\n");
         user_interact(& formula, & formula_size);
         if ( formula ) {
             printf("\n\n\n");
-            pcalc_process(formula, formula_size);
+            
+            build_ast( &ast, formula, formula_size );
+            eval_ast( &ast);
         }
     }
-#endif
 }
-
-
-
 
 
 #endif /* MAIN_C_IMPL */
