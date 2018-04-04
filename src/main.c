@@ -328,7 +328,7 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
                     // printf(" bit_index: %zx | unpacked bool: %d\n", bit_index, value);
                 } else if (t->type == TT_CONSTANT ) {
                     bool s = token_constant_to_bool( t, & value );
-                    assert_msg( s == true, "Passed constant was not a valid boolean");
+                    assert_msg( s == true, "Passed constant was not a valid boolean, or it was way too big");
                 }
 
                 ast_computation_stack_push( & stack, value );
@@ -342,7 +342,7 @@ pcalc_encoded_compute_with_value( struct ast_token_queue *queue,
             }
             
         }
-        assert_msg(stack.num_bits == 1, "Stack should remain with 1 value only");
+        assert_msg(stack.num_bits == 1, "Stack should remain with 1 value only, malformed formula");
         //printf("### Final Result: %d\n", ast_computation_stack_pop_value(& stack));
     }
 }
@@ -441,7 +441,7 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
                     } else {
                         operand_num--;
                     }
-                } while( newindex != 0 ? newindex-- : 0);
+                } while( newindex != 0 ? newindex-- : newindex);
             };
             pcalc_printf_subformula_recursive(queue, newindex);
         }
@@ -635,7 +635,7 @@ parse_end: {
     Token *t;
     size_t it;
 
-#if 1
+#if 0
     ast_token_queue_for(it, queue, t) {
         log_token(t);
     }
@@ -665,11 +665,7 @@ int main( int argc, char **argv)
 
 
     char small_code[] =
-#if 1
-        "(A & B) | C <-> D"
-# else
         "((!A && B ) || C && (G <-> D) <-> F)"
-#endif
         "\0\0\0\0\0\0";
 
 
