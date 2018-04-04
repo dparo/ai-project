@@ -248,7 +248,7 @@ pcalc_perform_operation_from_queue( Token *t,
         CHECK_2OPERANDS(*stack);
         v2 = ast_computation_stack_pop_value(stack);
         v1 = ast_computation_stack_pop_value(stack);
-        result = (v1 , v2);
+        result = (v2); // or (v1, v2)
         ast_computation_stack_push(stack, result);
     } break;
 
@@ -515,36 +515,14 @@ bruteforce_solve(struct ast_token_queue *queue)
 
 
 
-int main( int argc, char **argv)
+void
+pcalc_process( char *code, size_t codesize)
 {
-    platform_init();
-    UNUSED(argc), UNUSED(argv);
-    char huge_code [] =
-        "((!A && B ) || C && (G <-> D) <-> F) || "
-        "a1 | a2 | a3 | a4 | a5 | a6 | a7 | a8 | a9 | a10 | a11 |"
-        "a12 | a13 | a14 | a15 | a16 | a17 | a18 | a19 | a20 | a21 | a22 |"
-        "a23 | a24 | a25 | a26 | a27 | a28 | a29 | a30 | a31 | a32 | a33 |"
-        "a34 | a35 | a36 | a37 | a38 | a39 | a40 | a41 | a42 | a43 | a44 |"
-        "a45 | a46 | a47 | a48 | a49 | a50 | a51 | a52 | a53 | a54 | a55 |"
-        "a56 | a57 | a58 | a59 | a60 | a61 | a62 | a63 | a64 | a65 | a66 |"
-        "a67 | a68 | a69 | a70 | a | b | c | d | e | f | g |"
-        "h | i | j | k | l | m | n | o | p | q | r"
-        "\0\0\0\0\0\0";
+    assert(    code[codesize - 1] == '\0'
+            && code[codesize - 2] == '\0'
+            && code[codesize - 3] == '\0'
+            && code[codesize - 4] == '\0' );
 
-
-    char small_code[] =
-#if 1
-        "A & B"
-# else
-        "((!A && B ) || C && (G <-> D) <-> F)"
-#endif
-        "\0\0\0\0\0\0";
-
-
-
-
-    char *code = small_code;
-    size_t codesize = sizeof(small_code);
     
     Token token = Empty_Token;
     bool done = false;
@@ -642,6 +620,40 @@ parse_end: {
 #endif
 
     bruteforce_solve(& queue);
+
+}
+
+
+int main( int argc, char **argv)
+{
+    platform_init();
+    UNUSED(argc), UNUSED(argv);
+    char huge_code [] =
+        "((!A && B ) || C && (G <-> D) <-> F) || "
+        "a1 | a2 | a3 | a4 | a5 | a6 | a7 | a8 | a9 | a10 | a11 |"
+        "a12 | a13 | a14 | a15 | a16 | a17 | a18 | a19 | a20 | a21 | a22 |"
+        "a23 | a24 | a25 | a26 | a27 | a28 | a29 | a30 | a31 | a32 | a33 |"
+        "a34 | a35 | a36 | a37 | a38 | a39 | a40 | a41 | a42 | a43 | a44 |"
+        "a45 | a46 | a47 | a48 | a49 | a50 | a51 | a52 | a53 | a54 | a55 |"
+        "a56 | a57 | a58 | a59 | a60 | a61 | a62 | a63 | a64 | a65 | a66 |"
+        "a67 | a68 | a69 | a70 | a | b | c | d | e | f | g |"
+        "h | i | j | k | l | m | n | o | p | q | r"
+        "\0\0\0\0\0\0";
+
+
+    char small_code[] =
+#if 1
+        "A, B, C"
+# else
+        "((!A && B ) || C && (G <-> D) <-> F)"
+#endif
+        "\0\0\0\0\0\0";
+
+
+    pcalc_process(small_code, sizeof(small_code));
+
+
+
     
     return 0;
 
