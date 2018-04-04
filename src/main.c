@@ -52,108 +52,59 @@ void log_token (Token *token)
 }
 
 
+
+
 bool
-prop_calc_token_is_operator(Token *t)
+token_is_operator(Token *t)
 {
     bool result = true;
-    if (   t->type == TT_NONE
-        || t->type == TT_IDENTIFIER
-        || t->type == TT_PUNCT_OPEN_PAREN
-        || t->type == TT_PUNCT_CLOSE_PAREN
-        || t->type == TT_CONSTANT ) {
+    if ( t->type > TT_PUNCT_ENUM_OPERATORS_START_MARKER &&
+         t->type < TT_PUNCT_ENUM_OPERATORS_END_MARKER ) {
+        result = true;
+    } else {
         result = false;
     }
     return result;
 }
 
 
-bool
-pcalc_greater_or_eq_precedence(Token *sample,
-                               Token *tested )
+int
+operator_precedence(Token *t)
 {
-    bool result = false;
-
-    switch (tested->type) {
-    case TT_PUNCT_BOTHDIR_ARROW: {
-        result = true;
-    } break;
-    case TT_PUNCT_ARROW: {
-        if (sample->type == TT_PUNCT_BOTHDIR_ARROW) {
-            result = false;
-        } else {
-            result = true;
-        }
-    } break;
-
-    case TT_PUNCT_LOGICAL_AND:
-    case TT_PUNCT_BITWISE_AND: {
-        if ( sample->type == TT_PUNCT_BOTHDIR_ARROW ||
-             sample->type == TT_PUNCT_ARROW ||
-             sample->type == TT_PUNCT_EQUAL ||
-             sample->type == TT_PUNCT_EQUAL_EQUAL ||
-             sample->type == TT_PUNCT_COMMA ) {
-            result = false;
-        } else {
-            result = true;
-        }
-    } break;
-
-    case TT_PUNCT_LOGICAL_OR:
-    case TT_PUNCT_BITWISE_OR: {
-        if ( sample->type == TT_PUNCT_BOTHDIR_ARROW ||
-             sample->type == TT_PUNCT_ARROW ||
-             sample->type == TT_PUNCT_LOGICAL_AND ||
-             sample->type == TT_PUNCT_BITWISE_AND ||
-             sample->type == TT_PUNCT_EQUAL ||
-             sample->type == TT_PUNCT_EQUAL_EQUAL ||
-             sample->type == TT_PUNCT_COMMA) {
-            result = false;
-        } else {
-            result = true;
-        }
+    assert(token_is_operator(t));
+    int precedence[] = {
+        [TT_PUNCT_COMMA] = 100,
         
+        [TT_PUNCT_BOTHDIR_ARROW] = 5,
+        [TT_PUNCT_ARROW] = 5,
+        [TT_PUNCT_LOGICAL_AND] = 4,
+        [TT_PUNCT_BITWISE_AND] = 4,
+        [TT_PUNCT_LOGICAL_OR] = 3,
+        [TT_PUNCT_BITWISE_OR] = 3,
+        [TT_PUNCT_LOGICAL_NOT] = 2,
+        [TT_PUNCT_BITWISE_NOT] = 2,
+        [TT_PUNCT_EQUAL] = 1,
+        [TT_PUNCT_EQUAL_EQUAL] = 1,
 
-    } break;
 
-    case TT_PUNCT_LOGICAL_NOT:
-    case TT_PUNCT_BITWISE_NOT: {
-        if ( sample->type == TT_PUNCT_LOGICAL_NOT ||
-             sample->type == TT_PUNCT_BITWISE_NOT  ||
-             sample->type == TT_PUNCT_EQUAL ||
-             sample->type == TT_PUNCT_EQUAL_EQUAL ||
-             sample->type == TT_PUNCT_COMMA) {
-            result = true;
-        } else {
-            result = false;
-        }
-    } break;
-
-    case TT_PUNCT_EQUAL:
-    case TT_PUNCT_EQUAL_EQUAL: {
-        if ( sample->type == TT_PUNCT_EQUAL ||
-             sample->type == TT_PUNCT_EQUAL_EQUAL ||
-             sample->type == TT_PUNCT_COMMA) {
-            result = true;
-        } else {
-            result = false;
-        }
-    } break;
-
-    case TT_PUNCT_COMMA: {
-        if ( sample->type == TT_PUNCT_COMMA) {
-            result = true;
-        } else {
-            result = false;
-        }
-    } break;
-
-    default: {
-        invalid_code_path();
-    } break;
-    }
-
-    return result;
+        // Not valid set of types operators.
+        [0 ... TT_PUNCT_ENUM_OPERATORS_START_MARKER] = -1,
+        [TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS ... TT_PUNCT_ENUM_LAST_VALUE ] = -1,
+    };
+    return precedence[t->type];
 }
+
+bool
+greater_or_eq_precedence(Token *sample,
+                         Token *tested )
+{
+    int p1 = operator_precedence(sample);
+    int p2 = operator_precedence(tested);
+    assert(p1 >= 0);
+    assert(p2 >= 0);
+    return p1 <= p2;
+}
+
 
 
 
@@ -406,8 +357,8 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
     Token *t = &(queue->tokens[index]);
     if ( t->type == TT_IDENTIFIER || t->type == TT_CONSTANT ) {
         printf_token_text(t);
-    } else if (prop_calc_token_is_operator(t)) {
-        assert(prop_calc_token_is_operator(t));
+    } else if (token_is_operator(t)) {
+        assert(token_is_operator(t));
         
         size_t numberof_operands = pcalc_number_of_operands_for_operator(t);
         assert_msg(index >= numberof_operands, "Inconsistent formula");
@@ -436,7 +387,7 @@ pcalc_printf_subformula_recursive(struct ast_token_queue *queue,
                     if ( operand_num == (it) ) {
                         break;
                     }
-                    if (prop_calc_token_is_operator(t)) {
+                    if (token_is_operator(t)) {
                         operand_num += pcalc_number_of_operands_for_operator(t);
                     } else {
                         operand_num--;
@@ -467,7 +418,7 @@ pcalc_printf_computation_header(struct symbol_table *symtable,
     size_t q_it;
 
     ast_token_queue_for(q_it, *queue, t) {
-        if ( prop_calc_token_is_operator(t) ) {
+        if ( token_is_operator(t) ) {
             pcalc_printf_subformula_recursive(queue, q_it);
             pcalc_print_tabular();
         }
@@ -578,10 +529,10 @@ pcalc_process( char *code, size_t codesize)
                 token.type == TT_IDENTIFIER ) {
                 ast_token_queue_push(&queue, &token);
             } /* else if ( is function ) */
-            else if ( prop_calc_token_is_operator(& token )) {
+            else if ( token_is_operator(& token )) {
                 Token *peek = NULL;
                 while ( ( (stack.num_tokens) != 0 && (peek = ast_token_stack_peek_addr(&stack)))
-                        && ( pcalc_greater_or_eq_precedence(peek, & token)
+                        && ( greater_or_eq_precedence(peek, & token)
                              && peek->type != TT_PUNCT_OPEN_PAREN)) {
                     ast_token_queue_push( &queue, peek);
                     ast_token_stack_pop( & stack);
