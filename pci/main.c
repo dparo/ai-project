@@ -107,10 +107,10 @@ main( int argc, char **argv)
 
     struct interpreter intpt = {0};
 
-#if 1
+#if 0
     EVAL_COMMANDLINE_INLINE ( & intpt, "((P -> Q) & P) & (! Q)"
                               "\0\0\0\0\0\0" );
-#elif
+#else
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_size = 0; }
         printf("\n\n");

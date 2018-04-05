@@ -182,8 +182,8 @@ ast_print_token(Token *token)
 
 // returns the index of the last read elem
 void
-ast_print_expr ( struct ast *ast,
-                 size_t index )
+ast_print_expr___old ( struct ast *ast,
+                     size_t index )
 {
     
     Token *t = &(ast->tokens[index]);
@@ -234,6 +234,68 @@ ast_print_expr ( struct ast *ast,
 
                 } while( newindex != 0 ? newindex-- : newindex);
             };
+            ast_print_expr___old(ast, newindex);
+        }
+        printf(")");
+    } else {
+        invalid_code_path("");
+    }
+}
+
+void
+ast_print_expr ( struct ast *ast,
+                 size_t index )
+{
+    if ( index == (ast->num_tokens - 1)) {
+        int breakme = 0;
+    }
+
+    Token *t = & ( ast->tokens[index] );
+    if ( t->type == TT_IDENTIFIER || t->type == TT_CONSTANT ) {
+        ast_print_token(t);
+    } else if (token_is_operator(t)) {
+        assert(token_is_operator(t));
+        
+        uint numofoperands = operator_numofoperands(t);
+        assert_msg(index >= numofoperands, "Inconsistent formula");
+
+        printf(index == (ast->num_tokens - 1) ? "result: (" : "(");
+        ast_print_token(t);
+
+
+        for( size_t it = 1; it <= numofoperands; it++ ) {
+            printf(" ");
+            uint operand_num = 1;
+            // Fixes order of the operands on the queue, A & B, in the queue
+            // becomes { [0] = A, [2] = B, [3] = &} Which means that to know
+            // the position of the first operand i need to process recursively
+            // the second operand. This do { } while fixes this problem but
+            // introduces more iteration loops. To make it more efficient
+            // Since we probably will always have operators up to 3 operands
+            // while looping for the first operand we can store the postion
+            // of the first 2 to cut down on the number of iterations
+            size_t newindex = index;
+            do {
+                assert(operand_num > 0);
+                assert(newindex <= index);
+                /* printf("| newindex: %zu | operand_num: %zu\n", */
+                /*        newindex, operand_num); */
+                Token *t = &(ast->tokens[newindex]);
+                
+                if ( index == (ast->num_tokens - 1)) {
+                    int breakme = 0;
+                    char lol = 0;
+                }
+                
+                if ( operand_num == (it) && newindex != index) {
+                    break;
+                }
+
+                if (token_is_operator(t)) {
+                    operand_num += operator_numofoperands(t);
+                }
+                operand_num--;
+            } while( newindex != 0 ? newindex-- : newindex);
             ast_print_expr(ast, newindex);
         }
         printf(")");
@@ -586,7 +648,7 @@ eval_commandline ( struct interpreter *intpt,
     
     if ( intpt_begin_frame(intpt)) {
         ast_build_from_command( ast, commandline, commandline_size );
-# if 1
+# if 0
         ast_dbglog(ast);
 #endif
         if ( eval_ast( intpt ) ) {
