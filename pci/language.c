@@ -20,12 +20,12 @@ enum operator_prefixing {
     POSTFIX_OP,
 };
 
-static struct operator_infos {
+static const struct operator_infos {
     int precedence;
     uint numofoperands;
     enum operator_associativity associativity;
     enum operator_prefixing prefixing;
-} ops[] = {
+} OPS[] = {
 
     [TT_PUNCT_COMMA] = { 100, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
 
@@ -42,7 +42,7 @@ static struct operator_infos {
     [TT_PUNCT_BITWISE_OR]    = { 3, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_LOGICAL_NOT]   = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
     [TT_PUNCT_BITWISE_NOT]   = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
-    
+         
     [TT_PUNCT_SEMICOLON] = { 200, 2, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
     
     // Not valid set of types operators.
@@ -54,35 +54,35 @@ int
 operator_precedence(Token *t)
 {
     assert(token_is_operator(t));
-    return ops[t->type].precedence;
+    return OPS[t->type].precedence;
 }
 
 bool
 op_is_left_associative(Token *t)
 {
     assert(token_is_operator(t));
-    return (ops[t->type].associativity == LEFT_ASSOCIATIVE_OP);
+    return (OPS[t->type].associativity == LEFT_ASSOCIATIVE_OP);
 }
 
 bool
 is_prefix_operator(Token *t)
 {
     assert(token_is_operator(t));
-    return (ops[t->type].prefixing == PREFIX_OP);
+    return (OPS[t->type].prefixing == PREFIX_OP);
 }
 
 bool
 is_postfix_operator(Token *t)
 {
     assert(token_is_operator(t));
-    return (ops[t->type].prefixing == POSTFIX_OP);
+    return (OPS[t->type].prefixing == POSTFIX_OP);
 }
 
 bool
 is_infix_operator(Token *t)
 {
     assert(token_is_operator(t));
-    return (ops[t->type].prefixing == INFIX_OP);
+    return (OPS[t->type].prefixing == INFIX_OP);
 }
 
 
@@ -113,7 +113,7 @@ uint
 operator_numofoperands(Token *t)
 {
     assert(token_is_operator(t));
-    return ops[t->type].numofoperands;
+    return OPS[t->type].numofoperands;
     return 0;
 }
 
