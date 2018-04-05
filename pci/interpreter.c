@@ -113,17 +113,18 @@ print_tab(void)
 
 
 void
-pcalc_encoded_compute_with_value( struct ast *ast,
-                                  struct symtable *symtable,
-                                  struct vm_inputs *vmi )
+eval_expr( struct interpreter *intpt )
 {
+    struct ast *ast = &intpt->ast;
+    struct symtable *symtable = & intpt->symtable;
+    struct vm_inputs *vmi = & intpt->vmi;
+
     assert(vmi->num_inputs > 0);
 
-    struct vm_stack stack;
-    stack.num_bits = 0;
+    struct vm_stack *vms = & intpt->vms;
 
     // In the future this if will check for valid allocation
-    if ( stack.bits ) {
+    if ( vms->bits ) {
         Token *t;
         size_t it;
     
@@ -131,33 +132,32 @@ pcalc_encoded_compute_with_value( struct ast *ast,
             if ( t->type == TT_IDENTIFIER  || t->type == TT_CONSTANT) {
                 bool value;
                 if ( t->type == TT_IDENTIFIER ) {
-                    size_t bit_index = symtable_get_identifier_value(symtable, t);
+                    size_t input_index = symtable_get_identifier_value(symtable, t);
 
                     value = vm_inputs_unpack_bool( vmi,
-                                                         bit_index );
+                                                   input_index );
                     // printf(" bit_index: %zx | unpacked bool: %d\n", bit_index, value);
-                } else if (t->type == TT_CONSTANT ) {
+                } else if ( t->type == TT_CONSTANT ) {
                     bool s = token_constant_to_bool( t, & value );
                     assert_msg( s == true, "Passed constant was not a valid boolean, or it was way too big");
                 }
 
-                vm_stack_push( & stack, value );
-                
+                vm_stack_push( vms, value );
             } else {
                 // Token is an operator: Needs to perform the operation
                 //                       and push it into the stack
-                eval_operator( t, & stack ) ;
-                printf("%d", vm_stack_peek_value(& stack));
+                eval_operator( t, vms ) ;
+                printf("%d", vm_stack_peek_value(vms));
                 print_tab();
             }            
         }
-        assert_msg(stack.num_bits == 1, "Stack should remain with 1 value only, malformed formula");
+        assert_msg(vms->num_bits == 1, "Stack should remain with 1 value only, malformed formula");
         //printf("### Final Result: %d\n", vm_stack_pop_value(& stack));
     }
 }
 
 void
-build_symtable_from_queue ( struct interpreter *intpt )
+symtable_build_from_queue ( struct interpreter *intpt )
 {
     struct ast *ast = &intpt->ast;
     struct symtable *symtable = & intpt->symtable;
@@ -172,15 +172,23 @@ build_symtable_from_queue ( struct interpreter *intpt )
 }
 
 
+static inline void
+ast_print_token(Token *token)
+{
+    printf("%.*s", token->text_len, token->text);
+}
+
+
+
 // returns the index of the last read elem
 void
-pcalc_printf_subformula_recursive(struct ast *ast,
-                                  size_t index)
+ast_print_expr ( struct ast *ast,
+                 size_t index )
 {
     
     Token *t = &(ast->tokens[index]);
     if ( t->type == TT_IDENTIFIER || t->type == TT_CONSTANT ) {
-        printf_token_text(t);
+        ast_print_token(t);
     } else if (token_is_operator(t)) {
         assert(token_is_operator(t));
         
@@ -188,7 +196,7 @@ pcalc_printf_subformula_recursive(struct ast *ast,
         assert_msg(index >= numofoperands, "Inconsistent formula");
 
         printf(index == (ast->num_tokens - 1) ? "result: (" : "(");
-        printf_token_text(t);
+        ast_print_token(t);
 
         for( size_t it = 1; it <= numofoperands; it++ ) {
             printf(" ");
@@ -218,7 +226,7 @@ pcalc_printf_subformula_recursive(struct ast *ast,
                     }
                 } while( newindex != 0 ? newindex-- : newindex);
             };
-            pcalc_printf_subformula_recursive(ast, newindex);
+            ast_print_expr(ast, newindex);
         }
         printf(")");
     } else {
@@ -245,7 +253,7 @@ intpt_print_header( struct interpreter *intpt)
     size_t it;
     ast_for(it, *ast, t) {
         if ( token_is_operator(t) ) {
-            pcalc_printf_subformula_recursive(ast, it);
+            ast_print_expr(ast, it);
             print_tab();
         }
     }
@@ -279,7 +287,7 @@ intpt_print_inputs( struct interpreter *intpt )
 
 
 void
-symtable_preprocess_ids ( struct symtable *symtable )
+symtable_preprocess_expr ( struct symtable *symtable )
 {
 
     int it1 = 0, it2 = 0;
@@ -313,7 +321,7 @@ bruteforce_solve(struct interpreter *intpt)
         // Use the value right here and compute
         intpt_print_inputs(intpt);
         {
-            pcalc_encoded_compute_with_value(ast, symtable, vmi );
+            eval_expr(intpt);
             printf("\n");
         }
 
@@ -338,7 +346,7 @@ ast_dbglog(struct ast *ast)
     printf("\n\n");
     ast_for(it, *ast, t) {
         if ( token_is_operator(t) ) {
-            pcalc_printf_subformula_recursive(ast, it);
+            ast_print_expr(ast, it);
             print_tab();
         }
     }
@@ -399,11 +407,11 @@ build_ast_from_user_input( struct ast *ast,
                 ast_push(ast, &token);
             } /* else if ( is function ) */
             else if ( token_is_operator(& token)) {
-                /* if ( is_prefix_operator(& token)) { */
-                /*     token_stack_push(&stack, &token); */
-                /* } else if (is_postfix_operator(& token)) { */
-                /*     ast_push(ast, &token); */
-                /* } */ if(0) {} else {
+                if ( is_prefix_operator(& token)) {
+                    token_stack_push(&stack, &token);
+                } else if (is_postfix_operator(& token)) {
+                    ast_push(ast, &token);
+                } else {
                     assert(is_infix_operator(&token));
                     Token *peek = NULL;
                     while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack))) 
@@ -500,14 +508,14 @@ intpt_end_frame( struct interpreter *intpt)
 
 
 bool
-preprocess_ast_command ( struct interpreter *intpt )
+ast_preprocess_command ( struct interpreter *intpt )
 {
     bool alloc_result = true;
     struct ast *ast = & intpt->ast;
     struct symtable *symtable = & intpt->symtable;
     
-    build_symtable_from_queue(intpt);
-    symtable_preprocess_ids(symtable);
+    symtable_build_from_queue(intpt);
+    symtable_preprocess_expr(symtable);
     
     struct vm_inputs *vmi = & intpt -> vmi;
     vm_inputs_init_from_symtable( vmi, symtable);
@@ -536,7 +544,7 @@ eval_ast(struct interpreter *intpt )
     struct vm_inputs *vmi = & intpt->vmi;
 
     
-    if (preprocess_ast_command (intpt)) {
+    if (ast_preprocess_command (intpt)) {
         if ( vmi->inputs && vmi->num_inputs ) {
             bruteforce_solve(intpt);
         }

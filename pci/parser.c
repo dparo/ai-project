@@ -202,14 +202,6 @@ typedef struct Tokenizer {
 
 
 
-
-static inline void
-printf_token_text(Token *token)
-{
-    printf("%.*s", token->text_len, token->text);
-}
-
-
 static inline int
 token_txt_cmp(Token *t, char *string)
 {

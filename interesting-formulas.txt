@@ -1,0 +1,3 @@
+sempre vera: ( P & ( P -> Q ) -> Q)
+
+sempre vera: ((P -> Q) & P) & (! Q)
