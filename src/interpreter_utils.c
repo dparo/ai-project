@@ -201,6 +201,13 @@ vm_stack_pop_value(struct vm_stack *stack)
 
 
 
+void
+ast_clear( struct ast *ast )
+{
+    assert(ast);
+    ast->num_tokens = 0;
+}
+
 #define ast_for( iterator, ast, token)        \
     for (((iterator) = 0), ((token) = (ast).tokens);      \
          ((iterator) < (ast).num_tokens);                 \

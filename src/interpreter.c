@@ -372,7 +372,8 @@ build_ast_from_user_input( struct ast *ast,
     // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 
     // operator stack
-    struct token_stack stack = {0};
+    struct token_stack stack;
+    stack.num_tokens = 0;
       
     // NOTE: Maybe better error handling because even the push_state can throw an error
     //       Maybe set a locked variable inside the tokenizer for critical stuff
@@ -401,11 +402,11 @@ build_ast_from_user_input( struct ast *ast,
                 ast_push(ast, &token);
             } /* else if ( is function ) */
             else if ( token_is_operator(& token)) {
-                if ( is_prefix_operator(& token)) {
-                    token_stack_push(&stack, &token);
-                } else if (is_postfix_operator(& token)) {
-                    ast_push(ast, &token);
-                } else {
+                /* if ( is_prefix_operator(& token)) { */
+                /*     token_stack_push(&stack, &token); */
+                /* } else if (is_postfix_operator(& token)) { */
+                /*     ast_push(ast, &token); */
+                /* } */ if(0) {} else {
                     assert(is_infix_operator(&token));
                     Token *peek = NULL;
                     while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))
@@ -479,8 +480,13 @@ eval_commandline ( struct interpreter *interpreter,
                    char *commandline,
                    size_t commandline_size)
 {
-    build_ast_from_user_input( &(interpreter->ast), commandline, commandline_size );
-    eval_ast( & (interpreter->ast));
+    struct ast *ast = & interpreter->ast;
+    ast_clear(ast);
+    build_ast_from_user_input( ast, commandline, commandline_size );
+# if 0
+    ast_dbglog(ast);
+#endif
+    eval_ast( ast);
 }
 
 
