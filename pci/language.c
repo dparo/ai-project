@@ -87,7 +87,7 @@ is_infix_operator(Token *t)
 
 bool
 op_greater_precedence(Token *sample,
-                   Token *tested )
+                      Token *tested )
 {
     int p1 = operator_precedence(sample);
     int p2 = operator_precedence(tested);

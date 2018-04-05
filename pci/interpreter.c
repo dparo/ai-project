@@ -2,7 +2,7 @@
 #define INTERPRETER_C_INCLUDE
 
 #define INTERPRETER_UTILS_C_IMPL
-#include "interpreter_utils.c"
+#include "interpreter-utils.c"
 
 struct interpreter {
     struct vm_stack vms;
@@ -406,10 +406,10 @@ build_ast_from_user_input( struct ast *ast,
                 /* } */ if(0) {} else {
                     assert(is_infix_operator(&token));
                     Token *peek = NULL;
-                    while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))
-                            && ( ((op_greater_precedence(peek, & token))
-                                  || (op_eq_precedence(peek, &token) && op_is_left_associative(peek)))
-                                 && (peek->type != TT_PUNCT_OPEN_PAREN))) {
+                    while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack))) 
+                            && ( (peek->type != TT_PUNCT_OPEN_PAREN &&
+                                  ((op_greater_precedence(peek, & token))
+                                   || (op_eq_precedence(peek, &token) && op_is_left_associative(peek)))))) {
                         ast_push(ast, peek);
                         token_stack_pop( & stack);
                     }
@@ -432,7 +432,7 @@ build_ast_from_user_input( struct ast *ast,
                     }
                 } else {
                     // pop the closed paren from the stack
-                    token_stack_pop( & stack);
+                    token_stack_pop( & stack );
                 }
             }
         }

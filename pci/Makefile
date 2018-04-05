@@ -2,7 +2,7 @@
 
 BUILD_DEFS = -DMAIN_C_IMPL -D_GNU_SOURCE
 WARNINGS = -Wall -Wextra -Wno-unused-function -Wno-unused-parameter -Wno-unused-variable
-INCLUDES = -I./ -I./ext_deps/stb -I./__generated__
+INCLUDES = -I./ -I./ext-deps/stb -I./__generated__
 LIBRARIES = -lm -lreadline -ldl -pthread
 OUTPUT = ./bin/pci
 
