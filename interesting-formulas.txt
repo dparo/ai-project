@@ -21,8 +21,8 @@ F == F                                   // identita'
 (F | G) == (G | F)                       // commutativita'
 (F & (G | H)) == ((F & G) | (F & H))     // distributivita'
 (F | (G & H)) == ((F | G) & (F | H))     // distributivita'
-!(F | G) == (!F & G)                     // legge di De Morgan
-!(F & G) == (!F | G)                     // legge di De Morgan
+!(F | G) == (!F & !G)                    // legge di De Morgan
+!(F & G) == (!F | !G)                    // legge di De Morgan
 (F | (F & G)) == F                       // assorbimento
 (F & (F | G)) == F                       // assorbimento
 (F | (!F & G)) == (F | G)                // assorbimento

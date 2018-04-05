@@ -120,9 +120,11 @@ eval_expr( struct interpreter *intpt )
     struct vm_inputs *vmi = & intpt->vmi;
 
     assert(vmi->num_inputs > 0);
-
     struct vm_stack *vms = & intpt->vms;
-
+    
+    assert(vms->num_bits == 0);
+    // assert_msg(0, "Needs to handle it with recursion man");
+    
     // In the future this if will check for valid allocation
     // But this check will probably implemented by the preprocessor,
     // so this if could become just an assert.
@@ -335,17 +337,17 @@ bruteforce_solve(struct interpreter *intpt)
     for (size_t i = 0; i < max_it; i ++ ) {
         vm_stack_clear(vms);
 #       if 0
-        vm_inputs_dbglog(& vmi);
+        vm_inputs_dbglog(vmi);
 #       endif
         // Use the value right here and compute
         intpt_print_inputs(intpt);
         {
             eval_expr(intpt);
-            
+
             printf("\n");
         }
 
-        vm_inputs_increment(vmi );
+        vm_inputs_increment(vmi);
     }
 }
 
@@ -530,7 +532,7 @@ intpt_end_frame( struct interpreter *intpt)
 
 
 bool
-ast_preprocess_command ( struct interpreter *intpt )
+preprocess_command ( struct interpreter *intpt )
 {
     bool alloc_result = true;
     struct ast *ast = & intpt->ast;
@@ -566,7 +568,7 @@ eval_ast(struct interpreter *intpt )
     struct vm_inputs *vmi = & intpt->vmi;
 
     
-    if (ast_preprocess_command (intpt)) {
+    if (preprocess_command (intpt)) {
         if ( vmi->inputs && vmi->num_inputs ) {
 #if 0
             intpt_print_header(intpt);
@@ -595,7 +597,7 @@ eval_commandline ( struct interpreter *intpt,
     
     if ( intpt_begin_frame(intpt)) {
         ast_build_from_command( ast, commandline, commandline_size );
-# if 0
+# if 1
         ast_dbglog(ast);
 #endif
         if ( eval_ast( intpt ) ) {
