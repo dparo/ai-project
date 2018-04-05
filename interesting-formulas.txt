@@ -1,3 +1,33 @@
 sempre vera: ( P & ( P -> Q ) -> Q)
 
 sempre falsa: ((P -> Q) & P) & (! Q)
+
+
+
+UGUAGLIANZE SPECIALI
+F == F                                   identita'
+!(!F) == F                               doppia negazione
+(G & G) == G                             idempotenza
+(G | G) == G                             idempotenza
+(G & TRUE) ==G                           legge dei neutri
+(G & FALSE ) == FALSE                    legge dei neutri
+(G | TRUE ) == TRUE                      legge dei neutri
+(G | FALSE ) == G                        legge dei neutri
+(G & !G) == FALSE                        esclusione
+(G | !G) == TRUE                         complementarieta'
+((F & G) & H) == ((F & (G & H))          associativita'
+((F | G) | H) == ((F | (G | H)           associativita'
+(F & G) == (G & F)                       commutativita'
+(F | G) == (G | F)                       commutativita'
+(F & (G | H)) == ((F & G) | (F & H))     distributivita'
+(F | (G & H)) == ((F | G) & (F | H))     distributivita'
+!(F | G) == (!F & G)                     legge di De Morgan
+!(F & G) == (!F | G)                     legge di De Morgan
+(F | (F & G)) == F                       assorbimento
+(F & (F | G)) == F                       assorbimento
+(F | (!F & G)) == (F | G)                assorbimento
+(F & (!F | G)) == (F & G)                assorbimento
+(F → G) == (!F | G)                      eliminazione dell’implicazione
+(F → (G → H)) == (G → (F → H))           doppia implicazione
+(F → (G → H)) == ((F & G) → H)           doppia implicazione
+(F ↔ G) == ((F → G) & (G → F))           doppia implicazione
