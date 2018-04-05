@@ -49,7 +49,7 @@ struct token_stack {
     size_t num_tokens;
 };
 
-typedef uint8_t packed_bool;
+typedef uint32_t packed_bool;
 
 struct vm_stack {
 #define VM_STACK_MAX_NUMBITS 1024
@@ -90,8 +90,8 @@ struct ast {
 
 static inline void
 vm_stack_pack_bool( struct vm_stack *stack,
-                                 bool v,
-                                 size_t input_index )
+                    bool v,
+                    size_t input_index )
 {
     BOOL_PACK_INTO_ARRAY(v, input_index, stack->bits,
                          VM_STACK_MAX_NELEMS, packed_bool);
@@ -247,7 +247,7 @@ symtable_num_ids ( struct symtable *symtable )
 
 void
 symtable_add_identifier(struct symtable *symtable,
-                            Token *t)
+                        Token *t)
 {
     assert(symtable && symtable->dict);
     assert(t->text);
@@ -265,7 +265,7 @@ symtable_add_identifier(struct symtable *symtable,
 
 size_t
 symtable_get_identifier_value( struct symtable *symtable,
-                                   Token *t )
+                               Token *t )
 {
     assert(symtable && symtable->dict);
     assert(t->text);
@@ -276,6 +276,13 @@ symtable_get_identifier_value( struct symtable *symtable,
     size_t result = (size_t) stb_sdict_get(symtable->dict, t->text);
     t->text[t->text_len] = temp;
     return result;
+}
+
+void
+symtable_delete( struct symtable *symtable )
+{
+    stb_sdict_delete(symtable->dict);
+    symtable->dict = NULL;
 }
 
 

@@ -58,11 +58,13 @@
 
 // the formula is null terminated with necessary space for null termination
 void
-user_interact(char **formula, size_t *formula_size)
+user_interact(char **commandline, size_t *commandline_size)
 {
+    assert(commandline);
+    assert(commandline_size);
     // Maybe continue asking for more input if last character is like `\`
     // in a loop and concatenate to previous string
-    char *string = readline ("Input formula to compute:\n    [>] ");
+    char *string = readline ("Input Interpreter Command:\n    [>] ");
     enum { EXTRA_SPACE_FOR_NULL_TERMINATION = 5};
     size_t len = 0;
     size_t size = 0;
@@ -76,8 +78,8 @@ user_interact(char **formula, size_t *formula_size)
 
     if ( string ) {
         memset(string + len, 0, EXTRA_SPACE_FOR_NULL_TERMINATION);
-        *formula = string;
-        *formula_size = size;
+        *commandline = string;
+        *commandline_size = size;
     }
 
     if (string && string[0] != '\0') {
@@ -93,26 +95,19 @@ main( int argc, char **argv)
     UNUSED(argc), UNUSED(argv);
 
 
-    char input_line[4096];
-    size_t input_line_len = 0;
-    enum { EXTRA_SPACE_FOR_NULL_TERMINATION = 5};
-    char *readres = NULL;
-    	
-    char *formula = NULL;
-    size_t formula_size;
+    char * commandline = NULL;
+    size_t commandline_size;
 
 
-    struct ast ast = {0};
+    struct interpreter interpreter = {0};
     
     while ( 1 ) {
-        if ( formula ) { free(formula); formula_size = 0; }
+        if ( commandline ) { free(commandline); commandline_size = 0; }
         printf("\n\n");
-        user_interact(& formula, & formula_size);
-        if ( formula ) {
+        user_interact(& commandline, & commandline_size);
+        if ( commandline ) {
             printf("\n\n\n");
-            
-            build_ast( &ast, formula, formula_size );
-            eval_ast( &ast);
+            eval_commandline( & interpreter, commandline, commandline_size);
         }
     }
 }

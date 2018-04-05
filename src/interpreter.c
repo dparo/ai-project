@@ -5,7 +5,7 @@
 #include "interpreter_utils.c"
 
 struct interpreter {
-    struct vm_stack vm;
+    struct vm_stack vms;
     struct ast ast;
 };
 
@@ -21,13 +21,13 @@ struct interpreter {
 
 void
 eval_operator( Token *t,
-               struct vm_stack *vm )
+               struct vm_stack *vms )
 {
     bool result = 0;
     bool v1 = 0;
     bool v2 = 0;
     uint numofoperands = operator_numofoperands(t);
-    if (! ((vm->num_bits) >= (operator_numofoperands(t)) )) {
+    if (! ((vms->num_bits) >= (operator_numofoperands(t)) )) {
         goto not_enough_operands;                                 
     }
 
@@ -36,7 +36,7 @@ eval_operator( Token *t,
                 "STATIC ASSERT: Language will support at most 3 operands for operators");
     
     for ( uint i = 0; i < numofoperands; i ++ ) {
-        v[i] = vm_stack_pop_value(vm);
+        v[i] = vm_stack_pop_value(vms);
     }
 
     // NOTE v[0] Contains the last operand v[numberofoperands-1] contains the first operand
@@ -66,7 +66,7 @@ eval_operator( Token *t,
     } break;
     }
     
-    vm_stack_push(vm, result);
+    vm_stack_push(vms, result);
     return;
 not_enough_operands: {
         assert_msg(0, "Operator needs more operand, not found enough inside the stack");
@@ -273,6 +273,23 @@ pcalc_printf_variables_combination( struct symtable *symtable,
     }
 }
 
+
+void
+symtable_preprocess_ids ( struct symtable *symtable )
+{
+
+    int it1 = 0, it2 = 0;
+    char *k;
+    void *v;
+    ast_symtable_for(it1, symtable, k, v) {
+        v = (void*) ((size_t)it2);
+        it2 ++ ;
+        stb_sdict_set(symtable->dict, k, v);
+        //printf("k : %s | v: %zu\n", k, (size_t) v);
+    }
+}
+
+
 void
 bruteforce_solve(struct ast *ast)
 {
@@ -332,40 +349,25 @@ ast_dbglog(struct ast *ast)
 }
 
 
-void
-symtable_preprocess_ids ( struct symtable *symtable )
-{
-
-    int it1 = 0, it2 = 0;
-    char *k;
-    void *v;
-    ast_symtable_for(it1, symtable, k, v) {
-        v = (void*) ((size_t)it2);
-        it2 ++ ;
-        stb_sdict_set(symtable->dict, k, v);
-        //printf("k : %s | v: %zu\n", k, (size_t) v);
-    }
-}
-
 
 
 
 void
-build_ast_queue( struct ast *ast,
-                 char *code, size_t codesize )
+build_ast_from_user_input( struct ast *ast,
+                           char *commandline, size_t commandline_size )
 {
-    assert(    code[codesize - 1] == '\0'
-               && code[codesize - 2] == '\0'
-               && code[codesize - 3] == '\0'
-               && code[codesize - 4] == '\0' );
+    assert(    commandline[commandline_size - 1] == '\0'
+               && commandline[commandline_size - 2] == '\0'
+               && commandline[commandline_size - 3] == '\0'
+               && commandline[commandline_size - 4] == '\0' );
 
     
     Token token = Empty_Token;
     bool done = false;
     Tokenizer tknzr;
-    tokenizer_init_from_memory( &tknzr, code,
-                                codesize,
-                                "*code*");
+    tokenizer_init_from_memory( &tknzr, commandline,
+                                commandline_size,
+                                "*commandline*");
 
     // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 
@@ -472,6 +474,14 @@ eval_ast(struct ast *ast )
 
 
 
+void
+eval_commandline ( struct interpreter *interpreter,
+                   char *commandline,
+                   size_t commandline_size)
+{
+    build_ast_from_user_input( &(interpreter->ast), commandline, commandline_size );
+    eval_ast( & (interpreter->ast));
+}
 
 
 
