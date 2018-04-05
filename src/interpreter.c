@@ -461,23 +461,37 @@ parse_end: {
 }
 
 
-void
+bool
 preprocess_ast_command ( struct interpreter *intpt)
 {
+    bool alloc_result = true;
     struct ast *ast = & intpt->ast;
     struct symtable *symtable =  & intpt->symtable;
     symtable_clear(symtable);
     if (symtable_is_valid(symtable)) {
-        symtable_clear(symtable);
+        alloc_result = symtable_clear(symtable);
     } else {
-        symtable_new(symtable);
+        alloc_result = symtable_new(symtable);
     }
-    
+
+    if ( alloc_result == false ) { goto FAILURE; }
+
     build_symtable_from_queue(ast, symtable);
     symtable_preprocess_ids(symtable);
     
     struct vm_inputs *vmi = & intpt -> vmi;
     vm_inputs_init_from_symtable( vmi, symtable);
+
+
+
+/* SUCCESS: */ {
+        return 1;
+    }
+    
+FAILURE: {
+        fprintf(stderr, "Interpreter: Failed memory allocation");
+        return 0;
+    }
 }
 
 

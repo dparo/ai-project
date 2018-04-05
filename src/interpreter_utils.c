@@ -241,11 +241,12 @@ symtable_is_valid(struct symtable *symtable)
     return (symtable->dict != NULL);
 }
 
-void
+bool
 symtable_new(struct symtable *symtable)
 {
     symtable->dict = stb_sdict_new(1);
-    assert(symtable_is_valid(symtable));
+    bool alloc_result = symtable->dict != NULL;
+    return alloc_result;
 }
 
 void symtable_delete(struct symtable *symtable)
@@ -261,14 +262,16 @@ void symtable_delete(struct symtable *symtable)
 // Since the symtables are allocated using arena
 // to free all of them we newe to delete
 // the entire dictionary.
-void
+bool
 symtable_clear( struct symtable *symtable )
 {
     assert(symtable);
     if ( symtable_is_valid(symtable) ) {
         symtable_delete(symtable);
-        symtable_new(symtable);
+        bool alloc_result = symtable_new(symtable);
+        return alloc_result;
     }
+    return true;
 }
 
 
