@@ -68,7 +68,7 @@ eval_operator( Token *t,
         
     default: {
         assert_msg(0, "Invalid code path we should assert before when we require "
-            "the number of operands in operator_numofoperands");
+                   "the number of operands in operator_numofoperands");
     } break;
     }
     
@@ -154,15 +154,13 @@ eval_expr( struct interpreter *intpt )
             }            
         }
         assert_msg(vms->num_bits == 1, "Stack should remain with 1 value only, malformed formula");
-        //printf("### Final Result: %d\n", vm_stack_pop_value(& stack));
     }
 }
 
 void
-symtable_build_from_queue ( struct interpreter *intpt )
+symtable_build_from_ast ( struct symtable *symtable,
+                          struct ast *ast )
 {
-    struct ast *ast = &intpt->ast;
-    struct symtable *symtable = & intpt->symtable;
     Token *t;
     size_t it;
     ast_for(it, *ast, t) {
@@ -362,8 +360,8 @@ ast_dbglog(struct ast *ast)
 
 
 void
-build_ast_from_user_input( struct ast *ast,
-                           char *commandline, size_t commandline_size )
+ast_build_from_command( struct ast *ast,
+                        char *commandline, size_t commandline_size )
 {
     ast_clear(ast);
     assert(    commandline[commandline_size - 1] == '\0'
@@ -519,7 +517,7 @@ ast_preprocess_command ( struct interpreter *intpt )
     struct ast *ast = & intpt->ast;
     struct symtable *symtable = & intpt->symtable;
     
-    symtable_build_from_queue(intpt);
+    symtable_build_from_ast(symtable, ast);
     symtable_preprocess_expr(symtable);
     
     struct vm_inputs *vmi = & intpt -> vmi;
@@ -573,7 +571,7 @@ eval_commandline ( struct interpreter *intpt,
     struct ast *ast = & intpt->ast;
     
     if ( intpt_begin_frame(intpt)) {
-        build_ast_from_user_input( ast, commandline, commandline_size );
+        ast_build_from_command( ast, commandline, commandline_size );
 # if 1
         ast_dbglog(ast);
 #endif
