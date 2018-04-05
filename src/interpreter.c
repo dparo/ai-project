@@ -497,15 +497,25 @@ FAILURE: {
 
 
 
-void
+bool
 eval_ast(struct interpreter *intpt )
 {
+    bool result = false;
     struct ast *ast = & intpt->ast;
     struct vm_inputs *vmi = & intpt->vmi;
-    preprocess_ast_command (intpt);
-    if ( vmi->inputs && vmi->num_inputs ) {
-        bruteforce_solve(intpt);
+
+    
+    if (preprocess_ast_command (intpt)) {
+        if ( vmi->inputs && vmi->num_inputs ) {
+            bruteforce_solve(intpt);
+        }
+
+
+        result = true;
+    } else {
+        result = false;
     }
+    return result;
 }
 
 
@@ -521,7 +531,9 @@ eval_commandline ( struct interpreter *intpt,
 # if 0
     ast_dbglog(ast);
 #endif
-    eval_ast( intpt );
+    if ( eval_ast( intpt ) ) {
+        
+    }
 }
 
 
