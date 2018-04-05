@@ -88,6 +88,12 @@ user_interact(char **commandline, size_t *commandline_size)
 }
 
 
+#define EVAL_COMMANDLINE_INLINE(intpt, command)                   \
+    printf("\n\nformula: %s\n\n", command);                                    \
+    eval_commandline((intpt), strndup(command, sizeof(command)),  \
+                     sizeof(command))
+        
+
 int
 main( int argc, char **argv)
 {
@@ -100,7 +106,11 @@ main( int argc, char **argv)
 
 
     struct interpreter intpt = {0};
-    
+
+#if 1
+    EVAL_COMMANDLINE_INLINE ( & intpt, "((P -> Q) & P) & (! Q)"
+                              "\0\0\0\0\0\0" );
+#elif
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_size = 0; }
         printf("\n\n");
@@ -110,6 +120,7 @@ main( int argc, char **argv)
             eval_commandline( & intpt, commandline, commandline_size);
         }
     }
+#endif
 }
 
 

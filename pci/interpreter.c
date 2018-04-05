@@ -248,7 +248,7 @@ intpt_print_header( struct interpreter *intpt)
         printf("%s", key);
         print_tab();
     }
-    
+
     Token *t;
     size_t it;
     ast_for(it, *ast, t) {
@@ -347,12 +347,14 @@ ast_dbglog(struct ast *ast)
         log_token(t);
     }
     printf("\n\n");
+    // Debug expression printing
     ast_for(it, *ast, t) {
         if ( token_is_operator(t) ) {
             ast_print_expr(ast, it);
             print_tab();
         }
     }
+    printf("\n\n");
 }
 
 
@@ -549,7 +551,11 @@ eval_ast(struct interpreter *intpt )
     
     if (ast_preprocess_command (intpt)) {
         if ( vmi->inputs && vmi->num_inputs ) {
+#if 0
+            intpt_print_header(intpt);
+#else
             bruteforce_solve(intpt);
+#endif
         }
 
 
