@@ -209,6 +209,13 @@ ast_print_expr ( struct ast *ast,
             // Since we probably will always have operators up to 3 operands
             // while looping for the first operand we can store the postion
             // of the first 2 to cut down on the number of iterations
+
+
+            printf("\n\n######################################################\n"
+                   "#######################################\n\n"
+                   "Found the motherfucking bug here\n"
+                   "We need to think better about this loop wich is "
+                   "fucking retarded\n\n");
             size_t newindex = index; {
                 if ( index ) { newindex = index - 1; }
                 uint operand_num = numofoperands;
@@ -216,14 +223,15 @@ ast_print_expr ( struct ast *ast,
                     /* printf("| newindex: %zu | operand_num: %zu\n", */
                     /*        newindex, operand_num); */
                     Token *t = &(ast->tokens[newindex]);
-                    if ( operand_num == (it) ) {
-                        break;
-                    }
                     if (token_is_operator(t)) {
                         operand_num += operator_numofoperands(t);
                     } else {
                         operand_num--;
                     }
+                    if ( operand_num == (it) ) {
+                        break;
+                    }
+
                 } while( newindex != 0 ? newindex-- : newindex);
             };
             ast_print_expr(ast, newindex);
