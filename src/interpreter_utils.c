@@ -231,8 +231,8 @@ ast_clear( struct ast *ast )
          ((token) = & ((ast).tokens[--(iterator)])))                \
         if (true)
 
-#define ast_symtable_for(iterator, symtable, key, value)            \
-    stb_sdict_for((symtable)->dict, (iterator), (key), (value))         \
+#define ast_symtable_for(iterator, symtable, key, value)      \
+    stb_sdict_for((symtable)->dict, (iterator), (key), value) \
 
 void
 ast_push(struct ast *ast,
@@ -314,6 +314,17 @@ symtable_add_identifier(struct symtable *symtable,
     t->text[t->text_len] = temp;
 }
 
+
+void
+symtable_set_identifier_value( struct symtable *symtable,
+                               char   *id_name,
+                               size_t  value)
+{
+    assert(symtable);
+    assert(symtable_is_valid(symtable));
+    void *value_ = (void*) value;
+    stb_sdict_set(symtable->dict, id_name, value_);
+}
 
 size_t
 symtable_get_identifier_value( struct symtable *symtable,

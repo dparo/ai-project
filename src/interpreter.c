@@ -279,12 +279,12 @@ symtable_preprocess_ids ( struct symtable *symtable )
 {
 
     int it1 = 0, it2 = 0;
-    char *k;
-    void *v;
-    ast_symtable_for(it1, symtable, k, v) {
-        v = (void*) ((size_t)it2);
-        it2 ++ ;
-        stb_sdict_set(symtable->dict, k, v);
+
+    char *id_name;
+    void *value; (void) value;
+    
+    ast_symtable_for(it1, symtable, id_name, value) {
+        symtable_set_identifier_value(symtable, id_name, it2 ++);
         //printf("k : %s | v: %zu\n", k, (size_t) v);
     }
 }
