@@ -166,14 +166,6 @@ build_symtable_from_queue ( struct ast *ast,
     }
 }
 
-void
-printf_token_text(Token *token)
-{
-    printf("%.*s", token->text_len, token->text);
-}
-
-
-
 
 // returns the index of the last read elem
 void
@@ -367,7 +359,7 @@ build_ast_from_user_input( struct ast *ast,
     // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 
     // operator stack
-    struct token_stack stack;
+    static struct token_stack stack;
     stack.num_tokens = 0;
       
     // NOTE: Maybe better error handling because even the push_state can throw an error

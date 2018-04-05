@@ -11,6 +11,8 @@
 #define TOKENIZER_DEBUG 0
 #endif
 
+#define TOKENIZER_CACHING_ENABLED 0
+#define TOKENIZER_STATE_LIST_ENABLED 0
 #define TOKENIZER_DOLLAR_SIGN_VALID_IDENTIFIER (1)
 
 enum Token_Type {
@@ -145,6 +147,7 @@ typedef enum Tokenization_Error {
 #define TOKENIZER_STATES_LEN 256
 
 
+
 // Caching mechanism for recently parsed tokens
 // Circular buffer implementation base
 typedef struct Tokenizer_Cache {
@@ -189,12 +192,22 @@ typedef struct Tokenizer {
 
      char *at;
 
+#if TOKENIZER_STATE_LIST_ENABLED
      Tokenizer_State_List *list;
-     Tokenizer_Cache cache;
+#endif
+#if TOKENIZER_CACHING_ENABLED
+    Tokenizer_Cache cache;
+#endif
 } Tokenizer;
 
 
 
+
+static inline void
+printf_token_text(Token *token)
+{
+    printf("%.*s", token->text_len, token->text);
+}
 
 
 static inline int
@@ -1099,6 +1112,7 @@ cache_get_next_token (Tokenizer_Cache *cache,
 void
 tokenizer_push_state ( Tokenizer *tknzr )
 {
+#if TOKENIZER_STATE_LIST_ENABLED
      Tokenizer_State_List *it = tknzr->list;
      assert (it);
      while ( it->used == TOKENIZER_MAX_NUM_STATES ) {
@@ -1117,6 +1131,7 @@ tokenizer_push_state ( Tokenizer *tknzr )
      it->states[it->used].line_num = tknzr->line_num;
      it->states[it->used].column = tknzr->column;
      ++(it->used);
+#endif
 }
 
 
@@ -1136,7 +1151,7 @@ bool
 tokenizer_pop_state ( Tokenizer *tknzr )
 {
      bool result = false;
-     Tokenizer_Cache *cache = &tknzr->cache;
+#if TOKENIZER_STATE_LIST_ENABLED
      Tokenizer_State_List *it = tknzr->list;
      assert( it->used > 0 );
      assert (it);
@@ -1162,7 +1177,9 @@ tokenizer_pop_state ( Tokenizer *tknzr )
 
      Tokenizer_State *state = &(it->states[it->used - 1]);
 
+#if TOKENIZER_CACHING_ENABLED
      { // Cache recovery
+         Tokenizer_Cache *cache = &tknzr->cache;
           int find_idx = cache_find_bin_search(cache, state->at);
           if ( find_idx == -1 ) {
                cache_clear_invalidate(cache);
@@ -1172,6 +1189,7 @@ tokenizer_pop_state ( Tokenizer *tknzr )
           }
 
      }
+#endif
 
      // Restore the tokenizer to the required state
      {
@@ -1188,7 +1206,7 @@ tokenizer_pop_state ( Tokenizer *tknzr )
                it->next = 0x0000;
           }
      }
-
+#endif     
      return result;
 }
 
@@ -1197,13 +1215,16 @@ bool
 get_next_token ( Tokenizer *tknzr,
                  Token *token )
 {
-     Tokenizer_Cache *cache = &tknzr->cache;
+
      Token local_token_for_null;
 
      token = token == NULL ? &local_token_for_null : token;
 
-     i32 next_token_idx;
+     i32 next_token_idx = -1;
+# if TOKENIZER_CACHING_ENABLED
+     Tokenizer_Cache *cache = &tknzr->cache;
      cache_get_next_token(cache, &next_token_idx);
+
      if ( next_token_idx != -1) {
           *token = cache->buffer[next_token_idx];
           cache_inc_index(cache, &cache->at);
@@ -1226,7 +1247,9 @@ get_next_token ( Tokenizer *tknzr,
           //       by definition if we can get the token out that means that the end
           //       is offset by +1 and there's enough room for incrementing the at
      }
-     else {
+     else
+#endif
+     {
 
           if ( tokenizer_is_end(tknzr)) {
                return false;
@@ -1245,7 +1268,9 @@ get_next_token ( Tokenizer *tknzr,
                parse_identifier_or_keyword ( tknzr, token );
           }
           eat_whitespaces(tknzr);
+#if TOKENIZER_CACHING_ENABLED
           cache_fill_token(cache, token);
+#endif
      }
      return true;
 }
@@ -1255,6 +1280,7 @@ get_next_token ( Tokenizer *tknzr,
 static bool
 get_prev_token_from_cache_if_avail(Tokenizer *tknzr, Token *token )
 {
+#if TOKENIZER_CACHING_ENABLED
      bool result = false;
      Tokenizer_Cache *cache = &tknzr->cache;
      i32 prev_parsed_idx;
@@ -1279,6 +1305,9 @@ get_prev_token_from_cache_if_avail(Tokenizer *tknzr, Token *token )
           result = true;
      }
      return result;
+#else
+     return false;
+#endif
 }
 
 bool
@@ -1287,7 +1316,6 @@ get_prev_token ( Tokenizer *tknzr,
 {
      Token local_token_for_null;
      token = token == NULL ? &local_token_for_null : token;
-     Tokenizer_Cache *cache = &tknzr->cache;
      bool result = false;
 
      if( tknzr->at == tknzr->base ) {
@@ -1296,14 +1324,17 @@ get_prev_token ( Tokenizer *tknzr,
      }
 
      bool cached = get_prev_token_from_cache_if_avail(tknzr, token);
-     if ( cache ) {
+     if ( cached ) {
           result = true;
      }
 
      else {
           char *prev_tknzr_at = tknzr->at;
           assert_msg ( 0, "Test me" );
+#if TOKENIZER_CACHING_ENABLED
+          Tokenizer_Cache *cache = &tknzr->cache;
           cache_clear_invalidate(cache);
+#endif
 
           // traverse back until newline not preceded by \ backquote
           i32 line_counter_bwd = 0;
@@ -1423,6 +1454,7 @@ peek_prev_token ( Tokenizer *tknzr,
 static inline void
 cache_init (Tokenizer_Cache *cache)
 {
+#if TOKENIZER_CACHING_ENABLED
      cache->buffer_len = 512;
      size_t buffer_size = cache->buffer_len * sizeof(cache->buffer[0]);
      cache->buffer = alloc_memmapped_pages( 0x0, buffer_size,
@@ -1431,6 +1463,7 @@ cache_init (Tokenizer_Cache *cache)
      assert ( cache->buffer );
 
      cache_clear_invalidate(cache);
+#endif
 }
 
 void
@@ -1449,14 +1482,18 @@ tokenizer_init_from_memory( Tokenizer *tknzr,
     tknzr->at = tknzr->base;
 
     // For the state stack allocate 2 linked mmap pages
+#if TOKENIZER_STATE_LIST_ENABLED
     {
         tknzr->list = alloc_memmapped_pages( 0x0, sizeof(*(tknzr->list)), PAGE_PROT_READ | PAGE_PROT_WRITE,
                                              PAGE_PRIVATE | PAGE_ANONYMOUS);
         tknzr->list->next = 0x0000;
         assert ( tknzr->list );
     }
-
+#endif
+    
+#if TOKENIZER_CACHING_ENABLED
     cache_init (&tknzr->cache);
+#endif
 
     tknzr->err = 0;
     tknzr->err_desc[0] = 0;

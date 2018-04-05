@@ -71,6 +71,16 @@ struct vm_inputs {
     size_t num_inputs;
 };
 
+
+struct vm_outputs {
+#define VM_OUTPUTS_MAX_NUMBITS 1024
+#define VM_OUTPUTS_MAX_NUMELEMS \
+    BOOL_PACKED_ARRAY_NELEMS(VM_OUTPUTS_MAX_NUMBITS, sizeof(packed_bool))
+    // Flexible array member
+    packed_bool outputs[VM_OUTPUTS_MAX_NUMELEMS];
+    size_t num_outputs;
+};
+
     
 
 struct ast {
