@@ -348,7 +348,6 @@ vm_inputs_init_from_symtable(struct vm_inputs *vmi,
 {
     assert(symtable_num_ids(symtable) < VM_INPUTS_MAX_NUMBITS);
     vmi->num_inputs = symtable_num_ids(symtable);
-    // assert_msg(0, "Wrong size for memset");
     memset(vmi->inputs, 0, vm_inputs_size(vmi));
 }
 
@@ -414,7 +413,7 @@ vm_inputs_unpack_bool( struct vm_inputs *vmi,
 }
 
 void
-vm_inputs_generate_next_combination(struct vm_inputs *vmi )
+vm_inputs_increment(struct vm_inputs *vmi )
 {
     assert(vmi->num_inputs > 0);
 

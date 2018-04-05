@@ -124,6 +124,8 @@ eval_expr( struct interpreter *intpt )
     struct vm_stack *vms = & intpt->vms;
 
     // In the future this if will check for valid allocation
+    // But this check will probably implemented by the preprocessor,
+    // so this if could become just an assert.
     if ( vms->bits ) {
         Token *t;
         size_t it;
@@ -325,7 +327,7 @@ bruteforce_solve(struct interpreter *intpt)
             printf("\n");
         }
 
-        vm_inputs_generate_next_combination(vmi );
+        vm_inputs_increment(vmi );
     }
 }
 
@@ -569,7 +571,7 @@ eval_commandline ( struct interpreter *intpt,
     
     if ( intpt_begin_frame(intpt)) {
         build_ast_from_user_input( ast, commandline, commandline_size );
-# if 0
+# if 1
         ast_dbglog(ast);
 #endif
         if ( eval_ast( intpt ) ) {
