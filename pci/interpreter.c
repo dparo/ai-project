@@ -45,7 +45,7 @@ eval_operator( Token *t,
 
     switch (t->type) {
     case TT_PUNCT_BOTHDIR_ARROW: { result = (v[0] && v[1]) || !((v[0] || v[1])); } break;
-    case TT_PUNCT_ARROW: { result = (v[0] == true && v[1] == false ) ? false : true; } break;
+    case TT_PUNCT_ARROW: { result = (v[1] == true && v[0] == false ) ? false : true; } break;
 
     case TT_PUNCT_LOGICAL_AND:
     case TT_PUNCT_BITWISE_AND: { result = v[0] && v[1]; } break;
@@ -63,7 +63,7 @@ eval_operator( Token *t,
 
     case TT_PUNCT_NOT_EQUAL : { result = ( v[0] != v[1]); } break;
         
-    case TT_PUNCT_COMMA: { result = (v[0]); } break; /* // or (v[0], v[1]) c-alike comma */
+    case TT_PUNCT_COMMA: { result = (v[0]); } break; /* // or (v[1], v[0]) c-alike comma */
     case TT_PUNCT_SEMICOLON: { result = 0; } break;
         
     default: {
