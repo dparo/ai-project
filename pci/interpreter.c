@@ -64,7 +64,7 @@ eval_operator( Token *t,
     case TT_PUNCT_NOT_EQUAL : { result = ( v[0] != v[1]); } break;
         
     case TT_PUNCT_COMMA: { result = (v[0]); } break; /* // or (v[0], v[1]) c-alike comma */
-    case TT_PUNCT_SEMICOLON: { result = 0; } break; /* // or (v[0], v[1]) c-alike comma */
+    case TT_PUNCT_SEMICOLON: { result = 0; } break;
         
     default: {
         assert_msg(0, "Invalid code path we should assert before when we require "
