@@ -153,9 +153,10 @@ pcalc_encoded_compute_with_value( struct ast *ast,
 }
 
 void
-build_symtable_from_queue ( struct ast *ast,
-                                struct symtable *symtable )
+build_symtable_from_queue ( struct interpreter *intpt )
 {
+    struct ast *ast = &intpt->ast;
+    struct symtable *symtable = & intpt->symtable;
     Token *t;
     size_t it;
     ast_for(it, *ast, t) {
@@ -223,9 +224,11 @@ pcalc_printf_subformula_recursive(struct ast *ast,
 
 
 void
-pcalc_printf_computation_header(struct symtable *symtable,
-                                struct ast *ast)
+intpt_print_header( struct interpreter *intpt)
 {
+    struct symtable *symtable = & intpt->symtable;
+    struct ast *ast = &intpt->ast;
+    
     int s_it;
     char *key;
     void *value; (void) value;
@@ -248,10 +251,13 @@ pcalc_printf_computation_header(struct symtable *symtable,
     printf("\n");
 }
 
+
 void
-pcalc_printf_variables_combination( struct symtable *symtable,
-                                    struct vm_inputs *vmi )
+intpt_print_inputs( struct interpreter *intpt )
 {
+    struct symtable *symtable = & intpt->symtable;
+    struct vm_inputs *vmi = & intpt->vmi;
+    
     int s_it;
     char *key;
     void *value; (void) value;
@@ -289,9 +295,9 @@ bruteforce_solve(struct interpreter *intpt)
 {
     struct ast *ast = & intpt->ast;
     struct symtable *symtable =  & intpt->symtable;
-    struct vm_inputs *vmi = & intpt -> vmi;
+    struct vm_inputs *vmi = & intpt->vmi;
     
-    pcalc_printf_computation_header(symtable, ast);
+    intpt_print_header(intpt);
         
     size_t max_it = 1 << symtable_num_ids(symtable);
 
@@ -301,7 +307,7 @@ bruteforce_solve(struct interpreter *intpt)
         vm_inputs_dbglog(& vmi);
 #       endif
         // Use the value right here and compute
-        pcalc_printf_variables_combination( symtable, vmi );
+        intpt_print_inputs(intpt);
         {
             pcalc_encoded_compute_with_value(ast, symtable, vmi );
             printf("\n");
@@ -454,21 +460,49 @@ parse_end: {
 
 
 bool
-preprocess_ast_command ( struct interpreter *intpt)
+intpt_begin_frame(struct interpreter *intpt )
 {
-    bool alloc_result = true;
-    struct ast *ast = & intpt->ast;
+    bool result = true;
+    bool symtable_result = false;
     struct symtable *symtable =  & intpt->symtable;
     symtable_clear(symtable);
     if (symtable_is_valid(symtable)) {
-        alloc_result = symtable_clear(symtable);
+        symtable_result = symtable_clear(symtable);
     } else {
-        alloc_result = symtable_new(symtable);
+        symtable_result = symtable_new(symtable);
     }
+    result &= symtable_result;
+    
+    intpt->vms.num_bits = 0;
+    intpt->ast.num_tokens = 0;
+    intpt->vmi.num_inputs = 0;
 
-    if ( alloc_result == false ) { goto FAILURE; }
+    
 
-    build_symtable_from_queue(ast, symtable);
+    struct ast *ast = & intpt->ast;
+    assert(intpt->vms.num_bits == 0);
+    assert(intpt->ast.num_tokens == 0);
+    assert(symtable_num_ids(& (intpt->symtable)) == 0);
+    assert(intpt->vmi.num_inputs == 0);
+    return result;
+}
+
+void
+intpt_end_frame( struct interpreter *intpt)
+{
+    (void) intpt;
+}
+
+
+
+bool
+preprocess_ast_command ( struct interpreter *intpt )
+{
+    bool alloc_result = true;
+    struct ast *ast = & intpt->ast;
+    struct symtable *symtable = & intpt->symtable;
+    
+    build_symtable_from_queue(intpt);
     symtable_preprocess_ids(symtable);
     
     struct vm_inputs *vmi = & intpt -> vmi;
@@ -479,9 +513,10 @@ preprocess_ast_command ( struct interpreter *intpt)
 /* SUCCESS: */ {
         return 1;
     }
-    
+
+    goto FAILURE; // @NOTE: To remove warning of unused label
 FAILURE: {
-        fprintf(stderr, "Interpreter: Failed memory allocation");
+        fprintf(stderr, "Interpreter: Failed memory allocation\n");
         return 0;
     }
 }
@@ -519,12 +554,19 @@ eval_commandline ( struct interpreter *intpt,
                    size_t commandline_size)
 {
     struct ast *ast = & intpt->ast;
-    build_ast_from_user_input( ast, commandline, commandline_size );
+    
+    if ( intpt_begin_frame(intpt)) {
+        build_ast_from_user_input( ast, commandline, commandline_size );
 # if 0
-    ast_dbglog(ast);
+        ast_dbglog(ast);
 #endif
-    if ( eval_ast( intpt ) ) {
-        
+        if ( eval_ast( intpt ) ) {
+            
+        }
+
+        intpt_end_frame(intpt);
+    } else {
+        fprintf(stderr, "Failed to setup Interpreter context for evaluating the command\n");
     }
 }
 

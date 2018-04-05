@@ -288,9 +288,13 @@ symtable_clear( struct symtable *symtable )
 size_t
 symtable_num_ids ( struct symtable *symtable )
 {
-    int result = stb_sdict_count(symtable->dict);
-    assert(result >= 0);
-    return (size_t) result;
+    if (symtable_is_valid(symtable)) {
+        int result = stb_sdict_count(symtable->dict);
+        assert(result >= 0);
+        return (size_t) result;
+    } else {
+        return 0;
+    }
 }
 
 void
