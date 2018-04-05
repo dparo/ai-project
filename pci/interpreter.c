@@ -53,12 +53,16 @@ eval_operator( Token *t,
     case TT_PUNCT_LOGICAL_OR:
     case TT_PUNCT_BITWISE_OR: { result = v[0] || v[1]; } break;
 
+    case TT_PUNCT_BITWISE_XOR: { result = v[0] ^ v[1]; } break;
+        
     case TT_PUNCT_LOGICAL_NOT:
     case TT_PUNCT_BITWISE_NOT: { result = !v[0]; } break;
 
     case TT_PUNCT_EQUAL:
     case TT_PUNCT_EQUAL_EQUAL: { result = (v[0] == v[1]); } break;
 
+    case TT_PUNCT_NOT_EQUAL : { result = ( v[0] != v[1]); } break;
+        
     case TT_PUNCT_COMMA: { result = (v[0]); } break; /* // or (v[0], v[1]) c-alike comma */
     case TT_PUNCT_SEMICOLON: { result = 0; } break; /* // or (v[0], v[1]) c-alike comma */
         

@@ -1,6 +1,6 @@
 # Building
 ## Downloading deps
-### Ubuntu
+### Ubuntu / Debian / Linux Mint
 `sudo apt install gcc make libreadline-dev`
 ### Fedora
 `sudo dnf install gcc make readline-devel`
