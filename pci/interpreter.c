@@ -310,6 +310,7 @@ bruteforce_solve(struct interpreter *intpt)
     struct ast *ast = & intpt->ast;
     struct symtable *symtable =  & intpt->symtable;
     struct vm_inputs *vmi = & intpt->vmi;
+    struct vm_stack *vms = & intpt->vms;
     
     intpt_print_header(intpt);
         
@@ -317,6 +318,7 @@ bruteforce_solve(struct interpreter *intpt)
 
 
     for (size_t i = 0; i < max_it; i ++ ) {
+        vm_stack_clear(vms);
 #       if 0
         vm_inputs_dbglog(& vmi);
 #       endif
@@ -324,6 +326,7 @@ bruteforce_solve(struct interpreter *intpt)
         intpt_print_inputs(intpt);
         {
             eval_expr(intpt);
+            
             printf("\n");
         }
 

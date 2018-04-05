@@ -285,6 +285,13 @@ symtable_clear( struct symtable *symtable )
 }
 
 
+void
+vm_stack_clear( struct vm_stack *vms )
+{
+    assert(vms);
+    vms->num_bits = 0;
+}
+
 size_t
 symtable_num_ids ( struct symtable *symtable )
 {
