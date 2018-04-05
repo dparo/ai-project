@@ -7,6 +7,8 @@
 struct interpreter {
     struct vm_stack vms;
     struct ast ast;
+    struct symtable symtable;
+    struct vm_inputs vmi;
 };
 
 
@@ -291,37 +293,29 @@ symtable_preprocess_ids ( struct symtable *symtable )
 
 
 void
-bruteforce_solve(struct ast *ast)
+bruteforce_solve(struct interpreter *intpt)
 {
-    struct symtable symtable = symtable_new();
-
-
-    build_symtable_from_queue(ast, &symtable);
-    symtable_preprocess_ids(& symtable);
+    struct ast *ast = & intpt->ast;
+    struct symtable *symtable =  & intpt->symtable;
+    struct vm_inputs *vmi = & intpt -> vmi;
     
-    struct vm_inputs vmi;
-    vm_inputs_init_from_symtable(&  vmi, & symtable);
-
-    if ( vmi.inputs && vmi.num_inputs ) {
-
-        pcalc_printf_computation_header(& symtable, ast);
+    pcalc_printf_computation_header(symtable, ast);
         
-        size_t max_it = 1 << symtable_num_ids(& symtable);
+    size_t max_it = 1 << symtable_num_ids(symtable);
 
 
-        for (size_t i = 0; i < max_it; i ++ ) {
+    for (size_t i = 0; i < max_it; i ++ ) {
 #       if 0
-            vm_inputs_dbglog(& vmi);
+        vm_inputs_dbglog(& vmi);
 #       endif
-            // Use the value right here and compute
-            pcalc_printf_variables_combination( &symtable, & vmi );
-            {
-                pcalc_encoded_compute_with_value(ast, & symtable, & vmi );
-                printf("\n");
-            }
-
-            vm_inputs_generate_next_combination(& vmi );
+        // Use the value right here and compute
+        pcalc_printf_variables_combination( symtable, vmi );
+        {
+            pcalc_encoded_compute_with_value(ast, symtable, vmi );
+            printf("\n");
         }
+
+        vm_inputs_generate_next_combination(vmi );
     }
 }
 
@@ -356,6 +350,7 @@ void
 build_ast_from_user_input( struct ast *ast,
                            char *commandline, size_t commandline_size )
 {
+    ast_clear(ast);
     assert(    commandline[commandline_size - 1] == '\0'
                && commandline[commandline_size - 2] == '\0'
                && commandline[commandline_size - 3] == '\0'
@@ -467,26 +462,52 @@ parse_end: {
 
 
 void
-eval_ast(struct ast *ast )
+preprocess_ast_command ( struct interpreter *intpt)
 {
-    bruteforce_solve(ast);
+    struct ast *ast = & intpt->ast;
+    struct symtable *symtable =  & intpt->symtable;
+    symtable_clear(symtable);
+    if (symtable_is_valid(symtable)) {
+        symtable_clear(symtable);
+    } else {
+        symtable_new(symtable);
+    }
+    
+    build_symtable_from_queue(ast, symtable);
+    symtable_preprocess_ids(symtable);
+    
+    struct vm_inputs *vmi = & intpt -> vmi;
+    vm_inputs_init_from_symtable( vmi, symtable);
 }
 
 
 
 
 void
-eval_commandline ( struct interpreter *interpreter,
+eval_ast(struct interpreter *intpt )
+{
+    struct ast *ast = & intpt->ast;
+    struct vm_inputs *vmi = & intpt->vmi;
+    preprocess_ast_command (intpt);
+    if ( vmi->inputs && vmi->num_inputs ) {
+        bruteforce_solve(intpt);
+    }
+}
+
+
+
+
+void
+eval_commandline ( struct interpreter *intpt,
                    char *commandline,
                    size_t commandline_size)
 {
-    struct ast *ast = & interpreter->ast;
-    ast_clear(ast);
+    struct ast *ast = & intpt->ast;
     build_ast_from_user_input( ast, commandline, commandline_size );
 # if 0
     ast_dbglog(ast);
 #endif
-    eval_ast( ast);
+    eval_ast( intpt );
 }
 
 

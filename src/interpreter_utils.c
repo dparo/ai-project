@@ -234,13 +234,41 @@ ast_push(struct ast *ast,
 
 
 
-struct symtable
-symtable_new(void)
+static inline bool
+symtable_is_valid(struct symtable *symtable)
 {
-    struct symtable result = { 0 };
-    result.dict = stb_sdict_new(1);
-    assert(result.dict);
-    return result;
+    assert(symtable);
+    return (symtable->dict != NULL);
+}
+
+void
+symtable_new(struct symtable *symtable)
+{
+    symtable->dict = stb_sdict_new(1);
+    assert(symtable_is_valid(symtable));
+}
+
+void symtable_delete(struct symtable *symtable)
+{
+    assert(symtable);
+    if ( symtable_is_valid(symtable) ) {
+        stb_sdict_delete(symtable->dict);
+        symtable->dict = NULL;
+    }
+}
+
+
+// Since the symtables are allocated using arena
+// to free all of them we newe to delete
+// the entire dictionary.
+void
+symtable_clear( struct symtable *symtable )
+{
+    assert(symtable);
+    if ( symtable_is_valid(symtable) ) {
+        symtable_delete(symtable);
+        symtable_new(symtable);
+    }
 }
 
 
@@ -283,13 +311,6 @@ symtable_get_identifier_value( struct symtable *symtable,
     size_t result = (size_t) stb_sdict_get(symtable->dict, t->text);
     t->text[t->text_len] = temp;
     return result;
-}
-
-void
-symtable_delete( struct symtable *symtable )
-{
-    stb_sdict_delete(symtable->dict);
-    symtable->dict = NULL;
 }
 
 

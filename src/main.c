@@ -99,7 +99,7 @@ main( int argc, char **argv)
     size_t commandline_size;
 
 
-    struct interpreter interpreter = {0};
+    struct interpreter intpt = {0};
     
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_size = 0; }
@@ -107,7 +107,7 @@ main( int argc, char **argv)
         user_interact(& commandline, & commandline_size);
         if ( commandline ) {
             printf("\n\n\n");
-            eval_commandline( & interpreter, commandline, commandline_size);
+            eval_commandline( & intpt, commandline, commandline_size);
         }
     }
 }
