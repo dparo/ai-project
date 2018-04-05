@@ -1,21 +1,27 @@
 
 
+BUILD_DEFS = -DMAIN_C_IMPL -D_GNU_SOURCE
+WARNINGS = -Wall -Wextra -Wno-unused-function -Wno-unused-parameter -Wno-unused-variable
+INCLUDES = -I./ -I./ext_deps/stb -I./__generated__
+LIBRARIES = -lm -lreadline -ldl -pthread
+OUTPUT = ./bin/pci
 
 debug:
-	gcc -D_GNU_SOURCE -D__DEBUG -std=gnu11 -O0 -g3 -Wall -Wextra -Wno-unused-function -Wno-unused-parameter -Wno-unused-variable -DMAIN_C_IMPL -I./ -I./ext_deps/stb -I./__generated__ -I../common main.c -lm -lreadline -ldl -pthread -o ./bin/pci
+	gcc $(BUILD_DEFS) -D__DEBUG -std=gnu11 -O0 -g3 $(WARNINGS) $(INCLUDES) main.c $(LIBRARIES) -o $(OUTPUT)
 
 
 release:
-	gcc -D_GNU_SOURCE -std=gnu11 -O3 -Wall -Wextra -Wno-unused-function -Wno-unused-parameter -Wno-unused-variable -DMAIN_C_IMPL -I./ -I./ext_deps/stb -I./__generated__ -I../common main.c -lm -lreadline -ldl -pthread -o ./bin/pci
+	gcc $(BUILD_DEFS) -std=gnu11 -O3 $(WARNINGS) $(INCLUDES) main.c $(LIBRARIES) -o $(OUTPUT)
 
+default: debug
 
-all: default
+all: debug
 
 run: all
-	./bin/pci
+	$(OUTPUT)
 
 run_terminal: all
-	urxvt  -e "./bin/pci"
+	urxvt  -e "$(OUTPUT)"
 
 
 generate_emacs_tagfile:
