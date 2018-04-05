@@ -180,66 +180,41 @@ ast_print_token(Token *token)
 
 
 
-// returns the index of the last read elem
-void
-ast_print_expr___old ( struct ast *ast,
-                     size_t index )
+// Fixes order of the operands on the queue, A & B, in the queue
+// becomes { [0] = A, [2] = B, [3] = &} Which means that to know
+// the position of the first operand i need to process recursively
+// the second operand. This do { } while fixes this problem but
+// introduces more iteration loops. To make it more efficient
+// Since we probably will always have operators up to 3 operands
+// while looping for the first operand we can store the postion
+// of the first 2 to cut down on the number of iterations
+size_t
+ast_get_operand_index( struct ast *ast,
+                       size_t operator_index,
+                       size_t operand_num)
 {
+    size_t fixed_index = operator_index;
+    assert(operand_num > 0);
+    assert(operator_index < ast->num_tokens);
     
-    Token *t = &(ast->tokens[index]);
-    if ( t->type == TT_IDENTIFIER || t->type == TT_CONSTANT ) {
-        ast_print_token(t);
-    } else if (token_is_operator(t)) {
-        assert(token_is_operator(t));
-        
-        uint numofoperands = operator_numofoperands(t);
-        assert_msg(index >= numofoperands, "Inconsistent formula");
-
-        printf(index == (ast->num_tokens - 1) ? "result: (" : "(");
-        ast_print_token(t);
-
-        for( size_t it = 1; it <= numofoperands; it++ ) {
-            printf(" ");
-
-            // Fixes order of the operands on the queue, A & B, in the queue
-            // becomes { [0] = A, [2] = B, [3] = &} Which means that to know
-            // the position of the first operand i need to process recursively
-            // the second operand. This do { } while fixes this problem but
-            // introduces more iteration loops. To make it more efficient
-            // Since we probably will always have operators up to 3 operands
-            // while looping for the first operand we can store the postion
-            // of the first 2 to cut down on the number of iterations
-
-
-            printf("\n\n######################################################\n"
-                   "#######################################\n\n"
-                   "Found the motherfucking bug here\n"
-                   "We need to think better about this loop wich is "
-                   "fucking retarded\n\n");
-            size_t newindex = index; {
-                if ( index ) { newindex = index - 1; }
-                uint operand_num = numofoperands;
-                do {
-                    /* printf("| newindex: %zu | operand_num: %zu\n", */
-                    /*        newindex, operand_num); */
-                    Token *t = &(ast->tokens[newindex]);
-                    if (token_is_operator(t)) {
-                        operand_num += operator_numofoperands(t);
-                    } else {
-                        operand_num--;
-                    }
-                    if ( operand_num == (it) ) {
-                        break;
-                    }
-
-                } while( newindex != 0 ? newindex-- : newindex);
-            };
-            ast_print_expr___old(ast, newindex);
+    assert( token_is_operator(& ast->tokens[operator_index]));
+    uint it = 1;
+    do {
+        assert(it > 0);
+        Token *t = &(ast->tokens[fixed_index]);                
+        if ( operand_num == (it) &&
+             fixed_index != operator_index) {
+            break;
         }
-        printf(")");
-    } else {
-        invalid_code_path("");
-    }
+
+        if (token_is_operator(t)) {
+            it += operator_numofoperands(t);
+        }
+        it--;
+    } while( fixed_index != 0 ? fixed_index-- : fixed_index);
+
+    assert(fixed_index != operator_index);
+    return fixed_index;
 }
 
 void
@@ -263,40 +238,12 @@ ast_print_expr ( struct ast *ast,
         ast_print_token(t);
 
 
-        for( size_t it = 1; it <= numofoperands; it++ ) {
+        for( size_t operand_num = 1;
+             operand_num <= numofoperands;
+             operand_num++ ) {
             printf(" ");
-            uint operand_num = 1;
-            // Fixes order of the operands on the queue, A & B, in the queue
-            // becomes { [0] = A, [2] = B, [3] = &} Which means that to know
-            // the position of the first operand i need to process recursively
-            // the second operand. This do { } while fixes this problem but
-            // introduces more iteration loops. To make it more efficient
-            // Since we probably will always have operators up to 3 operands
-            // while looping for the first operand we can store the postion
-            // of the first 2 to cut down on the number of iterations
-            size_t newindex = index;
-            do {
-                assert(operand_num > 0);
-                assert(newindex <= index);
-                /* printf("| newindex: %zu | operand_num: %zu\n", */
-                /*        newindex, operand_num); */
-                Token *t = &(ast->tokens[newindex]);
-                
-                if ( index == (ast->num_tokens - 1)) {
-                    int breakme = 0;
-                    char lol = 0;
-                }
-                
-                if ( operand_num == (it) && newindex != index) {
-                    break;
-                }
-
-                if (token_is_operator(t)) {
-                    operand_num += operator_numofoperands(t);
-                }
-                operand_num--;
-            } while( newindex != 0 ? newindex-- : newindex);
-            ast_print_expr(ast, newindex);
+            size_t fixed_index = ast_get_operand_index(ast, index, operand_num);
+            ast_print_expr(ast, fixed_index);
         }
         printf(")");
     } else {
