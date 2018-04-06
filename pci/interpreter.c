@@ -126,6 +126,7 @@ eval_operator( Token *t,
         vm_stack_push(vms, result);
     } break;
 
+    case TT_PUNCT_SEMICOLON:
     case TT_PUNCT_QUESTION_MARK: {
         // There's nothing todo here (it pops and push the same value again)
         // The question mark has the sole purpose of a marker to confine to
@@ -138,11 +139,7 @@ eval_operator( Token *t,
         vm_stack_push(vms, result);
     } break;
         
-    case TT_PUNCT_SEMICOLON: {
-        result = 0;
-        vm_stack_push(vms, result);
-    } break;
-        
+
     default: {
         assert_msg(0, "Invalid code path we should assert before when we require "
                    "the number of operands in operator_numofoperands");
@@ -236,7 +233,9 @@ eval_entire_expr( struct interpreter *intpt )
                 print_tab(intpt);
             }            
         }
+#if 0  // Not really necessary: Example    `a; (B | C)` cannot be avaluated with this assert restriction
         assert_msg(vms->num_bits == 1, "Stack should remain with 1 value only, malformed formula");
+#endif
     }
 }
 
@@ -522,11 +521,9 @@ ast_build_from_command( struct interpreter *intpt,
                 bool ispostfix = is_postfix_operator( &token);
                 Token *peek = NULL;
                 while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
-                    bool open_paren = peek->type == TT_PUNCT_OPEN_PAREN;
-                    bool greater_prec = op_greater_precedence(peek, & token);
-                    bool eq_prec = op_eq_precedence(peek, &token);
-                    bool left_ass = op_is_left_associative(peek);
-                    if ( !open_paren && (greater_prec || (eq_prec && left_ass))) {
+                    if ( !(peek->type == TT_PUNCT_OPEN_PAREN)
+                         && ( (op_greater_precedence(peek, & token))
+                              || ((op_eq_precedence(peek, &token)) && (op_is_left_associative(peek))))) {
                         ast_push(ast, peek);
                         token_stack_pop( & stack);
                     } else { break; }
