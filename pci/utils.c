@@ -88,7 +88,8 @@ typedef double f64;
 
 
 #ifdef __GNUC__
-#   define PRINTF_STYLE __attribute__((format (printf, 1, 2))
+#   define PRINTF_STYLE(STRING_INDEX, FIRST_TO_CHECK)                   \
+    __attribute__((format (printf, (STRING_INDEX), (FIRST_TO_CHECK))))
 #   define NON_NULL_PARAM(NUM) __attribute__((nonnull (NUM)));
 #elif defined (_MSC_VER) && (_MSC_VER >= 1500)
 #   errro "Implement me for windows"

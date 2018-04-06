@@ -5,6 +5,9 @@
 #include "interpreter-utils.c"
 
 struct interpreter {
+    FILE *stream_info;
+    FILE *stream_out;
+    
     struct vm_stack vms;
     struct ast ast;
     struct symtable symtable;
@@ -19,6 +22,42 @@ struct interpreter {
 //#######################################################
 
 
+
+
+
+PRINTF_STYLE(2, 3)
+static inline int
+intpt_out_printf ( struct interpreter *intpt,
+                   char *format,
+                   ...) 
+
+{
+    assert(intpt);
+    FILE *f = intpt->stream_out ? intpt->stream_out : stdout;
+    va_list ap;
+    
+    va_start(ap, format);
+    int result = vfprintf(f, format, ap);
+    va_end(ap);
+    return result;
+}
+
+PRINTF_STYLE(2, 3)
+static inline int
+intpt_info_printf ( struct interpreter *intpt,
+                    char *format,
+                    ...) 
+
+{
+    assert(intpt);
+    FILE *f = intpt->stream_info ? intpt->stream_info : stdout;
+    va_list ap;
+    
+    va_start(ap, format);
+    int result = vfprintf(f, format, ap);
+    va_end(ap);
+    return result;
+}
 
 
 void
@@ -362,6 +401,7 @@ ast_dbglog(struct ast *ast)
     Token *t;
     size_t it;
 
+    printf("AST DEBUG LOG: ################################\n");
     ast_for(it, *ast, t) {
         log_token(t);
     }
@@ -373,6 +413,7 @@ ast_dbglog(struct ast *ast)
             print_tab();
         }
     }
+    printf("########################################\n");
     printf("\n\n");
 }
 
@@ -591,13 +632,13 @@ eval_ast(struct interpreter *intpt )
 void
 eval_commandline ( struct interpreter *intpt,
                    char *commandline,
-                   size_t commandline_size)
+                   size_t commandline_size )
 {
     struct ast *ast = & intpt->ast;
     
     if ( intpt_begin_frame(intpt)) {
         ast_build_from_command( ast, commandline, commandline_size );
-# if 1
+# if 0
         ast_dbglog(ast);
 #endif
         if ( eval_ast( intpt ) ) {
