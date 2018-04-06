@@ -1,33 +1,49 @@
 sempre vera: ( P & ( P -> Q ) -> Q)
 
-sempre falsa: ((P -> Q) & P) & (! Q)
+sempre falsa: ((P -> Q) & P) & (~ Q)
 
 
 
 UGUAGLIANZE SPECIALI
 F == F                                   // identita'
-!(!F) == F                               // doppia negazione
+~(~F) == F                               // doppia negazione
 (G & G) == G                             // idempotenza
 (G | G) == G                             // idempotenza
 (G & 1) ==G                              // legge dei neutri
 (G & 0 ) == 0                            // legge dei neutri
 (G | 1 ) == 1                            // legge dei neutri
 (G | 0 ) == G                            // legge dei neutri
-(G & !G) == 0                            // esclusione
-(G | !G) == 1                            // complementarieta'
+(G & ~G) == 0                            // esclusione
+(G | ~G) == 1                            // complementarieta'
 ((F & G) & H) == ((F & (G & H))          // associativita'
 ((F | G) | H) == ((F | (G | H)           // associativita'
 (F & G) == (G & F)                       // commutativita'
 (F | G) == (G | F)                       // commutativita'
 (F & (G | H)) == ((F & G) | (F & H))     // distributivita'
 (F | (G & H)) == ((F | G) & (F | H))     // distributivita'
-!(F | G) == (!F & !G)                    // legge di De Morgan
-!(F & G) == (!F | !G)                    // legge di De Morgan
+~(F | G) == (~F & ~G)                    // legge di De Morgan
+~(F & G) == (~F | ~G)                    // legge di De Morgan
 (F | (F & G)) == F                       // assorbimento
 (F & (F | G)) == F                       // assorbimento
-(F | (!F & G)) == (F | G)                // assorbimento
-(F & (!F | G)) == (F & G)                // assorbimento
-(F -> G) == (!F | G)                     // eliminazione dell’implicazione
+(F | (~F & G)) == (F | G)                // assorbimento
+(F & (~F | G)) == (F & G)                // assorbimento
+(F -> G) == (~F | G)                     // eliminazione dell’implicazione
 (F -> (G -> H)) == (G -> (F -> H))       // doppia implicazione
 (F -> (G -> H)) == ((F & G) -> H)        // doppia implicazione
 (F <-> G) == ((F -> G) & (G -> F))       // doppia implicazione
+
+
+// ASSIOMI: 
+    /* A1 */  A -> (B -> A)
+    /* A2 */  (A -> (B -> C)) -> ((A -> B) -> (A -> C))
+    /* A3 */  (~B -> ~A) -> ((~B -> A) -> B)
+
+
+// Esempio. Provare: P -> P
+    /*1]*/  ~P -> ((P -> P) -> P)                                  // per  assioma  A1  (A=P e B=(P -> P))
+    /*2]*/  (P -> ((P -> P) -> P) -> ((P -> (P -> P)) -> (P -> P)  // per assioma A2 (A=P e B=(P -> P) e C=P)
+    /*3]*/  (P -> (P -> P)) -> (P -> P)                            // per MP da [1] e [2]
+    /*4]*/  P -> (P -> P)                                          // per A1 (A=B=P)
+    /*5]*/  P -> P                                                 // per MP da [4] e [3]
+
+
