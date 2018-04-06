@@ -55,8 +55,11 @@ enum Token_Type {
      TT_PUNCT_SEMICOLON, // ;
 
 
+     TT_PUNCT_QUESTION_MARK,
+     TT_PUNCT_COLON,     // :
 
-     
+
+
      TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS, // marker
      // enums that follows this marker are parsed but not implemented
      // semantically
@@ -93,9 +96,6 @@ enum Token_Type {
 
      TT_PUNCT_DOT,
 
-     TT_PUNCT_COLON,     // :
-
-
      TT_PUNCT_ENUM_OPERATORS_END_MARKER,
 
      TT_PUNCT_OPEN_PAREN,
@@ -105,8 +105,6 @@ enum Token_Type {
      TT_PUNCT_OPEN_BRACE,
      TT_PUNCT_CLOSE_BRACE,
 
-
-     TT_PUNCT_QUESTION_MARK,
      TT_PUNCT_ENUM_LAST_VALUE,
 };
 typedef enum Token_Type Token_Type;

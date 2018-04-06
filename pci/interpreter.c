@@ -83,36 +83,75 @@ eval_operator( Token *t,
     // NOTE v[0] Contains the last operand v[numberofoperands-1] contains the first operand
 
     switch (t->type) {
-    case TT_PUNCT_BOTHDIR_ARROW: { result = (v[0] && v[1]) || !((v[0] || v[1])); } break;
-    case TT_PUNCT_ARROW: { result = (v[1] == true && v[0] == false ) ? false : true; } break;
+    case TT_PUNCT_BOTHDIR_ARROW: {
+        result = (v[0] && v[1]) || !((v[0] || v[1]));
+        vm_stack_push(vms, result);
+    } break;
+    case TT_PUNCT_ARROW: {
+        result = (v[1] == true && v[0] == false ) ? false : true;
+        vm_stack_push(vms, result);
+    } break;
 
     case TT_PUNCT_LOGICAL_AND:
-    case TT_PUNCT_BITWISE_AND: { result = v[0] && v[1]; } break;
+    case TT_PUNCT_BITWISE_AND: {
+        result = v[0] && v[1];
+        vm_stack_push(vms, result);
+    } break;
 
     case TT_PUNCT_LOGICAL_OR:
-    case TT_PUNCT_BITWISE_OR: { result = v[0] || v[1]; } break;
+    case TT_PUNCT_BITWISE_OR: {
+        result = v[0] || v[1];
+        vm_stack_push(vms, result);
+    } break;
 
-    case TT_PUNCT_BITWISE_XOR: { result = v[0] ^ v[1]; } break;
+    case TT_PUNCT_BITWISE_XOR: {
+        result = v[0] ^ v[1];
+        vm_stack_push(vms, result);
+    } break;
         
     case TT_PUNCT_LOGICAL_NOT:
-    case TT_PUNCT_BITWISE_NOT: { result = !v[0]; } break;
+    case TT_PUNCT_BITWISE_NOT: {
+        result = !v[0];
+        vm_stack_push(vms, result);
+    } break;
 
     case TT_PUNCT_EQUAL:
-    case TT_PUNCT_EQUAL_EQUAL: { result = (v[0] == v[1]); } break;
+    case TT_PUNCT_EQUAL_EQUAL: {
+        result = (v[0] == v[1]);
+        vm_stack_push(vms, result);
+    } break;
 
-    case TT_PUNCT_NOT_EQUAL : { result = ( v[0] != v[1]); } break;
+    case TT_PUNCT_COLON: {
+        vm_stack_push(vms, v[0]);
+        vm_stack_push(vms, v[1]);
+    } break;
+
+    case TT_PUNCT_QUESTION_MARK: {
+        //result = (v[]
+    } break;
+
+    case TT_PUNCT_NOT_EQUAL : {
+        result = ( v[0] != v[1]);
+        vm_stack_push(vms, result);
+    } break;
         
-    case TT_PUNCT_COMMA: { result = (v[0]); } break; /* // or (v[1], v[0]) c-alike comma */
-    case TT_PUNCT_SEMICOLON: { result = 0; } break;
+    case TT_PUNCT_COMMA: {
+        result = (v[0]);  /* // or (v[1], v[0]) c-alike comma */
+        vm_stack_push(vms, result);
+    } break;
+    case TT_PUNCT_SEMICOLON: {
+        result = 0;
+        vm_stack_push(vms, result);
+    } break;
         
     default: {
         assert_msg(0, "Invalid code path we should assert before when we require "
                    "the number of operands in operator_numofoperands");
     } break;
     }
-    
-    vm_stack_push(vms, result);
+
     return;
+
 not_enough_operands: {
         assert_msg(0, "Operator needs more operand, not found enough inside the stack");
         return;
@@ -434,10 +473,11 @@ ast_build_from_command( struct interpreter *intpt,
 {
     struct ast *ast = & intpt->ast;
     ast_clear(ast);
-    assert(    commandline[commandline_size - 1] == '\0'
-               && commandline[commandline_size - 2] == '\0'
-               && commandline[commandline_size - 3] == '\0'
-               && commandline[commandline_size - 4] == '\0' );
+    assert(    (commandline[commandline_size] == 0)
+               && (commandline[commandline_size - 1] == 0)
+               && (commandline[commandline_size - 2] == 0)
+               && (commandline[commandline_size - 3] == 0)
+               && (commandline[commandline_size - 4] == 0 ));
 
     
     Token token = Empty_Token;
@@ -648,11 +688,11 @@ eval_commandline ( struct interpreter *intpt,
         ast_build_from_command( intpt, commandline, commandline_size );
 # if 1
         ast_dbglog(intpt);
-#endif
+# else
         if ( eval_ast( intpt ) ) {
             
         }
-
+#endif
         intpt_end_frame(intpt);
     } else {
         intpt_info_printf(intpt, "Failed to setup Interpreter context for evaluating the command\n");

@@ -107,9 +107,9 @@ main( int argc, char **argv)
 
     struct interpreter intpt = {0};
 
-#if 0
-    EVAL_COMMANDLINE_INPLACE ( & intpt, "!(F & G) == (!F | !G) // legge di De Morgan"
-                               "\0\0\0\0\0\0" );
+#if 1
+    EVAL_COMMANDLINE_INPLACE ( & intpt, "a == b ? 1 : v1 ; (v2)"
+                               "\0\0\0\0\0\0\0" );
 #else
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_size = 0; }

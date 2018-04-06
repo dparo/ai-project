@@ -26,12 +26,19 @@ static const struct operator_infos {
     enum operator_associativity associativity;
     enum operator_prefixing prefixing;
 } OPS[] = {
+    [TT_PUNCT_SEMICOLON] = { 400, 1, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_COMMA] = { 300, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
 
-    [TT_PUNCT_COMMA] = { 100, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
 
-    [TT_PUNCT_EQUAL]         = { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_EQUAL_EQUAL]   = { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_NOT_EQUAL ]    = { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_QUESTION_MARK] = { 200, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_COLON] =         { 100, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
+
+
+
+    
+    [TT_PUNCT_EQUAL]         = { 6, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_EQUAL_EQUAL]   = { 6, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_NOT_EQUAL ]    = { 6, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
 
     [TT_PUNCT_BOTHDIR_ARROW] = { 5, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_ARROW]         = { 5, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
@@ -43,7 +50,7 @@ static const struct operator_infos {
     [TT_PUNCT_LOGICAL_NOT]   = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
     [TT_PUNCT_BITWISE_NOT]   = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
          
-    [TT_PUNCT_SEMICOLON] = { 200, 2, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
+
     
     // Not valid set of types operators.
     [0 ... TT_PUNCT_ENUM_OPERATORS_START_MARKER] = { -1, 0, LEFT_ASSOCIATIVE_OP, INFIX_OP },
