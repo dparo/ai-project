@@ -3,6 +3,7 @@
   - https://www.jair.org/media/298/live-298-1558-jair.pdf
   - https://en.wikipedia.org/wiki/Truth_table
   - http://homepage.sns.it/lolli/dispense00/corso1.pdf
+  - https://en.wikipedia.org/wiki/Dynamic_programming
 
 ** Implementazione di un risolutore
    - https://en.wikipedia.org/wiki/Boolean_satisfiability_problem

@@ -29,7 +29,7 @@ PRINTF_STYLE(2, 3)
 static inline int
 intpt_out_printf ( struct interpreter *intpt,
                    char *format,
-                   ...) 
+                   ... )
 
 {
     assert(intpt);
@@ -46,7 +46,7 @@ PRINTF_STYLE(2, 3)
 static inline int
 intpt_info_printf ( struct interpreter *intpt,
                     char *format,
-                    ...) 
+                    ... )
 
 {
     assert(intpt);
