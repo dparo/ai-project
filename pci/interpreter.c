@@ -145,20 +145,24 @@ token_constant_to_bool( Token *t,
 
 
 static inline void
-print_tab(void)
+print_tab(struct interpreter *intpt)
 {
-    printf("\t");
+    intpt_out_printf(intpt, "\t");
 }
 
 
 void
-eval_expr( struct interpreter *intpt )
+eval_entire_expr( struct interpreter *intpt )
 {
     struct ast *ast = &intpt->ast;
     struct symtable *symtable = & intpt->symtable;
     struct vm_inputs *vmi = & intpt->vmi;
 
+# if 0 // This assert is not needed cuz eval_entire_expr may be called with constant like `0 | 1`
     assert(vmi->num_inputs > 0);
+#endif
+
+
     struct vm_stack *vms = & intpt->vms;
     
     assert(vms->num_bits == 0);
@@ -190,8 +194,8 @@ eval_expr( struct interpreter *intpt )
                 // Token is an operator: Needs to perform the operation
                 //                       and push it into the stack
                 eval_operator( t, vms ) ;
-                printf("%d", vm_stack_peek_value(vms));
-                print_tab();
+                intpt_out_printf(intpt, "%d", vm_stack_peek_value(vms));
+                print_tab(intpt);
             }            
         }
         assert_msg(vms->num_bits == 1, "Stack should remain with 1 value only, malformed formula");
@@ -214,9 +218,10 @@ symtable_build_from_ast ( struct symtable *symtable,
 
 
 static inline void
-ast_print_token(Token *token)
+ast_print_token(struct interpreter *intpt,
+                Token *token)
 {
-    printf("%.*s", token->text_len, token->text);
+    intpt_out_printf(intpt, "%.*s", token->text_len, token->text);
 }
 
 
@@ -259,34 +264,35 @@ ast_get_operand_index( struct ast *ast,
 }
 
 void
-ast_print_expr ( struct ast *ast,
+ast_print_expr ( struct interpreter *intpt,
                  size_t index )
 {
+    struct ast* ast = & intpt->ast;
     if ( index == (ast->num_tokens - 1)) {
         int breakme = 0;
     }
 
     Token *t = & ( ast->tokens[index] );
     if ( t->type == TT_IDENTIFIER || t->type == TT_CONSTANT ) {
-        ast_print_token(t);
+        ast_print_token(intpt, t);
     } else if (token_is_operator(t)) {
         assert(token_is_operator(t));
         
         uint numofoperands = operator_numofoperands(t);
         assert_msg(index >= numofoperands, "Inconsistent formula");
 
-        printf(index == (ast->num_tokens - 1) ? "result: (" : "(");
-        ast_print_token(t);
+        intpt_out_printf(intpt, index == (ast->num_tokens - 1) ? "result: (" : "(");
+        ast_print_token(intpt, t);
 
 
         for( size_t operand_num = 1;
              operand_num <= numofoperands;
              operand_num++ ) {
-            printf(" ");
+            intpt_out_printf(intpt, " ");
             size_t fixed_index = ast_get_operand_index(ast, index, operand_num);
-            ast_print_expr(ast, fixed_index);
+            ast_print_expr(intpt, fixed_index);
         }
-        printf(")");
+        intpt_out_printf(intpt, ")");
     } else {
         invalid_code_path("");
     }
@@ -303,22 +309,22 @@ intpt_print_header( struct interpreter *intpt)
     char *key;
     void *value; (void) value;
     ast_symtable_for(s_it, symtable, key, value) {
-        printf("%s", key);
-        print_tab();
+        intpt_out_printf(intpt, "%s", key);
+        print_tab(intpt);
     }
 
     Token *t;
     size_t it;
     ast_for(it, *ast, t) {
         if ( token_is_operator(t) ) {
-            ast_print_expr(ast, it);
-            print_tab();
+            ast_print_expr(intpt, it);
+            print_tab(intpt);
         }
     }
         
-    
-    printf("\n");
-    printf("\n");
+
+    intpt_out_printf(intpt, "\n");
+    intpt_out_printf(intpt, "\n");
 }
 
 
@@ -338,8 +344,8 @@ intpt_print_inputs( struct interpreter *intpt )
     ast_symtable_for(it, symtable, k, v) {
         size_t index = (size_t) v;
         bool bool_value = vm_inputs_unpack_bool(vmi, index);
-        printf("%d", bool_value);
-        print_tab();
+        intpt_out_printf(intpt, "%d", bool_value);
+        print_tab(intpt);
     }
 }
 
@@ -381,9 +387,9 @@ bruteforce_solve(struct interpreter *intpt)
         // Use the value right here and compute
         intpt_print_inputs(intpt);
         {
-            eval_expr(intpt);
+            eval_entire_expr(intpt);
 
-            printf("\n");
+            intpt_out_printf(intpt, "\n");
         }
 
         vm_inputs_increment(vmi);
@@ -396,25 +402,26 @@ bruteforce_solve(struct interpreter *intpt)
 
 
 void
-ast_dbglog(struct ast *ast)
+ast_dbglog(struct interpreter *intpt)
 {
+    struct ast *ast = & intpt->ast;
     Token *t;
     size_t it;
 
-    printf("AST DEBUG LOG: ################################\n");
+    intpt_info_printf(intpt, "AST DEBUG LOG: ################################\n");
     ast_for(it, *ast, t) {
         log_token(t);
     }
-    printf("\n\n");
+    intpt_info_printf(intpt, "\n\n");
     // Debug expression printing
     ast_for(it, *ast, t) {
         if ( token_is_operator(t) ) {
-            ast_print_expr(ast, it);
-            print_tab();
+            ast_print_expr(intpt, it);
+            print_tab(intpt);
         }
     }
-    printf("########################################\n");
-    printf("\n\n");
+    intpt_info_printf(intpt, "########################################\n");
+    intpt_info_printf(intpt, "\n\n");
 }
 
 
@@ -422,9 +429,10 @@ ast_dbglog(struct ast *ast)
 
 
 void
-ast_build_from_command( struct ast *ast,
+ast_build_from_command( struct interpreter *intpt,
                         char *commandline, size_t commandline_size )
 {
+    struct ast *ast = & intpt->ast;
     ast_clear(ast);
     assert(    commandline[commandline_size - 1] == '\0'
                && commandline[commandline_size - 2] == '\0'
@@ -500,7 +508,7 @@ ast_build_from_command( struct ast *ast,
                 if ( stack.num_tokens == 0 ) {
                     if ( peek && peek->type != TT_PUNCT_OPEN_PAREN ) {
                         // Mismatched parentheses
-                        fprintf(stderr, "Mismatched parens\n");
+                        intpt_info_printf(intpt, "Mismatched parens\n");
                         goto parse_end;
                     }
                 } else {
@@ -522,7 +530,7 @@ ast_build_from_command( struct ast *ast,
     while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))) {
         if ( peek->type == TT_PUNCT_OPEN_PAREN ||
              peek->type == TT_PUNCT_CLOSE_PAREN ) {
-            fprintf(stderr, "Mismatched parens\n");
+            intpt_info_printf( intpt, "Mismatched parens\n");
             goto parse_end;
         }
         ast_push( ast, peek);
@@ -593,7 +601,7 @@ preprocess_command ( struct interpreter *intpt )
 
     goto FAILURE; // @NOTE: To remove warning of unused label
 FAILURE: {
-        fprintf(stderr, "Interpreter: Failed memory allocation\n");
+        intpt_info_printf(intpt, "Interpreter: Failed memory allocation\n");
         return 0;
     }
 }
@@ -637,9 +645,9 @@ eval_commandline ( struct interpreter *intpt,
     struct ast *ast = & intpt->ast;
     
     if ( intpt_begin_frame(intpt)) {
-        ast_build_from_command( ast, commandline, commandline_size );
+        ast_build_from_command( intpt, commandline, commandline_size );
 # if 0
-        ast_dbglog(ast);
+        ast_dbglog(intpt);
 #endif
         if ( eval_ast( intpt ) ) {
             
@@ -647,7 +655,7 @@ eval_commandline ( struct interpreter *intpt,
 
         intpt_end_frame(intpt);
     } else {
-        fprintf(stderr, "Failed to setup Interpreter context for evaluating the command\n");
+        intpt_info_printf(intpt, "Failed to setup Interpreter context for evaluating the command\n");
     }
 }
 
