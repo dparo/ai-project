@@ -26,12 +26,14 @@ static const struct operator_infos {
     enum operator_associativity associativity;
     enum operator_prefixing prefixing;
 } OPS[] = {
-    [TT_PUNCT_SEMICOLON] = { 400, 1, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    // C Standard: Confermed LEFT ASSOCIATIVITY
+    [TT_PUNCT_SEMICOLON] = { 400, 1, LEFT_ASSOCIATIVE_OP, POSTFIX_OP },
     [TT_PUNCT_COMMA] = { 300, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    
+    // C Standard: Confermed RIGHT ASSOCIATIVITY
+    [TT_PUNCT_COLON] =         { 200, 3, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_QUESTION_MARK] = { 100, 1, RIGHT_ASSOCIATIVE_OP, POSTFIX_OP },
 
-
-    [TT_PUNCT_QUESTION_MARK] = { 200, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_COLON] =         { 100, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
 
 
 
@@ -57,35 +59,35 @@ static const struct operator_infos {
     [TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS ... TT_PUNCT_ENUM_LAST_VALUE ] = { -1, 0, LEFT_ASSOCIATIVE_OP, INFIX_OP },
 };
 
-int
+static inline int
 operator_precedence(Token *t)
 {
     assert(token_is_operator(t));
     return OPS[t->type].precedence;
 }
 
-bool
+static inline bool
 op_is_left_associative(Token *t)
 {
     assert(token_is_operator(t));
     return (OPS[t->type].associativity == LEFT_ASSOCIATIVE_OP);
 }
 
-bool
+static inline bool
 is_prefix_operator(Token *t)
 {
     assert(token_is_operator(t));
     return (OPS[t->type].prefixing == PREFIX_OP);
 }
 
-bool
+static inline bool
 is_postfix_operator(Token *t)
 {
     assert(token_is_operator(t));
     return (OPS[t->type].prefixing == POSTFIX_OP);
 }
 
-bool
+static inline bool
 is_infix_operator(Token *t)
 {
     assert(token_is_operator(t));
@@ -93,7 +95,7 @@ is_infix_operator(Token *t)
 }
 
 
-bool
+static inline bool
 op_greater_precedence(Token *sample,
                       Token *tested )
 {
@@ -104,7 +106,7 @@ op_greater_precedence(Token *sample,
     return p1 < p2;
 }
 
-bool
+static inline bool
 op_eq_precedence(Token *sample,
                  Token *tested )
 {
@@ -116,7 +118,7 @@ op_eq_precedence(Token *sample,
 }
 
 
-uint
+static inline uint
 operator_numofoperands(Token *t)
 {
     assert(token_is_operator(t));

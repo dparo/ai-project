@@ -88,9 +88,9 @@ user_interact(char **commandline, size_t *commandline_size)
 }
 
 
-#define EVAL_COMMANDLINE_INPLACE(intpt, command)                   \
-    printf("\n\nformula: %s\n\n", command);                                    \
-    eval_commandline((intpt), strndup(command, sizeof(command)),  \
+#define EVAL_COMMANDLINE_INPLACE(intpt, command)                 \
+    printf("\n\nformula: %s\n\n", command);                      \
+    eval_commandline((intpt), strndup(command, sizeof(command)), \
                      sizeof(command))
         
 
@@ -108,7 +108,7 @@ main( int argc, char **argv)
     struct interpreter intpt = {0};
 
 #if 1
-    EVAL_COMMANDLINE_INPLACE ( & intpt, "a == b ? 1 : v1 ; (v2)"
+    EVAL_COMMANDLINE_INPLACE ( & intpt, " a == b ? c : 0"//
                                "\0\0\0\0\0\0\0" );
 #else
     while ( 1 ) {

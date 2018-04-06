@@ -1545,7 +1545,6 @@ void log_token (Token *token)
 }
 
 
-
 bool
 token_is_operator(Token *t)
 {

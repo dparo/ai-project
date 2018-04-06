@@ -65,15 +65,13 @@ eval_operator( Token *t,
                struct vm_stack *vms )
 {
     bool result = 0;
-    bool v1 = 0;
-    bool v2 = 0;
     uint numofoperands = operator_numofoperands(t);
     if (! ((vms->num_bits) >= (operator_numofoperands(t)) )) {
         goto not_enough_operands;                                 
     }
 
-    bool v[3]; 
-    assert_msg( numofoperands < ARRAY_LEN(v),
+    bool v[3];
+    assert_msg( numofoperands <= ARRAY_LEN(v),
                 "STATIC ASSERT: Language will support at most 3 operands for operators");
     
     for ( uint i = 0; i < numofoperands; i ++ ) {
@@ -83,15 +81,14 @@ eval_operator( Token *t,
     // NOTE v[0] Contains the last operand v[numberofoperands-1] contains the first operand
 
     switch (t->type) {
-    case TT_PUNCT_BOTHDIR_ARROW: {
-        result = (v[0] && v[1]) || !((v[0] || v[1]));
-        vm_stack_push(vms, result);
-    } break;
+        
     case TT_PUNCT_ARROW: {
         result = (v[1] == true && v[0] == false ) ? false : true;
         vm_stack_push(vms, result);
     } break;
 
+        
+    case TT_PUNCT_COMMA:
     case TT_PUNCT_LOGICAL_AND:
     case TT_PUNCT_BITWISE_AND: {
         result = v[0] && v[1];
@@ -116,18 +113,22 @@ eval_operator( Token *t,
     } break;
 
     case TT_PUNCT_EQUAL:
+        case TT_PUNCT_BOTHDIR_ARROW:
     case TT_PUNCT_EQUAL_EQUAL: {
         result = (v[0] == v[1]);
         vm_stack_push(vms, result);
     } break;
 
     case TT_PUNCT_COLON: {
-        vm_stack_push(vms, v[0]);
-        vm_stack_push(vms, v[1]);
+        result = (v[2] ? v[1] : v[0]);
+        vm_stack_push(vms, result);
     } break;
 
     case TT_PUNCT_QUESTION_MARK: {
-        //result = (v[]
+        // There's nothing todo here (it pops and push the same value again)
+        // The question mark has the sole purpose of a marker to confine to
+        // the right number of operands for the other operators
+        vm_stack_push(vms, v[0]);
     } break;
 
     case TT_PUNCT_NOT_EQUAL : {
@@ -135,10 +136,6 @@ eval_operator( Token *t,
         vm_stack_push(vms, result);
     } break;
         
-    case TT_PUNCT_COMMA: {
-        result = (v[0]);  /* // or (v[1], v[0]) c-alike comma */
-        vm_stack_push(vms, result);
-    } break;
     case TT_PUNCT_SEMICOLON: {
         result = 0;
         vm_stack_push(vms, result);
@@ -520,30 +517,32 @@ ast_build_from_command( struct interpreter *intpt,
                 ast_push(ast, &token);
             } /* else if ( is function ) */
             else if ( token_is_operator(& token)) {
-                if ( is_prefix_operator(& token)) {
-                    token_stack_push(&stack, &token);
-                } else if (is_postfix_operator(& token)) {
-                    ast_push(ast, &token);
-                } else {
-                    assert(is_infix_operator(&token));
-                    Token *peek = NULL;
-                    while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack))) 
-                            && ( (peek->type != TT_PUNCT_OPEN_PAREN &&
-                                  ((op_greater_precedence(peek, & token))
-                                   || (op_eq_precedence(peek, &token) && op_is_left_associative(peek)))))) {
+                bool ispostfix = is_postfix_operator( &token);
+                Token *peek = NULL;
+                while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
+                    bool open_paren = peek->type == TT_PUNCT_OPEN_PAREN;
+                    bool greater_prec = op_greater_precedence(peek, & token);
+                    bool eq_prec = op_eq_precedence(peek, &token);
+                    bool left_ass = op_is_left_associative(peek);
+                    if ( !open_paren && (greater_prec || (eq_prec && left_ass))) {
                         ast_push(ast, peek);
                         token_stack_pop( & stack);
-                    }
+                    } else { break; }
+                }
+                if ( ispostfix ) {
+                    ast_push(ast, & token);
+                } else {
                     token_stack_push( & stack, & token);
                 }
             } else if ( token.type == TT_PUNCT_OPEN_PAREN ) {
                 token_stack_push( & stack, & token);
-            } else if (token.type == TT_PUNCT_CLOSE_PAREN ) {
+            } else if ( token.type == TT_PUNCT_CLOSE_PAREN ) {
                 Token *peek = NULL;
-                while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))
-                        && ( peek->type != TT_PUNCT_OPEN_PAREN)) {
-                    ast_push( ast, peek);
-                    token_stack_pop( & stack );
+                while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
+                    if ( peek->type != TT_PUNCT_OPEN_PAREN ) {
+                        ast_push(ast, peek);
+                        token_stack_pop( & stack);
+                    } else { break; }
                 }
                 if ( stack.num_tokens == 0 ) {
                     if ( peek && peek->type != TT_PUNCT_OPEN_PAREN ) {
@@ -686,7 +685,7 @@ eval_commandline ( struct interpreter *intpt,
     
     if ( intpt_begin_frame(intpt)) {
         ast_build_from_command( intpt, commandline, commandline_size );
-# if 1
+# if 0
         ast_dbglog(intpt);
 # else
         if ( eval_ast( intpt ) ) {
