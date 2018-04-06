@@ -88,7 +88,7 @@ user_interact(char **commandline, size_t *commandline_size)
 }
 
 
-#define EVAL_COMMANDLINE_INLINE(intpt, command)                   \
+#define EVAL_COMMANDLINE_INPLACE(intpt, command)                   \
     printf("\n\nformula: %s\n\n", command);                                    \
     eval_commandline((intpt), strndup(command, sizeof(command)),  \
                      sizeof(command))
@@ -108,8 +108,8 @@ main( int argc, char **argv)
     struct interpreter intpt = {0};
 
 #if 0
-    EVAL_COMMANDLINE_INLINE ( & intpt, "!(F & G) == (!F | !G) // legge di De Morgan"
-                              "\0\0\0\0\0\0" );
+    EVAL_COMMANDLINE_INPLACE ( & intpt, "!(F & G) == (!F | !G) // legge di De Morgan"
+                               "\0\0\0\0\0\0" );
 #else
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_size = 0; }

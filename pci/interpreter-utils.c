@@ -126,7 +126,6 @@ vm_inputs_numelems(struct vm_inputs *vmi)
 static inline size_t
 vm_inputs_size(struct vm_inputs *vmi)
 {
-    assert(vmi->num_inputs);
     return vm_inputs_numelems(vmi) * sizeof(packed_bool);
 }
 
