@@ -9,12 +9,12 @@ F == F                                   // identita'
 !(!F) == F                               // doppia negazione
 (G & G) == G                             // idempotenza
 (G | G) == G                             // idempotenza
-(G & TRUE) ==G                           // legge dei neutri
-(G & FALSE ) == FALSE                    // legge dei neutri
-(G | TRUE ) == TRUE                      // legge dei neutri
-(G | FALSE ) == G                        // legge dei neutri
-(G & !G) == FALSE                        // esclusione
-(G | !G) == TRUE                         // complementarieta'
+(G & 1) ==G                           // legge dei neutri
+(G & 0 ) == 0                    // legge dei neutri
+(G | 1 ) == 1                      // legge dei neutri
+(G | 0 ) == G                        // legge dei neutri
+(G & !G) == 0                        // esclusione
+(G | !G) == 1                         // complementarieta'
 ((F & G) & H) == ((F & (G & H))          // associativita'
 ((F | G) | H) == ((F | (G | H)           // associativita'
 (F & G) == (G & F)                       // commutativita'
