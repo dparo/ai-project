@@ -420,7 +420,7 @@ ast_dbglog(struct interpreter *intpt)
             print_tab(intpt);
         }
     }
-    intpt_info_printf(intpt, "########################################\n");
+    intpt_info_printf(intpt, "\n########################################\n");
     intpt_info_printf(intpt, "\n\n");
 }
 
@@ -646,7 +646,7 @@ eval_commandline ( struct interpreter *intpt,
     
     if ( intpt_begin_frame(intpt)) {
         ast_build_from_command( intpt, commandline, commandline_size );
-# if 0
+# if 1
         ast_dbglog(intpt);
 #endif
         if ( eval_ast( intpt ) ) {
