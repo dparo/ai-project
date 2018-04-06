@@ -83,6 +83,8 @@ eval_operator( Token *t,
     switch (t->type) {
         
     case TT_PUNCT_ARROW: {
+        // or equivalently
+        // result = (!v[1]) || v[0];
         result = (v[1] == true && v[0] == false ) ? false : true;
         vm_stack_push(vms, result);
     } break;

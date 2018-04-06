@@ -2,6 +2,8 @@ sempre vera: ( P & ( P -> Q ) -> Q)
 
 sempre falsa: ((P -> Q) & P) & (~ Q)
 
+computazione implicazione
+(F -> G) == (~F | G)
 
 
 UGUAGLIANZE SPECIALI

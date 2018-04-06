@@ -107,7 +107,7 @@ main( int argc, char **argv)
 
     struct interpreter intpt = {0};
 
-#if 1
+#if 0
     EVAL_COMMANDLINE_INPLACE ( & intpt, " a == b ? c : 0"//
                                "\0\0\0\0\0\0\0" );
 #else
