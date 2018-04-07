@@ -5,6 +5,9 @@ sempre falsa: ((P -> Q) & P) & (~ Q)
 computazione implicazione
 (F -> G) == (~F | G)
 
+associativita' doppia implicazione
+( (A <-> B) <-> C ) == ( A <-> (B <-> C) )
+
 
 UGUAGLIANZE SPECIALI
 F == F                                   // identita'
