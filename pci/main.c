@@ -58,28 +58,21 @@
 
 // the formula is null terminated with necessary space for null termination
 void
-user_interact(char **commandline, size_t *commandline_size)
+user_interact(char **commandline, size_t *commandline_len)
 {
     assert(commandline);
-    assert(commandline_size);
+    assert(commandline_len);
     // Maybe continue asking for more input if last character is like `\`
     // in a loop and concatenate to previous string
     char *string = readline("\001\033[1;32m\002Input Interpreter Command:\n    [>]\001\033[0m\002 ");
-    enum { EXTRA_SPACE_FOR_NULL_TERMINATION = 6};
     size_t len = 0;
-    size_t size = 0;
     if ( string ) {
         len = strlen(string);
-        size = len + EXTRA_SPACE_FOR_NULL_TERMINATION;
-        void * temp = realloc(string, size);
-        if ( temp ) { string = temp; }
-        else { fprintf(stderr, "Failed Reading user input\n"); }
     } else { fprintf(stderr, "Failed Reading user input\n"); }
 
     if ( string ) {
-        memset(string + len, 0, EXTRA_SPACE_FOR_NULL_TERMINATION);
         *commandline = string;
-        *commandline_size = ( size - 2 );
+        *commandline_len = len;
     }
 
     if (string && string[0] != '\0') {
@@ -90,8 +83,7 @@ user_interact(char **commandline, size_t *commandline_size)
 
 #define EVAL_COMMANDLINE_INPLACE(intpt, command)                 \
     printf("\n\nformula: %s\n\n", command);                      \
-    eval_commandline((intpt), strndup(command, sizeof(command)), \
-                     sizeof(command) - 2)
+    eval_commandline((intpt), strdup(command), strlen(command))
         
 
 int
@@ -102,22 +94,21 @@ main( int argc, char **argv)
 
 
     char * commandline = NULL;
-    size_t commandline_size;
+    size_t commandline_len;
 
 
     struct interpreter intpt = {0};
     
 #if 0
-    EVAL_COMMANDLINE_INPLACE ( & intpt, " a == b ? c : 0"//
-                               "\0\0\0\0\0\0\0\0" );
+    EVAL_COMMANDLINE_INPLACE ( & intpt, " a == b ? c : 0");
 #else
     while ( 1 ) {
-        if ( commandline ) { free(commandline); commandline_size = 0; }
+        if ( commandline ) { free(commandline); commandline_len = 0; }
         intpt_info_printf(& intpt, "\n\n");
-        user_interact(& commandline, & commandline_size);
-        if ( commandline && commandline_size) {
+        user_interact(& commandline, & commandline_len);
+        if ( commandline && commandline_len) {
             printf("\n\n\n");
-            eval_commandline( & intpt, commandline, commandline_size);
+            eval_commandline( & intpt, commandline, commandline_len);
         } else {
             intpt_info_printf( &intpt, "Failed to get line from the terminal");
         }

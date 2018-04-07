@@ -481,22 +481,21 @@ ast_dbglog(struct interpreter *intpt)
 
 void
 ast_build_from_command( struct interpreter *intpt,
-                        char *commandline, size_t commandline_size )
+                        char *commandline, size_t commandline_len )
 {
     struct ast *ast = & intpt->ast;
     ast_clear(ast);
-    assert(    (commandline[commandline_size] == 0)
-               && (commandline[commandline_size - 1] == 0)
-               && (commandline[commandline_size - 2] == 0)
-               && (commandline[commandline_size - 3] == 0)
-               && (commandline[commandline_size - 4] == 0 ));
+
+    // Insure null-termination, It is not strictly necessary
+    // i think, but it may require further testing
+    assert(commandline[commandline_len] == 0);
 
     
     Token token = Empty_Token;
     bool done = false;
     Tokenizer tknzr;
     tokenizer_init_from_memory( &tknzr, commandline,
-                                commandline_size,
+                                commandline_len,
                                 "*commandline*");
 
     // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
@@ -700,12 +699,12 @@ eval_ast(struct interpreter *intpt )
 void
 eval_commandline ( struct interpreter *intpt,
                    char *commandline,
-                   size_t commandline_size )
+                   size_t commandline_len )
 {
     struct ast *ast = & intpt->ast;
     
     if ( intpt_begin_frame(intpt)) {
-        ast_build_from_command( intpt, commandline, commandline_size );
+        ast_build_from_command( intpt, commandline, commandline_len );
 # if 0
         ast_dbglog(intpt);
 # else
