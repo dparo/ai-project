@@ -34,14 +34,13 @@ static const struct operator_infos {
     [TT_PUNCT_COLON] =         { 200, 3, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_QUESTION_MARK] = { 100, 1, RIGHT_ASSOCIATIVE_OP, POSTFIX_OP },
 
-
-
-
-    
+    // C Standard: COnfermed RIGHT ASSOCIATIVITY
     [TT_PUNCT_EQUAL]         = { 6, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_EQUAL_EQUAL]   = { 6, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_NOT_EQUAL ]    = { 6, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
+    // C Standard: Confermed LEFT ASSOCIATIVITY
+    [TT_PUNCT_EQUAL_EQUAL]   = { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_NOT_EQUAL ]    = { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
 
+    // C Standard: Confermed LEFT ASSOCIATIVITY (Standard Math Operators)
     [TT_PUNCT_BOTHDIR_ARROW] = { 5, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_ARROW]         = { 5, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_LOGICAL_AND]   = { 4, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
@@ -54,7 +53,7 @@ static const struct operator_infos {
          
 
     
-    // Not valid set of types operators.
+    // Not valid set of operator types.
     [0 ... TT_PUNCT_ENUM_OPERATORS_START_MARKER] = { -1, 0, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS ... TT_PUNCT_ENUM_LAST_VALUE ] = { -1, 0, LEFT_ASSOCIATIVE_OP, INFIX_OP },
 };

@@ -85,7 +85,7 @@ eval_operator( Token *t,
     case TT_PUNCT_ARROW: {
         // or equivalently
         // result = (!v[1]) || v[0];
-        result = (v[1] == true && v[0] == false ) ? false : true;
+        result = (v[1] == true && v[0] == false) ? false : true;
         vm_stack_push(vms, result);
     } break;
 
@@ -155,27 +155,46 @@ not_enough_operands: {
 }
 
 bool
-token_constant_to_bool( Token *t,
-                        bool *out )
+valid_constant ( Token *t )
 {
     bool result = false;
     assert(t->type == TT_CONSTANT);
-    char temp = t->text[t->text_len];
-    t->text[t->text_len] = 0; {
-        char *endptr = NULL;
-        unsigned long int lli =  strtoul (t->text, &endptr, 10);
-
-        if ( endptr == NULL || *endptr == '\0') {
-            // Valid Character
+    if (t->text_len == 1) {
+        if ( *(t->text) == '0') {
             result = true;
-            *out = (lli == 0) ? 0 : 1;            
+        } else if ( *(t->text) == '1') {
+            result = true;
         } else {
             result = false;
-            *out = 0;
         }
+    } else {
+        result = false;
     }
-    t->text[t->text_len] = temp;
     return result;
+}
+
+
+bool
+token_constant_to_bool( Token *t )
+{
+    assert(valid_constant(t));
+    bool result = false;
+    assert(t->type == TT_CONSTANT);
+    if (t->text_len == 1) {
+        if ( *(t->text) == '0') {
+            result = false;
+        } else if ( *(t->text) == '1') {
+            result = true;
+        } else {
+            // should assert above inside valid_constant(t)
+            invalid_code_path();
+        }
+    } else {
+        // should assert above inside valid_constant(t)
+        invalid_code_path();
+    }
+    return result;
+
 }
 
 
@@ -220,8 +239,7 @@ eval_entire_expr( struct interpreter *intpt )
                                                    input_index );
                     // printf(" bit_index: %zx | unpacked bool: %d\n", bit_index, value);
                 } else if ( t->type == TT_CONSTANT ) {
-                    bool s = token_constant_to_bool( t, & value );
-                    assert_msg( s == true, "Passed constant was not a valid boolean, or it was way too big");
+                    value = token_constant_to_bool( t);
                 }
 
                 vm_stack_push( vms, value );
@@ -617,14 +635,25 @@ intpt_end_frame( struct interpreter *intpt)
 }
 
 
-
 bool
 preprocess_command ( struct interpreter *intpt )
 {
     bool alloc_result = true;
     struct ast *ast = & intpt->ast;
     struct symtable *symtable = & intpt->symtable;
-    
+
+    Token *t;
+    size_t it;
+    ast_for(it, *ast, t) {
+        if ( t->type == TT_CONSTANT ) {
+            bool valid = valid_constant(t);
+            if ( ! valid ) {
+                intpt_info_printf(intpt, " ## %.*s is not a valid constant\n", t->text_len, t->text);
+                goto INVALID_EXPR;
+            }
+        }
+    }
+
     symtable_build_from_ast(symtable, ast);
     symtable_preprocess_expr(symtable);
     
@@ -637,9 +666,8 @@ preprocess_command ( struct interpreter *intpt )
         return 1;
     }
 
-    goto FAILURE; // @NOTE: To remove warning of unused label
-FAILURE: {
-        intpt_info_printf(intpt, "Interpreter: Failed memory allocation\n");
+INVALID_EXPR: {
+        intpt_info_printf(intpt, " ## Semantic or syntactic error\n");
         return 0;
     }
 }
