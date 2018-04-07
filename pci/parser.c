@@ -504,7 +504,9 @@ is_punctuator (char c)
      return ( (c >= 0x21 && c <= 0x2F)
               || (c >= 0x3A && c <= 0x40)
               || (c >= 0x5B && c <= 0x5E)
-              || (c >= 0x7B) );
+              || (c >= 0x7B)
+              || (c ==  0x60) /* ` backtick apostrophe */
+         ); 
 }
 
 
@@ -1256,6 +1258,11 @@ get_next_token ( Tokenizer *tknzr,
                parse_punctuator(tknzr, token);
           } else if ( is_alpha (*tknzr->at) || *tknzr->at == '_' ) {
                parse_identifier_or_keyword ( tknzr, token );
+          } else {
+              token->type = TT_NONE;
+              token->text = 0;
+              token->text_len = 0;
+              return false;
           }
           eat_whitespaces(tknzr);
 #if TOKENIZER_CACHING_ENABLED
