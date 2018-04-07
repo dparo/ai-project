@@ -323,10 +323,6 @@ ast_print_expr ( struct interpreter *intpt,
                  size_t index )
 {
     struct ast* ast = & intpt->ast;
-    if ( index == (ast->num_tokens - 1)) {
-        int breakme = 0;
-    }
-
     Token *t = & ( ast->tokens[index] );
     if ( t->type == TT_IDENTIFIER || t->type == TT_CONSTANT ) {
         ast_print_token(intpt, t);
@@ -648,7 +644,7 @@ preprocess_command ( struct interpreter *intpt )
         if ( t->type == TT_CONSTANT ) {
             bool valid = valid_constant(t);
             if ( ! valid ) {
-                intpt_info_printf(intpt, " ## %.*s is not a valid constant\n", t->text_len, t->text);
+                intpt_info_printf(intpt, " ### %.*s is not a valid constant: valid constants are {`0`, `1`}\n", t->text_len, t->text);
                 goto INVALID_EXPR;
             }
         }
@@ -667,7 +663,7 @@ preprocess_command ( struct interpreter *intpt )
     }
 
 INVALID_EXPR: {
-        intpt_info_printf(intpt, " ## Semantic or syntactic error\n");
+        intpt_info_printf(intpt, " ### Semantic or syntactic error\n");
         return 0;
     }
 }
@@ -684,13 +680,11 @@ eval_ast(struct interpreter *intpt )
 
     
     if (preprocess_command (intpt)) {
-        if ( vmi->inputs && vmi->num_inputs ) {
 #if 0
-            intpt_print_header(intpt);
+        intpt_print_header(intpt);
 #else
-            bruteforce_solve(intpt);
+        bruteforce_solve(intpt);
 #endif
-        }
 
 
         result = true;

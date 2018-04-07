@@ -11,7 +11,7 @@ F == F                                   // identita'
 ~(~F) == F                               // doppia negazione
 (G & G) == G                             // idempotenza
 (G | G) == G                             // idempotenza
-(G & 1) ==G                              // legge dei neutri
+(G & 1) == G                             // legge dei neutri
 (G & 0 ) == 0                            // legge dei neutri
 (G | 1 ) == 1                            // legge dei neutri
 (G | 0 ) == G                            // legge dei neutri

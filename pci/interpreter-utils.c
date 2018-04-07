@@ -119,9 +119,12 @@ vm_stack_unpack_bool ( struct vm_stack *stack,
 static inline size_t
 vm_inputs_numelems(struct vm_inputs *vmi)
 {
-    assert(vmi->num_inputs);
-    return ( vmi->num_inputs - 1 ) / ( sizeof(packed_bool) * 8)
-        + 1;
+    if ( vmi->num_inputs ) {
+        return ( vmi->num_inputs - 1 ) / ( sizeof(packed_bool) * 8)
+            + 1;
+    } else {
+        return 0;
+    }
 }
 static inline size_t
 vm_inputs_size(struct vm_inputs *vmi)
@@ -354,7 +357,8 @@ vm_inputs_init_from_symtable(struct vm_inputs *vmi,
 {
     assert(symtable_num_ids(symtable) < VM_INPUTS_MAX_NUMBITS);
     vmi->num_inputs = symtable_num_ids(symtable);
-    memset(vmi->inputs, 0, vm_inputs_size(vmi));
+    size_t size = vm_inputs_size(vmi);
+    memset(vmi->inputs, 0, size);
 }
 
 
@@ -421,15 +425,13 @@ vm_inputs_unpack_bool( struct vm_inputs *vmi,
 void
 vm_inputs_increment(struct vm_inputs *vmi )
 {
-    assert(vmi->num_inputs > 0);
+    assert(vmi);
+    assert(vmi->inputs);
 
     packed_bool *array= vmi->inputs;
     size_t bits_count = vmi->num_inputs;
     
-    size_t nelems;
-    if ( bits_count == 0 ) { nelems = 0; }
-    else { nelems = ((bits_count - 1) / (sizeof(packed_bool) * 8)) + 1; }
-   
+    size_t nelems = vm_inputs_numelems(vmi);
     size_t bits_count_remainder;
     if ( nelems == 0 ) { bits_count_remainder = 0; }
     else {  bits_count_remainder = ( bits_count) % ( sizeof(packed_bool) * 8); }
