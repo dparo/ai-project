@@ -65,7 +65,7 @@ user_interact(char **commandline, size_t *commandline_size)
     // Maybe continue asking for more input if last character is like `\`
     // in a loop and concatenate to previous string
     char *string = readline("\001\033[1;32m\002Input Interpreter Command:\n    [>]\001\033[0m\002 ");
-    enum { EXTRA_SPACE_FOR_NULL_TERMINATION = 5};
+    enum { EXTRA_SPACE_FOR_NULL_TERMINATION = 6};
     size_t len = 0;
     size_t size = 0;
     if ( string ) {
@@ -79,7 +79,7 @@ user_interact(char **commandline, size_t *commandline_size)
     if ( string ) {
         memset(string + len, 0, EXTRA_SPACE_FOR_NULL_TERMINATION);
         *commandline = string;
-        *commandline_size = size;
+        *commandline_size = ( size - 2 );
     }
 
     if (string && string[0] != '\0') {
@@ -91,7 +91,7 @@ user_interact(char **commandline, size_t *commandline_size)
 #define EVAL_COMMANDLINE_INPLACE(intpt, command)                 \
     printf("\n\nformula: %s\n\n", command);                      \
     eval_commandline((intpt), strndup(command, sizeof(command)), \
-                     sizeof(command))
+                     sizeof(command) - 2)
         
 
 int
@@ -106,10 +106,10 @@ main( int argc, char **argv)
 
 
     struct interpreter intpt = {0};
-
+    
 #if 0
     EVAL_COMMANDLINE_INPLACE ( & intpt, " a == b ? c : 0"//
-                               "\0\0\0\0\0\0\0" );
+                               "\0\0\0\0\0\0\0\0" );
 #else
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_size = 0; }
