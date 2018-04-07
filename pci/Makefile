@@ -4,13 +4,18 @@ BUILD_DEFS = -DMAIN_C_IMPL -D_GNU_SOURCE
 WARNINGS = -Wall -Wextra -Wno-unused-function -Wno-unused-parameter -Wno-unused-variable
 INCLUDES = -I./ -I./ext-deps/stb -I./__generated__
 LIBRARIES = -lm -lreadline -ldl -pthread
-OUTPUT = ./bin/pci
+OUTPUT_PATH = ./bin/
+OUTPUT = $(OUTPUT_PATH)pci
 
-debug:
+
+mkdir_output_path:
+	mkdir -p $(OUTPUT_PATH)
+
+debug: mkdir_output_path
 	gcc $(BUILD_DEFS) -D__DEBUG -std=gnu11 -O0 -g3 $(WARNINGS) $(INCLUDES) main.c $(LIBRARIES) -o $(OUTPUT)
 
 
-release:
+release: mkdir_output_path
 	gcc $(BUILD_DEFS) -std=gnu11 -O3 $(WARNINGS) $(INCLUDES) main.c $(LIBRARIES) -o $(OUTPUT)
 
 default: debug
