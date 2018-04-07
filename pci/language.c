@@ -26,27 +26,27 @@ static const struct operator_infos {
     enum operator_associativity associativity;
     enum operator_prefixing prefixing;
 } OPS[] = {
-    // C Standard: Confermed LEFT ASSOCIATIVITY
     [TT_PUNCT_SEMICOLON] = { 16, 1, LEFT_ASSOCIATIVE_OP, POSTFIX_OP },
     [TT_PUNCT_COMMA] = { 15, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    
-    // C Standard: Confermed LEFT ASSOCIATIVITY (Standard Math Operators)
-    // C Standard: COnfermed RIGHT ASSOCIATIVITY
+
+    // C++ precedence: Place the ternary operator to the same precedence of equal
+    //                 to avoid parsing failures.
+    [TT_PUNCT_COLON] =         { 14, 3, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_QUESTION_MARK] = { 14, 1, RIGHT_ASSOCIATIVE_OP, POSTFIX_OP },
+        
     [TT_PUNCT_EQUAL]         = { 14, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
-    // C Standard: Confermed RIGHT ASSOCIATIVITY
-    [TT_PUNCT_COLON] =         { 13, 3, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_QUESTION_MARK] = { 13, 1, RIGHT_ASSOCIATIVE_OP, POSTFIX_OP },
     [TT_PUNCT_LOGICAL_OR]    = { 12, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_LOGICAL_AND]   = { 11, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_BITWISE_OR]    = { 10, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_BITWISE_XOR]   = { 9, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_BITWISE_AND]   = { 8, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
 
-    // C Standard: Confermed LEFT ASSOCIATIVITY
     [TT_PUNCT_EQUAL_EQUAL]   = { 7, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_NOT_EQUAL ]    = { 7, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
 
     // Place to insert bigger, bigger or equal, less, less or equal
+    /* {   } */
+
     [TT_PUNCT_LOGICAL_NOT]   = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
     [TT_PUNCT_BITWISE_NOT]   = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
 
