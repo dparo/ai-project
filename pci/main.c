@@ -64,7 +64,7 @@ user_interact(char **commandline, size_t *commandline_size)
     assert(commandline_size);
     // Maybe continue asking for more input if last character is like `\`
     // in a loop and concatenate to previous string
-    char *string = readline ("Input Interpreter Command:\n    [>] ");
+    char *string = readline("\001\033[1;32m\002Input Interpreter Command:\n    [>]\001\033[0m\002 ");
     enum { EXTRA_SPACE_FOR_NULL_TERMINATION = 5};
     size_t len = 0;
     size_t size = 0;
@@ -113,11 +113,13 @@ main( int argc, char **argv)
 #else
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_size = 0; }
-        printf("\n\n");
+        intpt_info_printf(& intpt, "\n\n");
         user_interact(& commandline, & commandline_size);
-        if ( commandline ) {
+        if ( commandline && commandline_size) {
             printf("\n\n\n");
             eval_commandline( & intpt, commandline, commandline_size);
+        } else {
+            intpt_info_printf( &intpt, "Failed to get line from the terminal");
         }
     }
 #endif
