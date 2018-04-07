@@ -222,7 +222,7 @@ tokenizer_deref_at ( Tokenizer *tknzr,
     } else if ( tknzr->at + relative_index < (tknzr->base)) {
         return 0;
     } else {
-        return *(tknzr->at);
+        return *(tknzr->at + relative_index);
     }
 }
 
