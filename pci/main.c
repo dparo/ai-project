@@ -92,15 +92,13 @@ main( int argc, char **argv)
     platform_init();
     UNUSED(argc), UNUSED(argv);
 
-
     char * commandline = NULL;
     size_t commandline_len;
-
 
     struct interpreter intpt = {0};
     
 #if 0
-    EVAL_COMMANDLINE_INPLACE ( & intpt, " a == b ? c : 0");
+    EVAL_COMMANDLINE_INPLACE ( & intpt, "a == b ? c : 0");
 #else
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_len = 0; }

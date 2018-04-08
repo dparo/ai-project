@@ -10,24 +10,26 @@
 
 
 # define YIELD_NORES()                                                   \
-    do { s.j = && jmp##__func__##__LINE__; return; jmp##__func__##__LINE__: {} } while(0)
+    do { s.__coro__jmp__ = && jmp##__func__##__LINE__; return; jmp##__func__##__LINE__: {} } while(0)
 
 # define YIELD(result)                                                  \
-    do { s.j = && jmp##__func__##__LINE__; return (result); jmp##__func__##__LINE__: {} } while(0)
+    do { s.__coro__jmp__ = && jmp##__func__##__LINE__; return (result); jmp##__func__##__LINE__: {} } while(0)
+
+
 
 
 int
 coro_enginnering(void)
 {
     static struct {
-        void *j;
+        void *__coro__jmp__;
         
         int a;
         int b;
     } s = {};
 
-    if (s.j) {
-        goto *(s.j);
+    if (s.__coro__jmp__) {
+        goto *(s.__coro__jmp__);
     }
  
     
@@ -39,23 +41,25 @@ coro_enginnering(void)
 
     YIELD(10);
        
-    s.j = NULL;
+    s.__coro__jmp__ = NULL;
     return 0;
     
 }
 
+
+
 int generator(void)
 {
     static struct {
-        void *j;
+        void *__coro__jmp__;
 
         
         int a;
     } s = {0};
 
 
-    if (s.j) {
-        goto *(s.j);
+    if (s.__coro__jmp__) {
+        goto *(s.__coro__jmp__);
     } else {
         memset(&s, 0, sizeof(s));
     }
@@ -68,7 +72,7 @@ int generator(void)
     
 
     
-    s.j = NULL;    //return 0;
+    s.__coro__jmp__ = NULL;    //return 0;
     return -1;
 
 }
@@ -77,7 +81,6 @@ int generator(void)
 
 void test_generator(void)
 {
-
     int value = 0;
     for ( int it = 0; it < 3; it++ ) {
         while (value = generator(), value != -1 ) {
@@ -87,26 +90,48 @@ void test_generator(void)
 }
 
 
-bool
-string_starts_with(char *starter,
-                   char *string,
-                   i32 string_len )
+
+#define CORO_BEGIN(s, ...)                             \
+    static struct {                                    \
+        void *__coro__jmp__;                           \
+        __VA_ARGS__                                    \
+    } (s) = {0};                                       \
+    if ((s).__coro__jmp__) {                           \
+        goto *((s).__coro__jmp__);                     \
+    } else { memset( &(s), 0, sizeof(s)); }
+    
+
+#define CORO_END(s)                          \
+    (s).__coro__jmp__ = (void*) 0;             
+
+#define CORO_END_VAL(s, x)                   \
+    (s).__coro__jmp__ = (void*) 0;              \
+    return x;
+
+
+
+
+enum condition {
+    condition_finished,
+    condition_need_more_memory,
+};
+
+enum condition
+test(void)
 {
-     bool result = true;
-     i32 i;
-     for ( i = 0;
-           (starter[i] != 0) && (i < string_len);
-           ++i ) {
-          if ( starter[i] != string[i] ) {
-               result = false;
-               break;
-          }
-     }
+    CORO_BEGIN
+        (s, int it; int a; int b; int c;); {
 
-     return result;
+
+        for ( s.it = 0; s.it < 100; (s.it)++) {
+            YIELD(condition_need_more_memory);
+            assert(enough_memory());
+            assert(enough_memory());
+        }
+
+    } CORO_END(s);
+    return condition_finished;
 }
-
-
 
 
 

@@ -4,6 +4,8 @@
   - https://en.wikipedia.org/wiki/Truth_table
   - http://homepage.sns.it/lolli/dispense00/corso1.pdf
   - https://en.wikipedia.org/wiki/Dynamic_programming
+  - http://www.ce.unipr.it/research/HYPERPROLOG/logmatintro.html
+  - [[https://www.doc.ic.ac.uk/~shm/ilp_theory.html#inverse_resolution]]
 
 ** Implementazione di un risolutore
    - https://en.wikipedia.org/wiki/Boolean_satisfiability_problem
@@ -12,6 +14,7 @@
    - http://minisat.se/
    - http://minisat.se/downloads/MiniSat.pdf
    - http://www.satcompetition.org/
+   - [[https://en.wikipedia.org/wiki/SLD_resolution]]
 
 ** AST Generation:
 
@@ -28,6 +31,7 @@
     - https://en.wikipedia.org/wiki/Operator_(computer_programming)
 
   - https://en.wikipedia.org/wiki/Recursive_descent_parser
+
 * Introduzione
   - BLAH BLAH
     
