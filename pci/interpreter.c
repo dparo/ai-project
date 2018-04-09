@@ -529,7 +529,6 @@ ast_build_from_command( struct interpreter *intpt,
     fprintf(stderr, "Implement functions parsing and braces list "
             "and square brackets\n");
 
-    bool prev_was_identifier = false;
     // NOTE: Maybe better error handling because even the push_state can throw an error
     //       Maybe set a locked variable inside the tokenizer for critical stuff
     //       that will inevitably inject more complexity on the library side
@@ -557,32 +556,36 @@ ast_build_from_command( struct interpreter *intpt,
         {
             if (token.type == TT_CONSTANT ||
                 token.type == TT_IDENTIFIER ) {
-                if ( token.type == TT_IDENTIFIER ) {
-                    prev_was_identifier = true;
-                }
                 ast_push(ast, &token);
             } /* else if ( is function ) */
             else {
-                if ( token.type == TT_PUNCT_OPEN_PAREN
-                     || token.type == TT_PUNCT_OPEN_BRACKET
-                     || token.type == TT_PUNCT_OPEN_BRACE) {
-                    if ( (prev_was_identifier && token.type == TT_PUNCT_OPEN_PAREN)
-                         || (token.type == TT_PUNCT_OPEN_BRACKET)
-                         || (token.type == TT_PUNCT_OPEN_BRACE)) {
-                        ast_push(ast, & token);
-                    }
+                if ( (token.type == TT_PUNCT_OPEN_PAREN)
+                     || (token.type == TT_PUNCT_OPEN_BRACE)
+                     || (token.type == TT_PUNCT_OPEN_BRACKET)) {
                     token_stack_push( & stack, & token);
-                } else if ( token.type == TT_PUNCT_CLOSE_PAREN ||
-                            token.type == TT_PUNCT_CLOSE_BRACKET ||
-                            token.type == TT_PUNCT_CLOSE_BRACE) {
+                } else if ( (token.type == TT_PUNCT_CLOSE_PAREN)
+                            || (token.type == TT_PUNCT_CLOSE_BRACE)
+                            || (token.type == TT_PUNCT_CLOSE_BRACKET)) {
                     Token *peek = NULL;
                     while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
-                        if ( (peek->type != TT_PUNCT_OPEN_PAREN)
-                             && (peek->type != TT_PUNCT_OPEN_BRACKET)
-                             && (peek->type != TT_PUNCT_OPEN_BRACE)) {
+                        if ( (peek->type != TT_PUNCT_OPEN_PAREN )
+                             && (peek->type != TT_PUNCT_OPEN_BRACE)
+                             && (peek->type != TT_PUNCT_OPEN_BRACKET)) {
                             ast_push(ast, peek);
                             token_stack_pop( & stack);
-                        } else { break; }
+                        } else {
+                            if ( peek != stack.tokens ) {
+                                Token *t = peek - 1;
+                                fprintf(stderr, "The previous identifier is not onto the stack, its inside the ast, so this if will always fail\n");
+                                if ( (t->type == TT_IDENTIFIER && peek->type == TT_PUNCT_OPEN_PAREN)) {
+                                    ast_push(ast, peek);
+                                } else {
+                                    break;
+                                }
+                            } else {
+                                break;
+                            }
+                        }
                     }
                     if ( stack.num_tokens == 0 ) {
                         if ( (peek) && (peek->type != TT_PUNCT_OPEN_PAREN)
@@ -615,7 +618,6 @@ ast_build_from_command( struct interpreter *intpt,
                 } else {
                     invalid_code_path();
                 }
-                prev_was_identifier = false;
             }
         }
 
