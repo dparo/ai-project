@@ -138,6 +138,27 @@ eval_operator( Token *t,
         result = ( v[0] != v[1]);
         vm_stack_push(vms, result);
     } break;
+
+    case TT_PUNCT_GREATER: {
+        result = (v[1] > v[0]);
+        vm_stack_push(vms, result);
+    } break;
+        
+    case TT_PUNCT_LESS: {
+        result = ( v[1] < v[0]);
+        vm_stack_push(vms, result);
+    } break;
+        
+    case TT_PUNCT_GREATER_OR_EQUAL: {
+        result = ( v[1] >= v[0]);
+        vm_stack_push(vms, result);
+    } break;
+        
+    case TT_PUNCT_LESS_OR_EQUAL: {
+        result = ( v[1] <= v[0]);
+        vm_stack_push(vms, result);
+    } break;
+
         
 
     default: {
@@ -479,7 +500,7 @@ ast_dbglog(struct interpreter *intpt)
 
 
 
-void
+bool
 ast_build_from_command( struct interpreter *intpt,
                         char *commandline, size_t commandline_len )
 {
@@ -581,15 +602,19 @@ ast_build_from_command( struct interpreter *intpt,
     while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))) {
         if ( peek->type == TT_PUNCT_OPEN_PAREN ||
              peek->type == TT_PUNCT_CLOSE_PAREN ) {
-            intpt_info_printf( intpt, "Mismatched parens\n");
+            intpt_info_printf( intpt, " ### Mismatched parens\n");
             goto parse_end;
         }
         ast_push( ast, peek);
         token_stack_pop ( & stack );
     }
 
+
+    return true;
     
 parse_end: {
+        intpt_info_printf(intpt, " ### Failed formula parsing\n");
+        return false;
     }
 
 }
@@ -704,14 +729,15 @@ eval_commandline ( struct interpreter *intpt,
     struct ast *ast = & intpt->ast;
     
     if ( intpt_begin_frame(intpt)) {
-        ast_build_from_command( intpt, commandline, commandline_len );
+        if ( ast_build_from_command( intpt, commandline, commandline_len ) ) {
 # if 0
-        ast_dbglog(intpt);
+            ast_dbglog(intpt);
 # else
-        if ( eval_ast( intpt ) ) {
-            
-        }
+            if ( eval_ast( intpt ) ) {
+                
+            }
 #endif
+        }
         intpt_end_frame(intpt);
     } else {
         intpt_info_printf(intpt, "Failed to setup Interpreter context for evaluating the command\n");

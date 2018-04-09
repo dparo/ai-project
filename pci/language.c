@@ -46,7 +46,12 @@ static const struct operator_infos {
 
     // Place to insert bigger, bigger or equal, less, less or equal
     /* {   } */
+    [TT_PUNCT_GREATER]          = {6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_LESS]             = {6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_GREATER_OR_EQUAL] = {6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_LESS_OR_EQUAL]    = {6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
 
+    
     [TT_PUNCT_LOGICAL_NOT]   = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
     [TT_PUNCT_BITWISE_NOT]   = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
 
