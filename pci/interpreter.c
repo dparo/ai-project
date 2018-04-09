@@ -574,7 +574,9 @@ ast_build_from_command( struct interpreter *intpt,
             else {
                 if ( token.type == TT_PUNCT_OPEN_PAREN ) {
                     token_stack_push( & stack, & token);
-                } else if ( token.type == TT_PUNCT_CLOSE_PAREN ) {
+                } else if ( token.type == TT_PUNCT_CLOSE_PAREN
+                            || token.type == TT_PUNCT_CLOSE_BRACE
+                            || token.type == TT_PUNCT_CLOSE_BRACKET) {
                     Token *peek = NULL;
                     while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
                         if ( peek->type != TT_PUNCT_OPEN_PAREN ) {
@@ -612,10 +614,17 @@ ast_build_from_command( struct interpreter *intpt,
                 } else {
                     invalid_code_path();
                 }
+
                 if ( prev_was_identifier && token.type == TT_PUNCT_META_FNCALL ) {
                     token.type = TT_PUNCT_OPEN_PAREN;
                     token_stack_push( & stack, & token);
                 }
+
+                if ( token.type == TT_PUNCT_OPEN_BRACE || token.type == TT_PUNCT_OPEN_BRACKET ) {
+                    token.type = TT_PUNCT_OPEN_PAREN;
+                    token_stack_push ( & stack, & token );
+                }
+                
                 prev_was_identifier = false;
             }
         }
@@ -634,7 +643,9 @@ ast_build_from_command( struct interpreter *intpt,
     while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))) {
         SHUNT_DBG();
         if ( peek->type == TT_PUNCT_OPEN_PAREN ||
-             peek->type == TT_PUNCT_CLOSE_PAREN ) {
+             peek->type == TT_PUNCT_CLOSE_PAREN ||
+             peek->type == TT_PUNCT_CLOSE_BRACE ||
+             peek->type == TT_PUNCT_CLOSE_BRACKET) {
             intpt_info_printf( intpt, " ### Mismatched parens\n");
             goto parse_end;
         }
