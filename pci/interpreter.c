@@ -115,7 +115,7 @@ eval_operator( Token *t,
     } break;
 
     case TT_PUNCT_EQUAL:
-        case TT_PUNCT_BOTHDIR_ARROW:
+    case TT_PUNCT_BOTHDIR_ARROW:
     case TT_PUNCT_EQUAL_EQUAL: {
         result = (v[0] == v[1]);
         vm_stack_push(vms, result);
@@ -135,7 +135,7 @@ eval_operator( Token *t,
     } break;
 
     case TT_PUNCT_NOT_EQUAL : {
-        result = ( v[0] != v[1]);
+        result = (v[0] != v[1]);
         vm_stack_push(vms, result);
     } break;
 
@@ -145,17 +145,17 @@ eval_operator( Token *t,
     } break;
         
     case TT_PUNCT_LESS: {
-        result = ( v[1] < v[0]);
+        result = (v[1] < v[0]);
         vm_stack_push(vms, result);
     } break;
         
     case TT_PUNCT_GREATER_OR_EQUAL: {
-        result = ( v[1] >= v[0]);
+        result = (v[1] >= v[0]);
         vm_stack_push(vms, result);
     } break;
         
     case TT_PUNCT_LESS_OR_EQUAL: {
-        result = ( v[1] <= v[0]);
+        result = (v[1] <= v[0]);
         vm_stack_push(vms, result);
     } break;
 
@@ -525,6 +525,11 @@ ast_build_from_command( struct interpreter *intpt,
     static struct token_stack stack;
     stack.num_tokens = 0;
       
+
+    fprintf(stderr, "Implement functions parsing and braces list "
+            "and square brackets\n");
+
+    bool prev_was_identifier = false;
     // NOTE: Maybe better error handling because even the push_state can throw an error
     //       Maybe set a locked variable inside the tokenizer for critical stuff
     //       that will inevitably inject more complexity on the library side
@@ -537,6 +542,9 @@ ast_build_from_command( struct interpreter *intpt,
 
         // log_token(& token);
 
+
+
+        
         // Extensions ->
         //   Postfix operators do an uncoditional push onto
         //                 ast_token_queue_push(queue, &token)
@@ -549,47 +557,67 @@ ast_build_from_command( struct interpreter *intpt,
         {
             if (token.type == TT_CONSTANT ||
                 token.type == TT_IDENTIFIER ) {
+                if ( token.type == TT_IDENTIFIER ) {
+                    prev_was_identifier = true;
+                }
                 ast_push(ast, &token);
             } /* else if ( is function ) */
-            else if ( token_is_operator(& token)) {
-                bool ispostfix = is_postfix_operator( &token);
-                Token *peek = NULL;
-                while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
-                    if ( !(peek->type == TT_PUNCT_OPEN_PAREN)
-                         && ( (op_greater_precedence(peek, & token))
-                              || ((op_eq_precedence(peek, &token)) && (op_is_left_associative(peek))))) {
-                        ast_push(ast, peek);
-                        token_stack_pop( & stack);
-                    } else { break; }
-                }
-                if ( ispostfix ) {
-                    ast_push(ast, & token);
-                } else {
+            else {
+                if ( token.type == TT_PUNCT_OPEN_PAREN
+                     || token.type == TT_PUNCT_OPEN_BRACKET
+                     || token.type == TT_PUNCT_OPEN_BRACE) {
+                    if ( (prev_was_identifier && token.type == TT_PUNCT_OPEN_PAREN)
+                         || (token.type == TT_PUNCT_OPEN_BRACKET)
+                         || (token.type == TT_PUNCT_OPEN_BRACE)) {
+                        ast_push(ast, & token);
+                    }
                     token_stack_push( & stack, & token);
-                }
-            } else if ( token.type == TT_PUNCT_OPEN_PAREN ) {
-                token_stack_push( & stack, & token);
-            } else if ( token.type == TT_PUNCT_CLOSE_PAREN ) {
-                Token *peek = NULL;
-                while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
-                    if ( peek->type != TT_PUNCT_OPEN_PAREN ) {
-                        ast_push(ast, peek);
-                        token_stack_pop( & stack);
-                    } else { break; }
-                }
-                if ( stack.num_tokens == 0 ) {
-                    if ( peek && peek->type != TT_PUNCT_OPEN_PAREN ) {
-                        // Mismatched parentheses
-                        intpt_info_printf(intpt, "Mismatched parens\n");
-                        goto parse_end;
+                } else if ( token.type == TT_PUNCT_CLOSE_PAREN ||
+                            token.type == TT_PUNCT_CLOSE_BRACKET ||
+                            token.type == TT_PUNCT_CLOSE_BRACE) {
+                    Token *peek = NULL;
+                    while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
+                        if ( (peek->type != TT_PUNCT_OPEN_PAREN)
+                             && (peek->type != TT_PUNCT_OPEN_BRACKET)
+                             && (peek->type != TT_PUNCT_OPEN_BRACE)) {
+                            ast_push(ast, peek);
+                            token_stack_pop( & stack);
+                        } else { break; }
+                    }
+                    if ( stack.num_tokens == 0 ) {
+                        if ( (peek) && (peek->type != TT_PUNCT_OPEN_PAREN)
+                             && ( peek->type != TT_PUNCT_OPEN_BRACKET)
+                             && ( peek->type != TT_PUNCT_OPEN_BRACE ) ) {
+                            // Mismatched parentheses
+                            intpt_info_printf(intpt, "Mismatched parens\n");
+                            goto parse_end;
+                        }
+                    } else {
+                        // pop the closed paren from the stack
+                        token_stack_pop( & stack );
+                    }
+                } else if ( token_is_operator(& token)) {
+                    bool ispostfix = is_postfix_operator( &token);
+                    Token *peek = NULL;
+                    while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
+                        if ( !(peek->type == TT_PUNCT_OPEN_PAREN)
+                             && ( (op_greater_precedence(peek, & token))
+                                  || ((op_eq_precedence(peek, &token)) && (op_is_left_associative(peek))))) {
+                            ast_push(ast, peek);
+                            token_stack_pop( & stack);
+                        } else { break; }
+                    }
+                    if ( ispostfix ) {
+                        ast_push(ast, & token);
+                    } else {
+                        token_stack_push( & stack, & token);
                     }
                 } else {
-                    // pop the closed paren from the stack
-                    token_stack_pop( & stack );
+                    invalid_code_path();
                 }
+                prev_was_identifier = false;
             }
         }
-        
 
     }
 
@@ -730,7 +758,7 @@ eval_commandline ( struct interpreter *intpt,
     
     if ( intpt_begin_frame(intpt)) {
         if ( ast_build_from_command( intpt, commandline, commandline_len ) ) {
-# if 0
+# if 1
             ast_dbglog(intpt);
 # else
             if ( eval_ast( intpt ) ) {

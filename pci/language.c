@@ -58,9 +58,12 @@ static const struct operator_infos {
     [TT_PUNCT_BOTHDIR_ARROW] = { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     // C-SPEC defines the arrow to be left associative. In propositional
     // calculus we use implication `->` right associative
-    [TT_PUNCT_ARROW]         = { 1, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
+    [TT_PUNCT_ARROW]           = { 1, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
 
-
+    [TT_PUNCT_OPEN_PAREN]      = { 0, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
+    [TT_PUNCT_OPEN_BRACE]      = { 0, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
+    [TT_PUNCT_OPEN_BRACKET]    = { 0, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
+    
     
     // Not valid set of operator types.
     [0 ... TT_PUNCT_ENUM_OPERATORS_START_MARKER] = { -1, 0, LEFT_ASSOCIATIVE_OP, INFIX_OP },
