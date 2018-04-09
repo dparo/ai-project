@@ -525,7 +525,9 @@ ast_build_from_command( struct interpreter *intpt,
     // operator stack
     static struct token_stack stack;
     stack.num_tokens = 0;
-      
+
+
+    bool prev_was_identifier = false;
     // NOTE: Maybe better error handling because even the push_state can throw an error
     //       Maybe set a locked variable inside the tokenizer for critical stuff
     //       that will inevitably inject more complexity on the library side
@@ -553,49 +555,57 @@ ast_build_from_command( struct interpreter *intpt,
         {
             if (token.type == TT_CONSTANT ||
                 token.type == TT_IDENTIFIER ) {
-                ast_push(ast, &token);
-            } /* else if ( is function ) */
-            else if ( token_is_operator(& token)) {
-                bool ispostfix = is_postfix_operator( &token);
-                Token *peek = NULL;
-                while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
-                    if ( !(peek->type == TT_PUNCT_OPEN_PAREN)
-                         && ( (op_greater_precedence(peek, & token))
-                              || ((op_eq_precedence(peek, &token)) && (op_is_left_associative(peek))))) {
-                        ast_push(ast, peek);
-                        token_stack_pop( & stack);
-                    } else { break; }
-                }
-                if ( ispostfix ) {
-                    ast_push(ast, & token);
-                } else {
-                    token_stack_push( & stack, & token);
-                }
-            } else if ( token.type == TT_PUNCT_OPEN_PAREN ) {
                 token_stack_push( & stack, & token);
-            } else if ( token.type == TT_PUNCT_CLOSE_PAREN ) {
-                Token *peek = NULL;
-                while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
-                    if ( peek->type != TT_PUNCT_OPEN_PAREN ) {
-                        ast_push(ast, peek);
-                        token_stack_pop( & stack);
-                    } else { break; }
-                }
-                if ( stack.num_tokens == 0 ) {
-                    if ( peek && peek->type != TT_PUNCT_OPEN_PAREN ) {
-                        // Mismatched parentheses
-                        intpt_info_printf(intpt, "Mismatched parens\n");
-                        goto parse_end;
+                // ast_push(ast, &token);
+            } /* else if ( is function ) */
+            else {
+                if ( token.type == TT_PUNCT_OPEN_PAREN ) {
+                    token_stack_push( & stack, & token);
+                } else if ( token.type == TT_PUNCT_CLOSE_PAREN ) {
+                    Token *peek = NULL;
+                    while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
+                        if ( peek->type != TT_PUNCT_OPEN_PAREN ) {
+                            ast_push(ast, peek);
+                            token_stack_pop( & stack);
+                        } else { break; }
+                    }
+                    if ( stack.num_tokens == 0 ) {
+                        if ( peek && peek->type != TT_PUNCT_OPEN_PAREN ) {
+                            // Mismatched parentheses
+                            intpt_info_printf(intpt, "Mismatched parens\n");
+                            goto parse_end;
+                        }
+                    } else {
+                        // pop the closed paren from the stack
+                        token_stack_pop( & stack );
+                    }
+                } else if ( token_is_operator(& token)) {
+                    bool ispostfix = is_postfix_operator( &token);
+                    Token *peek = NULL;
+                    while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
+                        if ( !(peek->type == TT_PUNCT_OPEN_PAREN)
+                             && ( (peek->type == TT_IDENTIFIER || peek->type == TT_CONSTANT)
+                                  || (op_greater_precedence(peek, & token))
+                                  || ((op_eq_precedence(peek, &token)) && (op_is_left_associative(peek))))) {
+                            ast_push(ast, peek);
+                            token_stack_pop( & stack);
+                        } else { break; }
+                    }
+                    if ( ispostfix ) {
+                        ast_push(ast, & token);
+                    } else {
+                        token_stack_push( & stack, & token);
                     }
                 } else {
-                    // pop the closed paren from the stack
-                    token_stack_pop( & stack );
+                    invalid_code_path();
                 }
+                prev_was_identifier = false;
             }
         }
-        
-
     }
+
+    printf("Out of main loop: \n");
+
 
     /* if there are no more tokens to read: */
     /* 	while there are still operator tokens on the stack: */
@@ -604,6 +614,10 @@ ast_build_from_command( struct interpreter *intpt,
 
     Token *peek = NULL;
     while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))) {
+        token_stack_dbglog( & stack );
+        ast_dbglog( ast );
+        printf("\n");
+
         if ( peek->type == TT_PUNCT_OPEN_PAREN ||
              peek->type == TT_PUNCT_CLOSE_PAREN ) {
             intpt_info_printf( intpt, " ### Mismatched parens\n");
@@ -613,6 +627,10 @@ ast_build_from_command( struct interpreter *intpt,
         token_stack_pop ( & stack );
     }
 
+    printf("Final: ");
+    token_stack_dbglog( & stack );
+    ast_dbglog( ast );
+    printf("\n");
 
     return true;
     
