@@ -182,11 +182,11 @@ token_stack_dbglog(struct token_stack *stack)
     assert(stack);
     printf("{ stack->num_tokens = %zu", stack->num_tokens);
     for ( size_t i = 0; i < stack->num_tokens; i++ ) {
-        printf(", [<<<");
+        printf(", [+");
         log_token_text(stdout, & (stack->tokens[i]));
-        printf(">>>]");
+        printf("+]");
     }
-    printf("}\n");
+    printf(" }\n");
 }
 
 
@@ -263,11 +263,11 @@ ast_dbglog(struct ast* ast)
     assert(ast);
     printf("{ ast->num_tokens = %zu", ast->num_tokens);
     for ( size_t i = 0; i < ast->num_tokens; i++ ) {
-        printf(", [<<<");
+        printf(", [+");
         log_token_text(stdout, & (ast->tokens[i]));
-        printf(">>>]");
+        printf("+]");
     }
-    printf("}\n");
+    printf(" }\n");
 }
 
 
