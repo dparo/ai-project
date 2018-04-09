@@ -98,7 +98,7 @@ main( int argc, char **argv)
     struct interpreter intpt = {0};
     
 #if 0
-    EVAL_COMMANDLINE_INPLACE ( & intpt, "a == b ? c : 0");
+    EVAL_COMMANDLINE_INPLACE ( & intpt, "(a(b & c) | d) + e(f)");
 #else
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_len = 0; }

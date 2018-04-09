@@ -297,7 +297,8 @@ static inline void
 ast_print_token(struct interpreter *intpt,
                 Token *token)
 {
-    intpt_out_printf(intpt, "%.*s", token->text_len, token->text);
+    FILE *f = intpt->stream_info ? intpt->stream_info : stdout;
+    log_token_text(f, token);
 }
 
 
@@ -474,7 +475,7 @@ bruteforce_solve(struct interpreter *intpt)
 
 
 void
-ast_dbglog(struct interpreter *intpt)
+ast_representation_dbglog(struct interpreter *intpt)
 {
     struct ast *ast = & intpt->ast;
     Token *t;
@@ -511,6 +512,14 @@ ast_build_from_command( struct interpreter *intpt,
     // i think, but it may require further testing
     assert(commandline[commandline_len] == 0);
 
+
+#define SHUNTING_YARD_DEBUG 1
+    
+#if SHUNTING_YARD_DEBUG == 1
+#define SHUNT_DBG() do { token_stack_dbglog( & stack ); ast_dbglog( ast ); printf("\n"); } while(0);
+#else
+#define SHUNT_DBG() do { } while(0)
+#endif
     
     Token token = Empty_Token;
     bool done = false;
@@ -524,21 +533,23 @@ ast_build_from_command( struct interpreter *intpt,
     // operator stack
     static struct token_stack stack;
     stack.num_tokens = 0;
-      
-
-    fprintf(stderr, "Implement functions parsing and braces list "
-            "and square brackets\n");
+    bool prev_was_identifier = false;
 
     // NOTE: Maybe better error handling because even the push_state can throw an error
     //       Maybe set a locked variable inside the tokenizer for critical stuff
     //       that will inevitably inject more complexity on the library side
     while (!done && get_next_token( &tknzr, & token)) {
+        SHUNT_DBG();
         // NOTE: At every iteration the tokenizer error is cleared with the call to get_next_token
         if ( tknzr.err ) {
             puts(tknzr.err_desc);
             assert_msg(0, "We got an error boys");
         }    
 
+        if ( prev_was_identifier && token.type ==  TT_PUNCT_OPEN_PAREN ) {
+            token.type = TT_PUNCT_META_FNCALL;
+        }
+        
         // log_token(& token);
 
 
@@ -556,41 +567,27 @@ ast_build_from_command( struct interpreter *intpt,
         {
             if (token.type == TT_CONSTANT ||
                 token.type == TT_IDENTIFIER ) {
-                ast_push(ast, &token);
+                if ( token.type == TT_IDENTIFIER ) {
+                    prev_was_identifier = true;
+                }
+                token_stack_push( & stack, & token);
+                // ast_push(ast, &token);
             } /* else if ( is function ) */
             else {
-                if ( (token.type == TT_PUNCT_OPEN_PAREN)
-                     || (token.type == TT_PUNCT_OPEN_BRACE)
-                     || (token.type == TT_PUNCT_OPEN_BRACKET)) {
+                if ( token.type == TT_PUNCT_OPEN_PAREN ) {
                     token_stack_push( & stack, & token);
-                } else if ( (token.type == TT_PUNCT_CLOSE_PAREN)
-                            || (token.type == TT_PUNCT_CLOSE_BRACE)
-                            || (token.type == TT_PUNCT_CLOSE_BRACKET)) {
+                } else if ( token.type == TT_PUNCT_CLOSE_PAREN
+                            || token.type == TT_PUNCT_CLOSE_BRACE
+                            || token.type == TT_PUNCT_CLOSE_BRACKET) {
                     Token *peek = NULL;
                     while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
-                        if ( (peek->type != TT_PUNCT_OPEN_PAREN )
-                             && (peek->type != TT_PUNCT_OPEN_BRACE)
-                             && (peek->type != TT_PUNCT_OPEN_BRACKET)) {
+                        if ( peek->type != TT_PUNCT_OPEN_PAREN ) {
                             ast_push(ast, peek);
                             token_stack_pop( & stack);
-                        } else {
-                            if ( peek != stack.tokens ) {
-                                Token *t = peek - 1;
-                                fprintf(stderr, "The previous identifier is not onto the stack, its inside the ast, so this if will always fail\n");
-                                if ( (t->type == TT_IDENTIFIER && peek->type == TT_PUNCT_OPEN_PAREN)) {
-                                    ast_push(ast, peek);
-                                } else {
-                                    break;
-                                }
-                            } else {
-                                break;
-                            }
-                        }
+                        } else { break; }
                     }
                     if ( stack.num_tokens == 0 ) {
-                        if ( (peek) && (peek->type != TT_PUNCT_OPEN_PAREN)
-                             && ( peek->type != TT_PUNCT_OPEN_BRACKET)
-                             && ( peek->type != TT_PUNCT_OPEN_BRACE ) ) {
+                        if ( peek && peek->type != TT_PUNCT_OPEN_PAREN ) {
                             // Mismatched parentheses
                             intpt_info_printf(intpt, "Mismatched parens\n");
                             goto parse_end;
@@ -604,7 +601,8 @@ ast_build_from_command( struct interpreter *intpt,
                     Token *peek = NULL;
                     while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
                         if ( !(peek->type == TT_PUNCT_OPEN_PAREN)
-                             && ( (op_greater_precedence(peek, & token))
+                             && ( (peek->type == TT_IDENTIFIER || peek->type == TT_CONSTANT)
+                                  || (op_greater_precedence(peek, & token))
                                   || ((op_eq_precedence(peek, &token)) && (op_is_left_associative(peek))))) {
                             ast_push(ast, peek);
                             token_stack_pop( & stack);
@@ -618,10 +616,25 @@ ast_build_from_command( struct interpreter *intpt,
                 } else {
                     invalid_code_path();
                 }
+
+                if ( prev_was_identifier && token.type == TT_PUNCT_META_FNCALL ) {
+                    token.type = TT_PUNCT_OPEN_PAREN;
+                    token_stack_push( & stack, & token);
+                }
+
+                if ( token.type == TT_PUNCT_OPEN_BRACE || token.type == TT_PUNCT_OPEN_BRACKET ) {
+                    token.type = TT_PUNCT_OPEN_PAREN;
+                    token_stack_push ( & stack, & token );
+                }
+                
+                prev_was_identifier = false;
             }
         }
-
     }
+
+#if SHUNTING_YARD_DEBUG == 1
+    printf("Out of main loop: \n");
+#endif
 
     /* if there are no more tokens to read: */
     /* 	while there are still operator tokens on the stack: */
@@ -630,8 +643,11 @@ ast_build_from_command( struct interpreter *intpt,
 
     Token *peek = NULL;
     while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))) {
+        SHUNT_DBG();
         if ( peek->type == TT_PUNCT_OPEN_PAREN ||
-             peek->type == TT_PUNCT_CLOSE_PAREN ) {
+             peek->type == TT_PUNCT_CLOSE_PAREN ||
+             peek->type == TT_PUNCT_CLOSE_BRACE ||
+             peek->type == TT_PUNCT_CLOSE_BRACKET) {
             intpt_info_printf( intpt, " ### Mismatched parens\n");
             goto parse_end;
         }
@@ -639,6 +655,14 @@ ast_build_from_command( struct interpreter *intpt,
         token_stack_pop ( & stack );
     }
 
+#if SHUNTING_YARD_DEBUG == 1
+    printf("Final: ");
+    SHUNT_DBG();
+#endif
+    
+    token_stack_dbglog( & stack );
+    ast_dbglog( ast );
+    printf("\n");
 
     return true;
     
@@ -734,7 +758,7 @@ eval_ast(struct interpreter *intpt )
 
     
     if (preprocess_command (intpt)) {
-#if 0
+#if 1
         intpt_print_header(intpt);
 #else
         bruteforce_solve(intpt);
@@ -760,8 +784,8 @@ eval_commandline ( struct interpreter *intpt,
     
     if ( intpt_begin_frame(intpt)) {
         if ( ast_build_from_command( intpt, commandline, commandline_len ) ) {
-# if 1
-            ast_dbglog(intpt);
+# if 0
+            ast_representation_dbglog(intpt);
 # else
             if ( eval_ast( intpt ) ) {
                 
