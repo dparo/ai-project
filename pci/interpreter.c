@@ -512,6 +512,14 @@ ast_build_from_command( struct interpreter *intpt,
     // i think, but it may require further testing
     assert(commandline[commandline_len] == 0);
 
+
+#define SHUNTING_YARD_DEBUG 1
+    
+#if SHUNTING_YARD_DEBUG == 1
+#define SHUNT_DBG() do { token_stack_dbglog( & stack ); ast_dbglog( ast ); printf("\n"); } while(0);
+#else
+#define SHUNT_DBG() do { } while(0)
+#endif
     
     Token token = Empty_Token;
     bool done = false;
@@ -532,15 +540,17 @@ ast_build_from_command( struct interpreter *intpt,
     //       Maybe set a locked variable inside the tokenizer for critical stuff
     //       that will inevitably inject more complexity on the library side
     while (!done && get_next_token( &tknzr, & token)) {
-        token_stack_dbglog( & stack );
-        ast_dbglog( ast );
-        printf("\n");
+        SHUNT_DBG();
         // NOTE: At every iteration the tokenizer error is cleared with the call to get_next_token
         if ( tknzr.err ) {
             puts(tknzr.err_desc);
             assert_msg(0, "We got an error boys");
         }    
 
+        if ( prev_was_identifier && token.type ==  TT_PUNCT_OPEN_PAREN ) {
+            token.type = TT_PUNCT_META_FNCALL;
+        }
+        
         // log_token(& token);
 
         // Extensions ->
@@ -555,6 +565,9 @@ ast_build_from_command( struct interpreter *intpt,
         {
             if (token.type == TT_CONSTANT ||
                 token.type == TT_IDENTIFIER ) {
+                if ( token.type == TT_IDENTIFIER ) {
+                    prev_was_identifier = true;
+                }
                 token_stack_push( & stack, & token);
                 // ast_push(ast, &token);
             } /* else if ( is function ) */
@@ -599,13 +612,18 @@ ast_build_from_command( struct interpreter *intpt,
                 } else {
                     invalid_code_path();
                 }
+                if ( prev_was_identifier && token.type == TT_PUNCT_META_FNCALL ) {
+                    token.type = TT_PUNCT_OPEN_PAREN;
+                    token_stack_push( & stack, & token);
+                }
                 prev_was_identifier = false;
             }
         }
     }
 
+#if SHUNTING_YARD_DEBUG == 1
     printf("Out of main loop: \n");
-
+#endif
 
     /* if there are no more tokens to read: */
     /* 	while there are still operator tokens on the stack: */
@@ -614,10 +632,7 @@ ast_build_from_command( struct interpreter *intpt,
 
     Token *peek = NULL;
     while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))) {
-        token_stack_dbglog( & stack );
-        ast_dbglog( ast );
-        printf("\n");
-
+        SHUNT_DBG();
         if ( peek->type == TT_PUNCT_OPEN_PAREN ||
              peek->type == TT_PUNCT_CLOSE_PAREN ) {
             intpt_info_printf( intpt, " ### Mismatched parens\n");
@@ -627,7 +642,11 @@ ast_build_from_command( struct interpreter *intpt,
         token_stack_pop ( & stack );
     }
 
+#if SHUNTING_YARD_DEBUG == 1
     printf("Final: ");
+    SHUNT_DBG();
+#endif
+    
     token_stack_dbglog( & stack );
     ast_dbglog( ast );
     printf("\n");
@@ -726,7 +745,7 @@ eval_ast(struct interpreter *intpt )
 
     
     if (preprocess_command (intpt)) {
-#if 0
+#if 1
         intpt_print_header(intpt);
 #else
         bruteforce_solve(intpt);

@@ -60,7 +60,7 @@ static const struct operator_infos {
     // calculus we use implication `->` right associative
     [TT_PUNCT_ARROW]         = { 1, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
 
-    [TT_PUNCT_META_FNCALL]     = { 0, 2, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
+    [TT_PUNCT_META_FNCALL]     = { 0, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_OPEN_BRACE]      = { 0, 2, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
     [TT_PUNCT_OPEN_BRACKET]    = { 0, 2, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
     
