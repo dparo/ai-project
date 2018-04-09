@@ -58,6 +58,10 @@ enum Token_Type {
     TT_PUNCT_QUESTION_MARK,
     TT_PUNCT_COLON,     // :
 
+    TT_PUNCT_META_FNCALL,
+    TT_PUNCT_OPEN_BRACKET,
+    TT_PUNCT_OPEN_BRACE,
+
 
 
     TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS, // marker
@@ -100,9 +104,7 @@ enum Token_Type {
 
     TT_PUNCT_OPEN_PAREN,
     TT_PUNCT_CLOSE_PAREN,
-    TT_PUNCT_OPEN_BRACKET,
     TT_PUNCT_CLOSE_BRACKET,
-    TT_PUNCT_OPEN_BRACE,
     TT_PUNCT_CLOSE_BRACE,
 
     TT_PUNCT_ENUM_LAST_VALUE,
@@ -1005,9 +1007,24 @@ compare_next_token_to (Tokenizer *tknzr, char * token_text )
 
 
 
+void log_token_text (FILE *stream, Token *token)
+{
+    char *text = token->text;
+    int text_len = token->text_len;
+    if ( token->type == TT_PUNCT_META_FNCALL ) {
+        text = "`fncall`";
+        text_len = sizeof("`fncall`") - 1;
+    }
+    fprintf(stream, "%.*s", text_len, text);
+}
+
+
+
+
 void log_token (Token *token)
 {
-     printf("%.*s\tline_number=%d\tcolumn=%d\n", token->text_len, token->text, token->line_num, token->column);
+    log_token_text(stdin, token);
+    fprintf(stdin, "\tline_number=%d\tcolumn=%d\n", token->line_num, token->column);
 }
 
 

@@ -297,7 +297,8 @@ static inline void
 ast_print_token(struct interpreter *intpt,
                 Token *token)
 {
-    intpt_out_printf(intpt, "%.*s", token->text_len, token->text);
+    FILE *f = intpt->stream_info ? intpt->stream_info : stdout;
+    log_token_text(f, token);
 }
 
 
@@ -474,7 +475,7 @@ bruteforce_solve(struct interpreter *intpt)
 
 
 void
-ast_dbglog(struct interpreter *intpt)
+ast_representation_dbglog(struct interpreter *intpt)
 {
     struct ast *ast = & intpt->ast;
     Token *t;
@@ -529,6 +530,9 @@ ast_build_from_command( struct interpreter *intpt,
     //       Maybe set a locked variable inside the tokenizer for critical stuff
     //       that will inevitably inject more complexity on the library side
     while (!done && get_next_token( &tknzr, & token)) {
+        token_stack_dbglog( & stack );
+        ast_dbglog( ast );
+        printf("\n");
         // NOTE: At every iteration the tokenizer error is cleared with the call to get_next_token
         if ( tknzr.err ) {
             puts(tknzr.err_desc);
@@ -731,7 +735,7 @@ eval_commandline ( struct interpreter *intpt,
     if ( intpt_begin_frame(intpt)) {
         if ( ast_build_from_command( intpt, commandline, commandline_len ) ) {
 # if 0
-            ast_dbglog(intpt);
+            ast_representation_dbglog(intpt);
 # else
             if ( eval_ast( intpt ) ) {
                 
