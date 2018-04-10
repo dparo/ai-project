@@ -507,5 +507,82 @@ vm_stack_dbglog(struct vm_stack *vm)
 }
 
 
+
+/* HASHING FUNCTIONS */
+
+size_t
+string_compute_hash(char *str)
+{
+    size_t hash = 5381;
+    int c;
+
+    while ((c = *str++))
+        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+
+    return hash;
+}
+
+
+typedef long long int hash_node_val;
+
+struct hash_node {
+    struct hash_node *next;
+    char *key;
+    hash_node_val value;
+};
+
+
+struct hash_map {
+    #define HASH_MAP_MAX_NELEMS 1024
+    struct hash_node *nodes[HASH_MAP_MAX_NELEMS]; // linked list nodes
+};
+
+
+bool
+hash_map_init( struct hash_map *hm )
+{
+    struct hash_node node;
+    bool result = true;
+    memset(hm, 0, sizeof(struct hash_map));
+    return result;
+}
+
+
+bool
+hash_map_add( struct hash_map *hm,
+              char *key,
+              hash_node_val val )
+{
+    bool result = true;
+    size_t hash = string_compute_hash(key);
+    size_t index = hash % HASH_MAP_MAX_NELEMS;
+
+    struct hash_node **node = &(hm->nodes[index]);
+
+    while( (*node)->next != NULL) {
+        node = &((*node)->next);
+    }
+
+    struct hash_node *t = malloc(sizeof(struct hash_node));
+    if ( !t ) {
+        (*node)->next = t;
+        char *tempstring = strdup(key);
+        if ( tempstring ) {
+            (*node)->key = key;
+            (*node)->value = val;
+        } else {
+            result = false;
+        }
+    } else {
+        result = false;
+    }
+    
+    return result;
+}
+              
+
+
+
+
 #endif /* INTERPRETER_UTILS_C_IMPL */
 
