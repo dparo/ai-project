@@ -1031,6 +1031,9 @@ void log_token_text (FILE *stream, Token *token)
     } else if ( token->type == TT_PUNCT_META_COMPOUND ) {
         text = "`compound`";
         text_len = sizeof("`compound`") - 1;
+    } else if ( token->type == TT_PUNCT_META_DEREF ) {
+        text = "`deref`";
+        text_len = sizeof("`deref`") - 1;
     }
     fprintf(stream, "%.*s", text_len, text);
 }

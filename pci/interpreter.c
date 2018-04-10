@@ -555,7 +555,9 @@ ast_build_from_command( struct interpreter *intpt,
                 token.type = TT_PUNCT_META_INDEX;
             } else if ( token.type == TT_PUNCT_OPEN_BRACE ) {
                 token.type = TT_PUNCT_META_COMPOUND;
-            } else if (token.type == TT_PUNCT_ASTERISK ) {
+            }
+        } else {
+            if ( token.type == TT_PUNCT_ASTERISK ) {
                 token.type = TT_PUNCT_META_DEREF;
             }
         }
