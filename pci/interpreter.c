@@ -546,8 +546,15 @@ ast_build_from_command( struct interpreter *intpt,
             assert_msg(0, "We got an error boys");
         }    
 
-        if ( prev_was_identifier && token.type ==  TT_PUNCT_OPEN_PAREN ) {
-            token.type = TT_PUNCT_META_FNCALL;
+
+        if ( prev_was_identifier ) {
+            if ( token.type ==  TT_PUNCT_OPEN_PAREN ) {
+                token.type = TT_PUNCT_META_FNCALL;
+            } else if (token.type == TT_PUNCT_OPEN_BRACKET ) {
+                token.type = TT_PUNCT_META_INDEX;
+            } else if ( token.type == TT_PUNCT_OPEN_BRACE ) {
+                token.type = TT_PUNCT_META_COMPOUND;
+            }
         }
         
         // log_token(& token);
@@ -622,7 +629,8 @@ ast_build_from_command( struct interpreter *intpt,
                     token_stack_push( & stack, & token);
                 }
 
-                if ( token.type == TT_PUNCT_OPEN_BRACE || token.type == TT_PUNCT_OPEN_BRACKET ) {
+                if ( token.type == TT_PUNCT_OPEN_BRACE || token.type == TT_PUNCT_OPEN_BRACKET
+                     || token.type == TT_PUNCT_META_INDEX || token.type == TT_PUNCT_META_COMPOUND) {
                     token.type = TT_PUNCT_OPEN_PAREN;
                     token_stack_push ( & stack, & token );
                 }
