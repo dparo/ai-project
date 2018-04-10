@@ -501,6 +501,7 @@ ast_representation_dbglog(struct interpreter *intpt)
 
 
 
+
 bool
 ast_build_from_command( struct interpreter *intpt,
                         char *commandline, size_t commandline_len )
@@ -652,14 +653,13 @@ ast_build_from_command( struct interpreter *intpt,
     Token *peek = NULL;
     while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))) {
         SHUNT_DBG();
-        if ( peek->type == TT_PUNCT_OPEN_PAREN ||
-             peek->type == TT_PUNCT_CLOSE_PAREN ||
-             peek->type == TT_PUNCT_CLOSE_BRACE ||
-             peek->type == TT_PUNCT_CLOSE_BRACKET) {
+        if ( peek->type == TT_PUNCT_OPEN_PAREN || peek->type == TT_PUNCT_CLOSE_PAREN
+             || peek->type == TT_PUNCT_OPEN_BRACE || peek->type == TT_PUNCT_CLOSE_BRACE
+             || peek->type == TT_PUNCT_OPEN_BRACKET || peek->type == TT_PUNCT_CLOSE_BRACKET ) {
             intpt_info_printf( intpt, " ### Mismatched parens\n");
             goto parse_end;
         }
-        ast_push( ast, peek);
+        ast_push( ast, peek );
         token_stack_pop ( & stack );
     }
 
