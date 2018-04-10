@@ -33,6 +33,9 @@ static const struct operator_infos {
     //                 to avoid parsing failures.
     [TT_PUNCT_COLON]         = { 14, 3, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_QUESTION_MARK] = { 14, 1, RIGHT_ASSOCIATIVE_OP, POSTFIX_OP },
+    [TT_PUNCT_POUND]         = { 14, 1, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
+    [TT_PUNCT_DOLLAR_SIGN]   = { 14, 1, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
+    [TT_PUNCT_AT_SIGN]       = { 13, 1, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
         
     [TT_PUNCT_EQUAL]         = { 14, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_LOGICAL_OR]    = { 12, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },

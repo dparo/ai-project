@@ -66,6 +66,14 @@ enum Token_Type {
     TT_PUNCT_OPEN_BRACKET,
     TT_PUNCT_OPEN_BRACE,
     
+#if TOKENIZER_DOLLAR_SIGN_VALID_IDENTIFIER == 1
+    TT_PUNCT_DOLLAR_SIGN, // $
+#endif
+
+    TT_PUNCT_AT_SIGN, // @
+    TT_PUNCT_POUND, // #
+
+
     TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS, // marker
     // enums that follows this marker are parsed but not implemented
     // semantically
@@ -74,12 +82,6 @@ enum Token_Type {
     TT_PUNCT_BACKWARD_SLASH, //
     TT_PUNCT_BACKWARD_APOSTROPHE, // `
 
-#if TOKENIZER_DOLLAR_SIGN_VALID_IDENTIFIER == 1
-    TT_PUNCT_DOLLAR_SIGN, // $
-#endif
-
-    TT_PUNCT_AT_SIGN, // @
-    TT_PUNCT_POUND, // #
 
 
     TT_PUNCT_PLUS,
