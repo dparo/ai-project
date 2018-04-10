@@ -27,9 +27,9 @@
 #include <ctype.h>
 
 
-#define UNUSED(...) (void)(__VA_ARGS__)
-#define MIN(a,b) ((a) < (b) ? (a) : (b))
-#define MAX(a,b) ((a) < (b) ? (b) : (a))
+#define UNUSED(...)  (void)(__VA_ARGS__)
+#define MIN(a,b)     ((a) < (b) ? (a) : (b))
+#define MAX(a,b)     ((a) < (b) ? (b) : (a))
 
 #include <sys/types.h>
 #include <sys/socket.h>

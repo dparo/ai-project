@@ -58,6 +58,8 @@ enum Token_Type {
     TT_PUNCT_QUESTION_MARK,
     TT_PUNCT_COLON,     // :
 
+
+    TT_PUNCT_META_DEREF,
     TT_PUNCT_META_FNCALL,
     TT_PUNCT_META_INDEX,
     TT_PUNCT_META_COMPOUND,
@@ -69,9 +71,15 @@ enum Token_Type {
     // semantically
 
 
-    TT_PUNCT_BACKWARD_SLASH,
-    TT_PUNCT_BACKWARD_APOSTROPHE,
-    TT_PUNCT_AT_SIGN,
+    TT_PUNCT_BACKWARD_SLASH, //
+    TT_PUNCT_BACKWARD_APOSTROPHE, // `
+
+#if TOKENIZER_DOLLAR_SIGN_VALID_IDENTIFIER == 1
+    TT_PUNCT_DOLLAR_SIGN, // $
+#endif
+
+    TT_PUNCT_AT_SIGN, // @
+    TT_PUNCT_POUND, // #
 
 
     TT_PUNCT_PLUS,
@@ -431,7 +439,8 @@ is_punctuator (char c)
              || (c >= 0x3A && c <= 0x40)
              || (c >= 0x5B && c <= 0x5E)
              || (c >= 0x7B)
-             || (c ==  0x60) /* ` backtick apostrophe */
+             || (c ==  0x60)  /* ` backtick apostrophe */
+             || (c == '#' )
         ); 
 }
 
@@ -574,9 +583,6 @@ tokenizer_adv_over_start_of_string ( Tokenizer *tknzr, char* punct )
 }
 
 
-// TODO: Eats the entire preprocessor directive line, maybe we want to provide an extra
-// step to split it into tokens ?
-
 static void
 parse_digit ( Tokenizer *tknzr,
               Token * token )
@@ -704,6 +710,10 @@ parse_punctuator ( Tokenizer *tknzr,
      else if (c1 == '@') {
           token->type = TT_PUNCT_AT_SIGN;
           token->text_len = 1;
+     }
+     else if ( c1 == '#' ) {
+         token->type = TT_PUNCT_POUND;
+         token->text_len = 1;
      }
      else if ( c1 == '+') {
           if ( c2 == '+') {
