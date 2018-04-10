@@ -97,7 +97,7 @@ main( int argc, char **argv)
 
     struct interpreter intpt = {0};
     
-#if 1
+#if 0
     EVAL_COMMANDLINE_INPLACE ( & intpt, "a[ (1], {c), d}");
 #else
     while ( 1 ) {

@@ -601,8 +601,9 @@ ast_build_from_command( struct interpreter *intpt,
                             goto parse_end;
                         }
                     } else {
-                        // pop the closed paren from the stack
-                        token_stack_pop( & stack );
+                        // pop the open paren from the stack
+                        if ( peek && peek->type == TT_PUNCT_OPEN_PAREN )
+                            token_stack_pop( & stack );
                     }
                 } else if ( token_is_operator(& token)) {
                     bool ispostfix = is_postfix_operator( &token);
@@ -654,8 +655,8 @@ ast_build_from_command( struct interpreter *intpt,
     while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))) {
         SHUNT_DBG();
         if ( peek->type == TT_PUNCT_OPEN_PAREN || peek->type == TT_PUNCT_CLOSE_PAREN
-             || peek->type == TT_PUNCT_OPEN_BRACE || peek->type == TT_PUNCT_CLOSE_BRACE
-             || peek->type == TT_PUNCT_OPEN_BRACKET || peek->type == TT_PUNCT_CLOSE_BRACKET ) {
+             || peek->type == TT_PUNCT_CLOSE_BRACE
+             || peek->type == TT_PUNCT_CLOSE_BRACKET ) {
             intpt_info_printf( intpt, " ### Mismatched parens\n");
             goto parse_end;
         }
