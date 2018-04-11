@@ -1,4 +1,4 @@
-:source-highlighter: coderay
+:source-highlighter: highlightjs
 
 = Hello, AsciiDoc
 
@@ -20,7 +20,7 @@ http://asciidoc.org[AsciiDoc]
 ** item3
 
 
-
+== Implementation
 .main.c
 [source,c,linenums]
 ----

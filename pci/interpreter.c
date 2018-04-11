@@ -509,7 +509,7 @@ ast_build_from_command( struct interpreter *intpt,
     struct ast *ast = & intpt->ast;
     ast_clear(ast);
 
-    // Insure null-termination, It is not strictly necessary
+    // Ensure null-termination, It is not strictly necessary
     // i think, but it may require further testing
     assert(commandline[commandline_len] == 0);
 
