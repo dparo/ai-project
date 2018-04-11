@@ -10,6 +10,7 @@
 ** Implementazione di un risolutore
    - https://en.wikipedia.org/wiki/Boolean_satisfiability_problem
      - https://en.wikipedia.org/wiki/Chaff_algorithm
+       - http://www.princeton.edu/~chaff/publication/DAC2001v56.pdf
      - https://en.wikipedia.org/wiki/GRASP_(SAT_solver)
      - https://en.wikipedia.org/wiki/Local_search_(constraint_satisfaction)
      - https://en.wikipedia.org/wiki/WalkSAT
