@@ -18,7 +18,7 @@
      - https://en.wikipedia.org/wiki/Davis%E2%80%93Putnam_algorithm
    - https://en.wikipedia.org/wiki/DPLL_algorithm
    - https://en.wikipedia.org/wiki/Conflict-Driven_Clause_Learning ( modern evolution of DPLL algorithm, state of the art in 2014)
-   - http://logictools.org/propositional.html
+   - http://logictools.org/propositional.html ( Good link to get started on reading )
    - http://minisat.se/
    - http://minisat.se/downloads/MiniSat.pdf
    - http://www.satcompetition.org/
@@ -26,19 +26,17 @@
 
 ** AST Generation:
 
-  - https://en.wikipedia.org/wiki/Shunting-yard_algorithm
-  - http://wcipeg.com/wiki/Shunting_yard_algorithm
+  - https://en.wikipedia.org/wiki/Shunting-yard_algorithm ( READ )
+  - http://wcipeg.com/wiki/Shunting_yard_algorithm ( READ )
   
 *** Impelementation Notes:
-    - https://stackoverflow.com/questions/42683665/modify-the-shunting-yard-algorithm-to-include-a-wall-operator
-    - https://softwareengineering.stackexchange.com/questions/290043/precedence-of-function-in-shunting-yard-algorithm
+    - https://stackoverflow.com/questions/42683665/modify-the-shunting-yard-algorithm-to-include-a-wall-operator ( READ )
+    - https://softwareengineering.stackexchange.com/questions/290043/precedence-of-function-in-shunting-yard-algorithm ( READ )
 
     - http://reedbeta.com/blog/the-shunting-yard-algorithm/
-    - https://www.quora.com/How-do-I-parse-mathematical-expressions-with-sin-cos-tan-etc-in-C-with-shunting-yard-algorithm
-    - https://softwareengineering.stackexchange.com/questions/290916/incorporating-functions-into-a-shunting-yard-algorithm-implementation?rq=1
-    - https://en.wikipedia.org/wiki/Operator_(computer_programming)
+    - https://softwareengineering.stackexchange.com/questions/290916/incorporating-functions-into-a-shunting-yard-algorithm-implementation?rq=1  ( READ )
 
-  - https://en.wikipedia.org/wiki/Recursive_descent_parser
+  - https://en.wikipedia.org/wiki/Recursive_descent_parser ( PROPER WAY TO IMPLEMENT THE PARSER: NOT THE CASE FOR THIS PROJECT )
 
 * Introduzione
   - BLAH BLAH

@@ -191,8 +191,8 @@ token_stack_dbglog(struct token_stack *stack)
 
 
 void
-vm_stack_push(struct vm_stack *stack,
-                           bool v)
+vm_stack_push( struct vm_stack *stack,
+               bool v )
 {
     assert(stack->num_bits != VM_STACK_MAX_NUMBITS);
     vm_stack_pack_bool(stack, v, (stack->num_bits));
