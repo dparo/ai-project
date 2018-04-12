@@ -92,6 +92,7 @@ user_interact(char **commandline, size_t *commandline_len)
 int
 main( int argc, char **argv)
 {
+    comm_line_args(argc, argv);
     platform_init();
     UNUSED(argc), UNUSED(argv);
 
