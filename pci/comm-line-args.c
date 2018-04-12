@@ -18,6 +18,9 @@ error_t argp_error_exit_status = EX_USAGE;
 
 static const struct argp_option opts[] = {
     // name, key, arg, flags, doc, group
+
+    // @NOTE: the group is used to sort and show near options of the same group
+    // when requesting the --help option
     { "solver", 's', "SOLVER", OPTION_ARG_OPTIONAL | 0, "Specify the solver to use: {bruteforce | SLD}", 1},
     {0}
 };
@@ -32,7 +35,7 @@ commline_dbglog(const char *fmt, ...)
 }
 
 error_t
-parser (int key, char *arg, struct argp_state *state)
+argp_parser (int key, char *arg, struct argp_state *state)
 {
     if ( key == ARGP_KEY_INIT ) {
         // This is always the first time this function will get called
@@ -72,7 +75,7 @@ parser (int key, char *arg, struct argp_state *state)
 
 static const struct argp argp = {
     .options = opts,
-    .parser = parser,
+    .parser = argp_parser,
     .doc = NULL,
     .children = NULL,
     .argp_domain = NULL
@@ -83,7 +86,6 @@ static const struct argp argp = {
 void
 comm_line_args(int argc, char **argv)
 {
-
     int *arg_index = NULL;
     void *input = NULL;
     argp_parse(& argp, argc, argv, 0, arg_index, input);
