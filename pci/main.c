@@ -86,6 +86,9 @@ user_interact(char **commandline, size_t *commandline_len)
     eval_commandline((intpt), strdup(command), strlen(command))
         
 
+#define COMM_LINE_ARGS_C_IMPL
+#include "comm-line-args.c"
+
 int
 main( int argc, char **argv)
 {
