@@ -1,0 +1,23 @@
+
+mices = [jerry]
+cats = [tom]
+
+
+// How to express the concatenation of list.
+// is it based on evaluation/substitution or should it work like a c-macro???
+animals = mices + cats
+
+
+
+
+// Optimization generation, tree branch cutting off,
+// What should happen when formulas do have side effect like in this
+// case where we do print onto the screen...?
+
+// Prolog just seems to do not care, and gives you an imperative
+// style too to express this kind of stuff where really needed
+// If used inside the expression the side effect may never be generated!
+(# x @ mices { print(x) }) == (# x @ animals { mices[x], print(x) })
+
+
+siblings[ [sally, erica], [ ... ] ]
