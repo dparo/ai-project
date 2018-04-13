@@ -208,6 +208,7 @@ is_postfix_delimiter(enum delimiter d)
 struct ast_node {
     char *text;
     i32 text_len;
+    int num_operands;
     enum ast_node_type type;
     enum operator op;
     enum delimiter del;
@@ -271,10 +272,12 @@ ast_node_from_token( struct ast_node *node,
     assert(curr_t);
     
     bool result = true;
-    node->text = curr_t->text;
-    node->text_len = curr_t->text_len;
-    node->op = OPERATOR_NONE;
-    node->del = DELIMITER_NONE;
+
+    node->text         = curr_t->text;
+    node->text_len     = curr_t->text_len;
+    node->op           = OPERATOR_NONE;
+    node->del          = DELIMITER_NONE;
+    node->num_operands = 0;
 
     if ( curr_t->type == TT_IDENTIFIER ) {
         node->type = AST_NODE_TYPE_IDENTIFIER;
