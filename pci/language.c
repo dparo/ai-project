@@ -139,27 +139,23 @@ enum ast_node_type {
     AST_NODE_TYPE_IDENTIFIER,
     AST_NODE_TYPE_KEYWORD,
     AST_NODE_TYPE_CONSTANT,
-    AST_NODE_TYPE_PREFIX_DELIMITER,
-    AST_NODE_TYPE_INFIX_DELIMITER,
-    AST_NODE_TYPE_POSTFIX_DELIMITER,    
+    AST_NODE_TYPE_DELIMITER,
 };
 
 
-enum prefix_delimiter {
-    PREFIX_DELIMITER_UKNOWN,
+enum delimiter {
+    // It's not a delimiter
+    DELIMITER_NONE,
+    
+    PREFIX_DELIMITER_UKNOWN = 1,
     PREFIX_DELIMITER_PAREN,
     PREFIX_DELIMITER_BRACKET,
     PREFIX_DELIMITER_BRACE,
     PREFIX_DELIMITER_QUESTION_MARK,
-};
 
-enum infix_delimiter {
-    INFIX_DELIMITER_COMMA,
-};
+    INFIX_DELIMITER_COMMA = 1 << 8,
 
-
-enum postfix_delimiter {
-    POSTFIX_DELIMITER_PAREN,
+    POSTFIX_DELIMITER_PAREN = 1 << 16,
     POSTFIX_DELIMITER_BRACKET,
     POSTFIX_DELIMITER_BRACE,
     POSTFIX_DELIMITER_COLON,
@@ -167,17 +163,54 @@ enum postfix_delimiter {
     POSTFIX_DELIMITER_SEMICOLON,
 };
 
+bool
+is_prefix_delimiter(enum delimiter d)
+{
+    int mask = 0;
+    mask |= 1 << 8;
+    mask |= 1 << 16;
+    if ( (d & mask) == 0 ) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+bool
+is_infix_delimiter(enum delimiter d)
+{
+    int mask = 0;
+    mask |= 1 << 8;
+
+    if ( (d & mask) != 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+
+bool
+is_postfix_delimiter(enum delimiter d)
+{
+    int mask = 0;
+    mask |= 1 << 16;
+
+    if ( (d & mask) != 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
 
 struct ast_node {
     char *text;
     i32 text_len;
     enum ast_node_type type;
-    union {
-        enum operator op;
-        enum prefix_delimiter opdel;
-        enum infix_delimiter indel;
-        enum postfix_delimiter cldel;
-    };
+    enum operator op;
+    enum delimiter del;
 };
 
 
@@ -240,6 +273,8 @@ ast_node_from_token( struct ast_node *node,
     bool result = true;
     node->text = curr_t->text;
     node->text_len = curr_t->text_len;
+    node->op = OPERATOR_NONE;
+    node->del = DELIMITER_NONE;
 
     if ( curr_t->type == TT_IDENTIFIER ) {
         node->type = AST_NODE_TYPE_IDENTIFIER;
@@ -256,51 +291,54 @@ ast_node_from_token( struct ast_node *node,
 
     else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
         if (prev_t && prev_t->type == TT_IDENTIFIER) {
+            node->type = AST_NODE_TYPE_OPERATOR;
             node->op = OPERATOR_FNCALL;
         } else {
-            node->type = AST_NODE_TYPE_PREFIX_DELIMITER;
-            node->opdel = PREFIX_DELIMITER_PAREN;
+            node->type = AST_NODE_TYPE_DELIMITER;
         }
+        node->del = PREFIX_DELIMITER_PAREN;
     } else if (curr_t->type == TT_PUNCT_OPEN_BRACKET) {
         if (prev_t && prev_t->type == TT_IDENTIFIER) {
+            node->type = AST_NODE_TYPE_OPERATOR;
             node->op = OPERATOR_INDEX;
         } else {
-            node->type = AST_NODE_TYPE_PREFIX_DELIMITER;
-            node->opdel = PREFIX_DELIMITER_BRACKET;
+            node->type = AST_NODE_TYPE_DELIMITER;
         }
+        node->del = PREFIX_DELIMITER_BRACKET;
     } else if (curr_t->type == TT_PUNCT_OPEN_BRACE) {
         if (prev_t && prev_t->type == TT_IDENTIFIER) {
+            node->type = AST_NODE_TYPE_OPERATOR;
             node->op = OPERATOR_COMPOUND;
         } else {
-            node->type = AST_NODE_TYPE_PREFIX_DELIMITER;
-            node->opdel = PREFIX_DELIMITER_BRACE;
+            node->type = AST_NODE_TYPE_DELIMITER;
         }
+        node->del = PREFIX_DELIMITER_BRACE;
     }
 
     else if (curr_t->type == TT_PUNCT_CLOSE_PAREN) {
-        node->type = AST_NODE_TYPE_POSTFIX_DELIMITER;
-        node->opdel = POSTFIX_DELIMITER_PAREN;
+        node->type = AST_NODE_TYPE_DELIMITER;
+        node->del = POSTFIX_DELIMITER_PAREN;
     } else if (curr_t->type == TT_PUNCT_CLOSE_BRACKET) {
-        node->type = AST_NODE_TYPE_POSTFIX_DELIMITER;
-        node->opdel = POSTFIX_DELIMITER_BRACKET;
+        node->type = AST_NODE_TYPE_DELIMITER;
+        node->del = POSTFIX_DELIMITER_BRACKET;
     } else if (curr_t->type == TT_PUNCT_CLOSE_BRACE) {
-        node->type = AST_NODE_TYPE_POSTFIX_DELIMITER;
-        node->opdel = POSTFIX_DELIMITER_BRACE;
+        node->type = AST_NODE_TYPE_DELIMITER;
+        node->del = POSTFIX_DELIMITER_BRACE;
     }
 
     
     else if (curr_t->type == TT_PUNCT_COMMA) {
-        node->type = AST_NODE_TYPE_POSTFIX_DELIMITER;
-        node->opdel = INFIX_DELIMITER_COMMA;
+        node->type = AST_NODE_TYPE_DELIMITER;
+        node->del = INFIX_DELIMITER_COMMA;
     } else if (curr_t->type == TT_PUNCT_SEMICOLON) {
-        node->type = AST_NODE_TYPE_POSTFIX_DELIMITER;
-        node->opdel = POSTFIX_DELIMITER_SEMICOLON;
+        node->type = AST_NODE_TYPE_DELIMITER;
+        node->del = POSTFIX_DELIMITER_SEMICOLON;
     } else if (curr_t->type == TT_PUNCT_QUESTION_MARK) {
-        node->type = AST_NODE_TYPE_PREFIX_DELIMITER;
-        node->opdel = PREFIX_DELIMITER_QUESTION_MARK;
+        node->type = AST_NODE_TYPE_DELIMITER;
+        node->del = PREFIX_DELIMITER_QUESTION_MARK;
     } else if (curr_t->type == TT_PUNCT_COLON) {
-        node->type = AST_NODE_TYPE_POSTFIX_DELIMITER;
-        node->opdel = POSTFIX_DELIMITER_COLON;
+        node->type = AST_NODE_TYPE_DELIMITER;
+        node->del = POSTFIX_DELIMITER_COLON;
     }
 
 
@@ -374,6 +412,10 @@ ast_node_from_token( struct ast_node *node,
         }
     }
 
+    if ( result == true ) {
+        assert(node->type != AST_NODE_TYPE_NONE);
+        assert( (node->op != OPERATOR_NONE) || ( (node->type == AST_NODE_TYPE_DELIMITER) && (node->del != DELIMITER_NONE)));
+    }
     return result;
           
 }
