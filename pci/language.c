@@ -159,50 +159,9 @@ enum delimiter {
     POSTFIX_DELIMITER_BRACKET,
     POSTFIX_DELIMITER_BRACE,
     POSTFIX_DELIMITER_COLON,
-    POSTFIX_DELIMITER_COMMA,
     POSTFIX_DELIMITER_SEMICOLON,
 };
 
-bool
-is_prefix_delimiter(enum delimiter d)
-{
-    int mask = 0;
-    mask |= 1 << 8;
-    mask |= 1 << 16;
-    if ( (d & mask) == 0 ) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-bool
-is_infix_delimiter(enum delimiter d)
-{
-    int mask = 0;
-    mask |= 1 << 8;
-
-    if ( (d & mask) != 0) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
-
-bool
-is_postfix_delimiter(enum delimiter d)
-{
-    int mask = 0;
-    mask |= 1 << 16;
-
-    if ( (d & mask) != 0) {
-        return true;
-    } else {
-        return false;
-    }
-}
 
 
 struct ast_node {
@@ -215,11 +174,76 @@ struct ast_node {
 };
 
 
+
+
 bool
 ast_node_is_valid(struct ast_node *node)
 {
     assert(node);
     return node->type != AST_NODE_TYPE_NONE;
+}
+
+
+bool
+is_prefix_delimiter(struct ast_node *node)
+{
+    assert(node);
+    assert(ast_node_is_valid(node));
+    if ( node->type == AST_NODE_TYPE_DELIMITER || node->type == AST_NODE_TYPE_OPERATOR) {
+        enum delimiter d = node->del;
+        int mask = 0;
+        mask |= 1 << 8;
+        mask |= 1 << 16;
+        if ( (d & mask) == 0 ) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+bool
+is_infix_delimiter(struct ast_node *node)
+{
+    assert(node);
+    assert(ast_node_is_valid(node));
+    if ( node->type == AST_NODE_TYPE_DELIMITER || node->type == AST_NODE_TYPE_OPERATOR) {
+        enum delimiter d = node->del;
+        int mask = 0;
+        mask |= 1 << 8;
+        
+        if ( (d & mask) != 0) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
+}
+
+
+
+bool
+is_postfix_delimiter(struct ast_node *node)
+{
+    assert(node);
+    assert(ast_node_is_valid(node));
+    if ( node->type == AST_NODE_TYPE_DELIMITER || node->type == AST_NODE_TYPE_OPERATOR) {
+        enum delimiter d = node->del;
+        int mask = 0;
+        mask |= 1 << 16;
+        
+        if ( (d & mask) != 0) {
+            return true;
+        } else {
+            return false;
+        }
+    } else {
+        return false;
+    }
 }
 
 void

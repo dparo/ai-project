@@ -545,7 +545,6 @@ ast_build_from_command( struct interpreter *intpt,
     // operator stack
     static struct ast_node_stack stack;
     stack.num_nodes = 0;
-    bool prev_was_identifier = false;
 
     while (get_next_token( &tknzr, curr_t)) {
         SHUNT_DBG();
@@ -553,11 +552,15 @@ ast_build_from_command( struct interpreter *intpt,
         // NOTE: At every iteration the tokenizer error is cleared with the call to get_next_token
         if ( tknzr.err ) {
             puts(tknzr.err_desc);
-            intpt_info_printf( intpt, " Internal parsing error\n");
-            goto parse_end;
+            intpt_info_printf( intpt, " ### Internal parsing error\n");
+            goto parse_failed;
 
         }
-        ast_node_from_token(&node, curr_t, prev_t);
+        bool conversion = ast_node_from_token(&node, curr_t, prev_t);
+        if ( !conversion ) {
+            intpt_info_printf(intpt, " ### Parsing error\n ### Operator %.*s is not supported\n", curr_t->text_len, curr_t->text );
+            goto parse_failed;
+        }
 
         // Extensions ->
         //   Postfix operators do an uncoditional push onto
@@ -569,44 +572,45 @@ ast_build_from_command( struct interpreter *intpt,
         // Shunting-yard algorithm
         // @NOTE: Does not handle functions
         {
-            if (curr_t->type == TT_CONSTANT ||
-                curr_t->type == TT_IDENTIFIER ) {
-                if ( curr_t->type == TT_IDENTIFIER ) {
-                    prev_was_identifier = true;
-                }
+            if ( node.type == AST_NODE_TYPE_CONSTANT
+                 || node.type == AST_NODE_TYPE_IDENTIFIER ) {
                 ast_node_stack_push( & stack, & node);
                 // ast_push(ast, curr_t);
             } /* else if ( is function ) */
             else {
-                if ( curr_t->type == TT_PUNCT_OPEN_PAREN ) {
-                    ast_node_stack_push( & stack, & node);
-                } else if ( curr_t->type == TT_PUNCT_CLOSE_PAREN
-                            || curr_t->type == TT_PUNCT_CLOSE_BRACE
-                            || curr_t->type == TT_PUNCT_CLOSE_BRACKET) {
+                if ( is_infix_delimiter( & node ) && is_postfix_delimiter(& node)) {
                     struct ast_node *peek = NULL;
                     while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
-                        if ( peek->type != TT_PUNCT_OPEN_PAREN ) {
+                        if ( !is_prefix_delimiter(peek)) {
                             ast_push(ast, peek);
                             ast_node_stack_pop( & stack);
                         } else { break; }
                     }
                     if ( stack.num_nodes == 0 ) {
-                        if ( peek && peek->type != TT_PUNCT_OPEN_PAREN ) {
+                        if ( peek && !is_prefix_delimiter(peek)) {
                             // Mismatched parentheses
                             intpt_info_printf(intpt, " ### Mismatched parens\n");
-                            goto parse_end;
+                            goto parse_failed;
                         }
                     } else {
                         // pop the open paren from the stack
-                        if ( peek && peek->type == TT_PUNCT_OPEN_PAREN )
+                        if ( peek && is_prefix_delimiter(peek) ) {
                             ast_node_stack_pop( & stack );
+                            if ( peek->type == AST_NODE_TYPE_OPERATOR ) {
+                                ast_push(ast, peek);
+                            }
+                        }
                     }
-                } else if ( token_is_operator(curr_t)) {
+                }
+                if ( is_prefix_delimiter(& node) || is_infix_delimiter( & node)) {
+                    ast_node_stack_push( & stack, & node);
+                }
+                else if ( node.type == AST_NODE_TYPE_OPERATOR ) {
                     bool ispostfix = is_postfix_operator( & node);
                     struct ast_node *peek = NULL;
                     while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
-                        if ( !(peek->type == TT_PUNCT_OPEN_PAREN)
-                             && ( (peek->type == TT_IDENTIFIER || peek->type == TT_CONSTANT)
+                        if ( !(is_prefix_delimiter(peek))
+                             && ( (peek->type == AST_NODE_TYPE_IDENTIFIER || peek->type == AST_NODE_TYPE_CONSTANT)
                                   || (op_greater_precedence(peek, & node))
                                   || ((op_eq_precedence(peek, & node)) && (op_is_left_associative(peek))))) {
                             ast_push(ast, peek);
@@ -621,19 +625,6 @@ ast_build_from_command( struct interpreter *intpt,
                 } else {
                     invalid_code_path();
                 }
-
-                if ( prev_was_identifier && curr_t->type == TT_PUNCT_META_FNCALL ) {
-                    curr_t->type = TT_PUNCT_OPEN_PAREN;
-                    ast_node_stack_push( & stack, & node);
-                }
-
-                if ( curr_t->type == TT_PUNCT_OPEN_BRACE || curr_t->type == TT_PUNCT_OPEN_BRACKET
-                     || curr_t->type == TT_PUNCT_META_INDEX || curr_t->type == TT_PUNCT_META_COMPOUND) {
-                    curr_t->type = TT_PUNCT_OPEN_PAREN;
-                    ast_node_stack_push ( & stack, & node );
-                }
-                
-                prev_was_identifier = false;
             }
         }
         prev_t = curr_t;
@@ -653,11 +644,10 @@ ast_build_from_command( struct interpreter *intpt,
     struct ast_node *peek = NULL;
     while ( ( (stack.num_nodes) != 0 && (peek = ast_node_stack_peek_addr(&stack)))) {
         SHUNT_DBG();
-        if ( peek->type == TT_PUNCT_OPEN_PAREN || peek->type == TT_PUNCT_CLOSE_PAREN
-             || peek->type == TT_PUNCT_CLOSE_BRACE
-             || peek->type == TT_PUNCT_CLOSE_BRACKET ) {
+        if ( is_prefix_delimiter(peek) || is_postfix_delimiter(peek)
+             || is_infix_delimiter(peek)) {
             intpt_info_printf( intpt, " ### Mismatched parens\n");
-            goto parse_end;
+            goto parse_failed;
         }
         ast_push( ast, peek );
         ast_node_stack_pop ( & stack );
@@ -674,7 +664,7 @@ ast_build_from_command( struct interpreter *intpt,
 
     return true;
     
-parse_end: {
+parse_failed: {
         intpt_info_printf(intpt, " ### Failed formula parsing\n");
         return false;
     }
