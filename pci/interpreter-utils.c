@@ -24,11 +24,11 @@
 #define BOOL_PACK_INTO_ARRAY(val, bit_index, array, array_num_members, typeof_arraymember) \
     do {                                                                \
         assert(bit_index < (array_num_members) * sizeof(typeof_arraymember) * 8); \
-        size_t index = ((size_t)bit_index) / ( sizeof(typeof_arraymember) * 8); \
-        (array)[index] =                                                \
-            (typeof_arraymember)((array)[index]                         \
-                                 & ~((typeof_arraymember)1 << ((size_t)(bit_index) - index * sizeof(typeof_arraymember) * 8))) \
-            | (typeof_arraymember)(val) << ((size_t)(bit_index) - index * sizeof(typeof_arraymember) * 8); \
+        size_t ___index___ = ((size_t)bit_index) / ( sizeof(typeof_arraymember) * 8); \
+        (array)[___index___] =                                                \
+            (typeof_arraymember)((array)[___index___]                         \
+                                 & ~((typeof_arraymember)1 << ((size_t)(bit_index) - ___index___ * sizeof(typeof_arraymember) * 8))) \
+            | (typeof_arraymember)(val) << ((size_t)(bit_index) - ___index___ * sizeof(typeof_arraymember) * 8); \
     } while(0)
 
 #define BOOL_UNPACK_FROM_ARRAY(bit_index, array, array_num_members, typeof_arraymember) \
@@ -72,13 +72,19 @@ struct vm_inputs {
 };
 
 
+enum vm_outputs_cache {
+    VM_OUTPUT_UKNOWN = 0,
+    VM_OUTPUT_ALL_TRUE = 1,
+    VM_OUTPUT_ALL_FALSE = 2,
+};
+
 struct vm_outputs {
-#define VM_OUTPUTS_MAX_NUMBITS 1024
-#define VM_OUTPUTS_MAX_NUMELEMS \
-    BOOL_PACKED_ARRAY_NELEMS(VM_OUTPUTS_MAX_NUMBITS, sizeof(packed_bool))
     // Flexible array member
-    packed_bool outputs[VM_OUTPUTS_MAX_NUMELEMS];
-    size_t num_outputs;
+    size_t num_rows;        // 2 ^ n where n is the number of inputs
+    size_t num_cols;        // Every cols is the ouput of an applied operator
+    enum vm_outputs_cache *row_cache;
+    enum vm_outputs_cache *col_cache;
+    packed_bool *outputs;   // 2D array of results
 };
 
     
@@ -493,6 +499,124 @@ vm_inputs_dbglog(struct vm_inputs *vmi)
     }
     printf("\n");
 }
+
+
+
+static inline size_t
+vm_outputs_numelems(struct vm_outputs *vmo)
+{
+    size_t nums = (vmo->num_rows) * (vmo->num_cols);
+    if ( nums ) {
+        return ( nums - 1 ) / ( sizeof(packed_bool) * 8)
+            + 1;
+    } else {
+        return 0;
+    }
+}
+
+
+static inline size_t
+vm_outputs_size(struct vm_outputs *vmo)
+{
+    return vm_outputs_numelems(vmo) * sizeof(packed_bool);
+}
+
+static inline size_t
+vm_outputs_get_bitindex( struct vm_outputs *vmo,
+                         size_t row, size_t col )
+{
+    assert(vmo);
+    return (col + row * vmo->num_cols);
+}
+
+void
+vm_outputs_pack_bool( struct vm_outputs *vmo,
+                      bool value,
+                      size_t row, size_t col )
+{
+    assert(vmo);
+    assert(vmo->outputs);
+    assert(vmo->row_cache);
+    assert(vmo->col_cache);
+    assert(row < vmo->num_rows);
+    assert(col < vmo->num_cols);
+
+    size_t bitindex = vm_outputs_get_bitindex(vmo, row, col);
+
+    size_t nelems = vm_outputs_numelems(vmo);
+    
+    BOOL_PACK_INTO_ARRAY(value, bitindex, vmo->outputs,
+                         nelems, packed_bool);
+}
+
+
+bool
+vm_outputs_unpack_bool( struct vm_outputs *vmo,
+                        size_t row, size_t col)
+{
+    assert(vmo);
+    assert(vmo->outputs);
+    assert(vmo->row_cache);
+    assert(vmo->col_cache);
+    assert(row < vmo->num_rows);
+    assert(col < vmo->num_cols);
+
+    size_t bitindex = vm_outputs_get_bitindex(vmo, row, col);
+
+    size_t nelems = vm_outputs_numelems(vmo);
+    
+    bool b = BOOL_UNPACK_FROM_ARRAY(bitindex, vmo->outputs,
+                                    nelems, packed_bool);
+    return b;
+}
+
+
+void
+vm_outputs_set_row_cache( struct vm_outputs *vmo,
+                          size_t row,
+                          enum vm_outputs_cache c)
+{
+    assert(vmo);
+    assert(vmo->outputs);
+    assert(vmo->row_cache);
+    assert(vmo->col_cache);
+
+    assert(row < vmo->num_rows);
+    vmo->row_cache[row] = c;
+}
+
+void
+vm_outputs_set_col_cache( struct vm_outputs *vmo,
+                          size_t col,
+                          enum vm_outputs_cache c)
+{
+    assert(vmo);
+    assert(vmo->outputs);
+    assert(vmo->row_cache);
+    assert(vmo->col_cache);
+
+    assert(col < vmo->num_cols);
+    vmo->col_cache[col] = c;
+}
+
+#if 0
+void
+vm_outputs_dbglog(struct vm_outputs *vmo)
+{
+    size_t nelems = vm_ouputs_numelems(vmo);
+    printf("Vm Outputs Cols Cached:\n");
+    for ( size_t i = 0; i < vmo->num_cols; i++ ) {
+        bool b = vm_outputs_unpack_bool( vmo, )
+
+        printf(" %b |", b);
+    }
+    
+    for ( size_t i = 0;_ i < nelems; i ++ ) {
+        printf(" %zx |", (size_t)vmi->outputs[i]);
+    }
+    printf("\n");
+}
+#endif
 
 
 void

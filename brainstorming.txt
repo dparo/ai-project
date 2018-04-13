@@ -45,3 +45,9 @@ siblings[ [sally, erica], [ ... ] ]
 // all'interno del corpo della formula
 // se in forma prenessa l'operatore `#` fa la solita cosa che ha sempre fatto ed itera implicitamente
 // come nel metodo bruteforce.
+
+
+// NOTA: Attenzione all'AST. L'intera formula completa e' un unica espressione
+// e { men[x] } non e' un espressione valida o comunque sensata
+// nel contesto di appartenenza
+#x @ people { men[x] }
