@@ -139,26 +139,32 @@ enum ast_node_type {
     AST_NODE_TYPE_IDENTIFIER,
     AST_NODE_TYPE_KEYWORD,
     AST_NODE_TYPE_CONSTANT,
-    AST_NODE_TYPE_OPEN_DELIMITER,
-    AST_NODE_TYPE_CLOSE_DELIMITER,    
+    AST_NODE_TYPE_PREFIX_DELIMITER,
+    AST_NODE_TYPE_INFIX_DELIMITER,
+    AST_NODE_TYPE_POSTFIX_DELIMITER,    
 };
 
 
-enum open_delimiter {
-    OPEN_DELIMITER_UKNOWN,
-    OPEN_DELIMITER_PAREN,
-    OPEN_DELIMITER_BRACKET,
-    OPEN_DELIMITER_BRACE,
-    OPEN_DELIMITER_QUESTION_MARK,
+enum prefix_delimiter {
+    PREFIX_DELIMITER_UKNOWN,
+    PREFIX_DELIMITER_PAREN,
+    PREFIX_DELIMITER_BRACKET,
+    PREFIX_DELIMITER_BRACE,
+    PREFIX_DELIMITER_QUESTION_MARK,
 };
 
-enum closing_delimiter {
-    CLOSE_DELIMITER_PAREN,
-    CLOSE_DELIMITER_BRACKET,
-    CLOSE_DELIMITER_BRACE,
-    CLOSE_DELIMITER_COLON,
-    CLOSE_DELIMITER_COMMA,
-    CLOSE_DELIMITER_SEMICOLON,
+enum infix_delimiter {
+    INFIX_DELIMITER_COMMA,
+};
+
+
+enum postfix_delimiter {
+    POSTFIX_DELIMITER_PAREN,
+    POSTFIX_DELIMITER_BRACKET,
+    POSTFIX_DELIMITER_BRACE,
+    POSTFIX_DELIMITER_COLON,
+    POSTFIX_DELIMITER_COMMA,
+    POSTFIX_DELIMITER_SEMICOLON,
 };
 
 
@@ -168,8 +174,9 @@ struct ast_node {
     enum ast_node_type type;
     union {
         enum operator op;
-        enum open_delimiter opdel;
-        enum closing_delimiter cldel;
+        enum prefix_delimiter opdel;
+        enum infix_delimiter indel;
+        enum postfix_delimiter cldel;
     };
 };
 
@@ -251,49 +258,49 @@ ast_node_from_token( struct ast_node *node,
         if (prev_t && prev_t->type == TT_IDENTIFIER) {
             node->op = OPERATOR_FNCALL;
         } else {
-            node->type = AST_NODE_TYPE_OPEN_DELIMITER;
-            node->opdel = OPEN_DELIMITER_PAREN;
+            node->type = AST_NODE_TYPE_PREFIX_DELIMITER;
+            node->opdel = PREFIX_DELIMITER_PAREN;
         }
     } else if (curr_t->type == TT_PUNCT_OPEN_BRACKET) {
         if (prev_t && prev_t->type == TT_IDENTIFIER) {
             node->op = OPERATOR_INDEX;
         } else {
-            node->type = AST_NODE_TYPE_OPEN_DELIMITER;
-            node->opdel = OPEN_DELIMITER_BRACKET;
+            node->type = AST_NODE_TYPE_PREFIX_DELIMITER;
+            node->opdel = PREFIX_DELIMITER_BRACKET;
         }
     } else if (curr_t->type == TT_PUNCT_OPEN_BRACE) {
         if (prev_t && prev_t->type == TT_IDENTIFIER) {
             node->op = OPERATOR_COMPOUND;
         } else {
-            node->type = AST_NODE_TYPE_OPEN_DELIMITER;
-            node->opdel = OPEN_DELIMITER_BRACE;
+            node->type = AST_NODE_TYPE_PREFIX_DELIMITER;
+            node->opdel = PREFIX_DELIMITER_BRACE;
         }
     }
 
     else if (curr_t->type == TT_PUNCT_CLOSE_PAREN) {
-        node->type = AST_NODE_TYPE_CLOSE_DELIMITER;
-        node->opdel = CLOSE_DELIMITER_PAREN;
+        node->type = AST_NODE_TYPE_POSTFIX_DELIMITER;
+        node->opdel = POSTFIX_DELIMITER_PAREN;
     } else if (curr_t->type == TT_PUNCT_CLOSE_BRACKET) {
-        node->type = AST_NODE_TYPE_CLOSE_DELIMITER;
-        node->opdel = CLOSE_DELIMITER_BRACKET;
+        node->type = AST_NODE_TYPE_POSTFIX_DELIMITER;
+        node->opdel = POSTFIX_DELIMITER_BRACKET;
     } else if (curr_t->type == TT_PUNCT_CLOSE_BRACE) {
-        node->type = AST_NODE_TYPE_CLOSE_DELIMITER;
-        node->opdel = CLOSE_DELIMITER_BRACE;
+        node->type = AST_NODE_TYPE_POSTFIX_DELIMITER;
+        node->opdel = POSTFIX_DELIMITER_BRACE;
     }
 
     
     else if (curr_t->type == TT_PUNCT_COMMA) {
-        node->type = AST_NODE_TYPE_CLOSE_DELIMITER;
-        node->opdel = CLOSE_DELIMITER_COMMA;
+        node->type = AST_NODE_TYPE_POSTFIX_DELIMITER;
+        node->opdel = INFIX_DELIMITER_COMMA;
     } else if (curr_t->type == TT_PUNCT_SEMICOLON) {
-        node->type = AST_NODE_TYPE_CLOSE_DELIMITER;
-        node->opdel = CLOSE_DELIMITER_SEMICOLON;
+        node->type = AST_NODE_TYPE_POSTFIX_DELIMITER;
+        node->opdel = POSTFIX_DELIMITER_SEMICOLON;
     } else if (curr_t->type == TT_PUNCT_QUESTION_MARK) {
-        node->type = AST_NODE_TYPE_OPEN_DELIMITER;
-        node->opdel = OPEN_DELIMITER_QUESTION_MARK;
+        node->type = AST_NODE_TYPE_PREFIX_DELIMITER;
+        node->opdel = PREFIX_DELIMITER_QUESTION_MARK;
     } else if (curr_t->type == TT_PUNCT_COLON) {
-        node->type = AST_NODE_TYPE_CLOSE_DELIMITER;
-        node->opdel = CLOSE_DELIMITER_COLON;
+        node->type = AST_NODE_TYPE_POSTFIX_DELIMITER;
+        node->opdel = POSTFIX_DELIMITER_COLON;
     }
 
 
