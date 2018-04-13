@@ -21,8 +21,6 @@ enum Token_Type {
     TT_KEYWORD = 2,
     TT_CONSTANT = 3,
 
-
-    TT_PUNCT_ENUM_OPERATORS_START_MARKER,
     TT_PUNCT_EQUAL,
     TT_PUNCT_EQUAL_EQUAL,
     TT_PUNCT_NOT_EQUAL,
@@ -60,13 +58,6 @@ enum Token_Type {
     TT_PUNCT_COLON,     // :
 
 
-    TT_PUNCT_META_DEREF,
-    TT_PUNCT_META_FNCALL,
-    TT_PUNCT_META_INDEX,
-    TT_PUNCT_META_COMPOUND,
-    TT_PUNCT_OPEN_BRACKET,
-    TT_PUNCT_OPEN_BRACE,
-    
 #if TOKENIZER_DOLLAR_SIGN_VALID_IDENTIFIER == 1
     TT_PUNCT_DOLLAR_SIGN, // $
 #endif
@@ -74,10 +65,6 @@ enum Token_Type {
     TT_PUNCT_AT_SIGN, // @
     TT_PUNCT_POUND, // #
 
-
-    TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS, // marker
-    // enums that follows this marker are parsed but not implemented
-    // semantically
 
 
     TT_PUNCT_BACKWARD_SLASH, //
@@ -112,11 +99,13 @@ enum Token_Type {
 
     TT_PUNCT_DOT,
 
-    TT_PUNCT_ENUM_OPERATORS_END_MARKER,
+
 
     TT_PUNCT_OPEN_PAREN,
     TT_PUNCT_CLOSE_PAREN,
+    TT_PUNCT_OPEN_BRACKET,
     TT_PUNCT_CLOSE_BRACKET,
+    TT_PUNCT_OPEN_BRACE,
     TT_PUNCT_CLOSE_BRACE,
 
     TT_PUNCT_ENUM_LAST_VALUE,
@@ -1016,19 +1005,6 @@ void log_token_text (FILE *stream, Token *token)
 {
     char *text = token->text;
     int text_len = token->text_len;
-    if ( token->type == TT_PUNCT_META_FNCALL ) {
-        text = "`fncall`";
-        text_len = sizeof("`fncall`") - 1;
-    } else if ( token->type == TT_PUNCT_META_INDEX )  {
-        text = "`index`";
-        text_len = sizeof("`index`") - 1;
-    } else if ( token->type == TT_PUNCT_META_COMPOUND ) {
-        text = "`compound`";
-        text_len = sizeof("`compound`") - 1;
-    } else if ( token->type == TT_PUNCT_META_DEREF ) {
-        text = "`deref`";
-        text_len = sizeof("`deref`") - 1;
-    }
     fprintf(stream, "%.*s", text_len, text);
 }
 
@@ -1038,22 +1014,9 @@ void log_token_text (FILE *stream, Token *token)
 void log_token (Token *token)
 {
     log_token_text(stdin, token);
-    fprintf(stdin, "\tline_number=%d\tcolumn=%d\n", token->line_num, token->column);
+    fprintf(stdout, "\tline_number=%d\tcolumn=%d\n", token->line_num, token->column);
 }
 
-
-bool
-token_is_operator(Token *t)
-{
-    bool result = true;
-    if ( t->type > TT_PUNCT_ENUM_OPERATORS_START_MARKER &&
-         t->type < TT_PUNCT_ENUM_OPERATORS_END_MARKER ) {
-        result = true;
-    } else {
-        result = false;
-    }
-    return result;
-}
 
 
 #endif /* PARSER_C_IMPL */

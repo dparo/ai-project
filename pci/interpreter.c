@@ -61,12 +61,12 @@ intpt_info_printf ( struct interpreter *intpt,
 
 
 void
-eval_operator( Token *t,
+eval_operator( struct ast_node *node,
                struct vm_stack *vms )
 {
     bool result = 0;
-    uint numofoperands = operator_numofoperands(t);
-    if (! ((vms->num_bits) >= (operator_numofoperands(t)) )) {
+    uint numofoperands = operator_numofoperands(node);
+    if (! ((vms->num_bits) >= (operator_numofoperands(node)) )) {
         goto not_enough_operands;                                 
     }
 
@@ -80,8 +80,14 @@ eval_operator( Token *t,
 
     // NOTE v[0] Contains the last operand v[numberofoperands-1] contains the first operand
 
-    switch (t->type) {
+    switch (node->type) {
+    default: {
+        assert_msg(0, "Needs implementation motherfucker");
+    } break;
         
+        
+
+#if 0
     case TT_PUNCT_ARROW: {
         // or equivalently
         // result = (!v[1]) || v[0];
@@ -165,6 +171,7 @@ eval_operator( Token *t,
         assert_msg(0, "Invalid code path we should assert before when we require "
                    "the number of operands in operator_numofoperands");
     } break;
+#endif
     }
 
     return;
@@ -176,14 +183,14 @@ not_enough_operands: {
 }
 
 bool
-valid_constant ( Token *t )
+valid_constant ( struct ast_node *node )
 {
     bool result = false;
-    assert(t->type == TT_CONSTANT);
-    if (t->text_len == 1) {
-        if ( *(t->text) == '0') {
+    assert(node->type == AST_NODE_TYPE_CONSTANT);
+    if (node->text_len == 1) {
+        if ( *(node->text) == '0') {
             result = true;
-        } else if ( *(t->text) == '1') {
+        } else if ( *(node->text) == '1') {
             result = true;
         } else {
             result = false;
@@ -196,15 +203,15 @@ valid_constant ( Token *t )
 
 
 bool
-token_constant_to_bool( Token *t )
+ast_node_constant_to_bool( struct ast_node *node )
 {
-    assert(valid_constant(t));
+    assert(valid_constant(node));
     bool result = false;
-    assert(t->type == TT_CONSTANT);
-    if (t->text_len == 1) {
-        if ( *(t->text) == '0') {
+    assert(node->type == AST_NODE_TYPE_CONSTANT);
+    if (node->text_len == 1) {
+        if ( *(node->text) == '0') {
             result = false;
-        } else if ( *(t->text) == '1') {
+        } else if ( *(node->text) == '1') {
             result = true;
         } else {
             // should assert above inside valid_constant(t)
@@ -247,27 +254,27 @@ eval_entire_expr( struct interpreter *intpt )
     // But this check will probably implemented by the preprocessor,
     // so this if could become just an assert.
     if ( vms->bits ) {
-        Token *t;
+        struct ast_node *node;
         size_t it;
     
-        ast_for(it, *ast, t) {
-            if ( t->type == TT_IDENTIFIER  || t->type == TT_CONSTANT) {
+        ast_for(it, *ast, node) {
+            if ( node->type == AST_NODE_TYPE_IDENTIFIER  || node->type == AST_NODE_TYPE_CONSTANT) {
                 bool value;
-                if ( t->type == TT_IDENTIFIER ) {
-                    size_t input_index = symtable_get_identifier_value(symtable, t);
+                if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
+                    size_t input_index = symtable_get_identifier_value(symtable, node->text, node->text_len);
 
                     value = vm_inputs_unpack_bool( vmi,
                                                    input_index );
                     // printf(" bit_index: %zx | unpacked bool: %d\n", bit_index, value);
-                } else if ( t->type == TT_CONSTANT ) {
-                    value = token_constant_to_bool( t);
+                } else if ( node->type == AST_NODE_TYPE_CONSTANT ) {
+                    value = ast_node_constant_to_bool(node);
                 }
 
                 vm_stack_push( vms, value );
             } else {
                 // Token is an operator: Needs to perform the operation
                 //                       and push it into the stack
-                eval_operator( t, vms ) ;
+                eval_operator( node, vms ) ;
                 intpt_out_printf(intpt, "%d", vm_stack_peek_value(vms));
                 print_tab(intpt);
             }            
@@ -282,23 +289,23 @@ void
 symtable_build_from_ast ( struct symtable *symtable,
                           struct ast *ast )
 {
-    Token *t;
+    struct ast_node *node;
     size_t it;
-    ast_for(it, *ast, t) {
-        if ( t->type == TT_IDENTIFIER ) {
+    ast_for(it, *ast, node) {
+        if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
             //null terminate;
-            symtable_add_identifier(symtable, t);
+            symtable_add_identifier(symtable, node->text, node->text_len);
         }
     }
 }
 
 
 static inline void
-ast_print_token(struct interpreter *intpt,
-                Token *token)
+intpt_print_node(struct interpreter *intpt,
+                struct ast_node *node)
 {
     FILE *f = intpt->stream_info ? intpt->stream_info : stdout;
-    log_token_text(f, token);
+    ast_node_print(f, node);
 }
 
 
@@ -318,20 +325,20 @@ ast_get_operand_index( struct ast *ast,
 {
     size_t fixed_index = operator_index;
     assert(operand_num > 0);
-    assert(operator_index < ast->num_tokens);
+    assert(operator_index < ast->num_nodes);
     
-    assert( token_is_operator(& ast->tokens[operator_index]));
+    assert( ast_node_is_operator(& ast->nodes[operator_index]));
     uint it = 1;
     do {
         assert(it > 0);
-        Token *t = &(ast->tokens[fixed_index]);                
+        struct ast_node *node = &(ast->nodes[fixed_index]);                
         if ( operand_num == (it) &&
              fixed_index != operator_index) {
             break;
         }
 
-        if (token_is_operator(t)) {
-            it += operator_numofoperands(t);
+        if (ast_node_is_operator(node)) {
+            it += operator_numofoperands(node);
         }
         it--;
     } while( fixed_index != 0 ? fixed_index-- : fixed_index);
@@ -345,17 +352,18 @@ ast_print_expr ( struct interpreter *intpt,
                  size_t index )
 {
     struct ast* ast = & intpt->ast;
-    Token *t = & ( ast->tokens[index] );
-    if ( t->type == TT_IDENTIFIER || t->type == TT_CONSTANT ) {
-        ast_print_token(intpt, t);
-    } else if (token_is_operator(t)) {
-        assert(token_is_operator(t));
+    struct ast_node *node = & ( ast->nodes[index] );
+    if ( node->type == AST_NODE_TYPE_IDENTIFIER || node->type == AST_NODE_TYPE_CONSTANT ) {
+        intpt_print_node(intpt, node);
+    } else if (ast_node_is_operator(node)) {
+        assert(ast_node_is_operator(node));
         
-        uint numofoperands = operator_numofoperands(t);
+        uint numofoperands = operator_numofoperands(node);
         assert_msg(index >= numofoperands, "Inconsistent formula");
 
-        intpt_out_printf(intpt, index == (ast->num_tokens - 1) ? "result: (" : "(");
-        ast_print_token(intpt, t);
+        intpt_out_printf(intpt, index == (ast->num_nodes - 1) ? "result: (" : "(");
+        intpt_print_node(intpt, node);
+        intpt_print_node(intpt, node);
 
 
         for( size_t operand_num = 1;
@@ -386,10 +394,10 @@ intpt_print_header( struct interpreter *intpt)
         print_tab(intpt);
     }
 
-    Token *t;
+    struct ast_node *node;
     size_t it;
-    ast_for(it, *ast, t) {
-        if ( token_is_operator(t) ) {
+    ast_for(it, *ast, node) {
+        if ( ast_node_is_operator(node) ) {
             ast_print_expr(intpt, it);
             print_tab(intpt);
         }
@@ -399,7 +407,6 @@ intpt_print_header( struct interpreter *intpt)
     intpt_out_printf(intpt, "\n");
     intpt_out_printf(intpt, "\n");
 }
-
 
 void
 intpt_print_inputs( struct interpreter *intpt )
@@ -478,17 +485,17 @@ void
 ast_representation_dbglog(struct interpreter *intpt)
 {
     struct ast *ast = & intpt->ast;
-    Token *t;
+    struct ast_node *node;
     size_t it;
 
     intpt_info_printf(intpt, "AST DEBUG LOG: ################################\n");
-    ast_for(it, *ast, t) {
-        log_token(t);
+    ast_for(it, *ast, node) {
+        ast_node_print(stdout, node);
     }
     intpt_info_printf(intpt, "\n\n");
     // Debug expression printing
-    ast_for(it, *ast, t) {
-        if ( token_is_operator(t) ) {
+    ast_for(it, *ast, node) {
+        if ( ast_node_is_operator(node) ) {
             ast_print_expr(intpt, it);
             print_tab(intpt);
         }
@@ -521,9 +528,13 @@ ast_build_from_command( struct interpreter *intpt,
 #else
 #define SHUNT_DBG() do { } while(0)
 #endif
+
+
+    // 1 token look ahead
+    Token t[2] = { Empty_Token, Empty_Token };
+    Token *prev_t = NULL;
+    Token *curr_t = t;
     
-    Token token = Empty_Token;
-    bool done = false;
     Tokenizer tknzr;
     tokenizer_init_from_memory( &tknzr, commandline,
                                 commandline_len,
@@ -536,10 +547,7 @@ ast_build_from_command( struct interpreter *intpt,
     stack.num_tokens = 0;
     bool prev_was_identifier = false;
 
-    // NOTE: Maybe better error handling because even the push_state can throw an error
-    //       Maybe set a locked variable inside the tokenizer for critical stuff
-    //       that will inevitably inject more complexity on the library side
-    while (!done && get_next_token( &tknzr, & token)) {
+    while (get_next_token( &tknzr, curr_t)) {
         SHUNT_DBG();
         // NOTE: At every iteration the tokenizer error is cleared with the call to get_next_token
         if ( tknzr.err ) {
@@ -549,56 +557,56 @@ ast_build_from_command( struct interpreter *intpt,
 
 
         if ( prev_was_identifier ) {
-            if ( token.type ==  TT_PUNCT_OPEN_PAREN ) {
-                token.type = TT_PUNCT_META_FNCALL;
-            } else if (token.type == TT_PUNCT_OPEN_BRACKET ) {
-                token.type = TT_PUNCT_META_INDEX;
-            } else if ( token.type == TT_PUNCT_OPEN_BRACE ) {
-                token.type = TT_PUNCT_META_COMPOUND;
+            if ( curr_t->type ==  TT_PUNCT_OPEN_PAREN ) {
+                curr_t->type = TT_PUNCT_META_FNCALL;
+            } else if (curr_t->type == TT_PUNCT_OPEN_BRACKET ) {
+                curr_t->type = TT_PUNCT_META_INDEX;
+            } else if ( curr_t->type == TT_PUNCT_OPEN_BRACE ) {
+                curr_t->type = TT_PUNCT_META_COMPOUND;
             }
         } else {
-            if ( token.type == TT_PUNCT_ASTERISK ) {
-                token.type = TT_PUNCT_META_DEREF;
+            if ( curr_t->type == TT_PUNCT_ASTERISK ) {
+                curr_t->type = TT_PUNCT_META_DEREF;
             }
         }
         
-        // log_token(& token);
+        // log_token(curr_t);
 
 
 
         
         // Extensions ->
         //   Postfix operators do an uncoditional push onto
-        //                 ast_token_queue_push(queue, &token)
+        //                 ast_token_queue_push(queue, curr_t)
         // 
         // Prefix operators do an uncoditional push onto    ???(Needs testing)???
-        //                   ast_token_stack_push(&stack, &token);
+        //                   ast_token_stack_push(&stack, curr_t);
         
         // Shunting-yard algorithm
         // @NOTE: Does not handle functions
         {
-            if (token.type == TT_CONSTANT ||
-                token.type == TT_IDENTIFIER ) {
-                if ( token.type == TT_IDENTIFIER ) {
+            if (curr_t->type == TT_CONSTANT ||
+                curr_t->type == TT_IDENTIFIER ) {
+                if ( curr_t->type == TT_IDENTIFIER ) {
                     prev_was_identifier = true;
                 }
-                token_stack_push( & stack, & token);
-                // ast_push(ast, &token);
+                token_stack_push( & stack, curr_t);
+                // ast_push(ast, curr_t);
             } /* else if ( is function ) */
             else {
-                if ( token.type == TT_PUNCT_OPEN_PAREN ) {
-                    token_stack_push( & stack, & token);
-                } else if ( token.type == TT_PUNCT_CLOSE_PAREN
-                            || token.type == TT_PUNCT_CLOSE_BRACE
-                            || token.type == TT_PUNCT_CLOSE_BRACKET) {
+                if ( curr_t->type == TT_PUNCT_OPEN_PAREN ) {
+                    token_stack_push( & stack, curr_t);
+                } else if ( curr_t->type == TT_PUNCT_CLOSE_PAREN
+                            || curr_t->type == TT_PUNCT_CLOSE_BRACE
+                            || curr_t->type == TT_PUNCT_CLOSE_BRACKET) {
                     Token *peek = NULL;
-                    while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
+                    while ((stack.num_nodes != 0) && (peek = token_stack_peek_addr(&stack))) {
                         if ( peek->type != TT_PUNCT_OPEN_PAREN ) {
                             ast_push(ast, peek);
                             token_stack_pop( & stack);
                         } else { break; }
                     }
-                    if ( stack.num_tokens == 0 ) {
+                    if ( stack.num_nodes == 0 ) {
                         if ( peek && peek->type != TT_PUNCT_OPEN_PAREN ) {
                             // Mismatched parentheses
                             intpt_info_printf(intpt, "Mismatched parens\n");
@@ -609,41 +617,44 @@ ast_build_from_command( struct interpreter *intpt,
                         if ( peek && peek->type == TT_PUNCT_OPEN_PAREN )
                             token_stack_pop( & stack );
                     }
-                } else if ( token_is_operator(& token)) {
-                    bool ispostfix = is_postfix_operator( &token);
+                } else if ( token_is_operator(curr_t)) {
+                    bool ispostfix = is_postfix_operator( curr_t);
                     Token *peek = NULL;
-                    while ((stack.num_tokens != 0) && (peek = token_stack_peek_addr(&stack))) {
+                    while ((stack.num_nodes != 0) && (peek = token_stack_peek_addr(&stack))) {
                         if ( !(peek->type == TT_PUNCT_OPEN_PAREN)
                              && ( (peek->type == TT_IDENTIFIER || peek->type == TT_CONSTANT)
-                                  || (op_greater_precedence(peek, & token))
-                                  || ((op_eq_precedence(peek, &token)) && (op_is_left_associative(peek))))) {
+                                  || (op_greater_precedence(peek, curr_t))
+                                  || ((op_eq_precedence(peek, curr_t)) && (op_is_left_associative(peek))))) {
                             ast_push(ast, peek);
                             token_stack_pop( & stack);
                         } else { break; }
                     }
                     if ( ispostfix ) {
-                        ast_push(ast, & token);
+                        ast_push(ast, curr_t);
                     } else {
-                        token_stack_push( & stack, & token);
+                        token_stack_push( & stack, curr_t);
                     }
                 } else {
                     invalid_code_path();
                 }
 
-                if ( prev_was_identifier && token.type == TT_PUNCT_META_FNCALL ) {
-                    token.type = TT_PUNCT_OPEN_PAREN;
-                    token_stack_push( & stack, & token);
+                if ( prev_was_identifier && curr_t->type == TT_PUNCT_META_FNCALL ) {
+                    curr_t->type = TT_PUNCT_OPEN_PAREN;
+                    token_stack_push( & stack, curr_t);
                 }
 
-                if ( token.type == TT_PUNCT_OPEN_BRACE || token.type == TT_PUNCT_OPEN_BRACKET
-                     || token.type == TT_PUNCT_META_INDEX || token.type == TT_PUNCT_META_COMPOUND) {
-                    token.type = TT_PUNCT_OPEN_PAREN;
-                    token_stack_push ( & stack, & token );
+                if ( curr_t->type == TT_PUNCT_OPEN_BRACE || curr_t->type == TT_PUNCT_OPEN_BRACKET
+                     || curr_t->type == TT_PUNCT_META_INDEX || curr_t->type == TT_PUNCT_META_COMPOUND) {
+                    curr_t->type = TT_PUNCT_OPEN_PAREN;
+                    token_stack_push ( & stack, curr_t );
                 }
                 
                 prev_was_identifier = false;
             }
         }
+        prev_t = curr_t;
+        curr_t += sizeof(t[0]);
+        if (curr_t >= (t + ARRAY_LEN(t))) { curr_t = t; }
     }
 
 #if SHUNTING_YARD_DEBUG == 1
@@ -656,7 +667,7 @@ ast_build_from_command( struct interpreter *intpt,
     /* 		pop the operator from the operator stack onto the output queue. */
 
     Token *peek = NULL;
-    while ( ( (stack.num_tokens) != 0 && (peek = token_stack_peek_addr(&stack)))) {
+    while ( ( (stack.num_nodes) != 0 && (peek = token_stack_peek_addr(&stack)))) {
         SHUNT_DBG();
         if ( peek->type == TT_PUNCT_OPEN_PAREN || peek->type == TT_PUNCT_CLOSE_PAREN
              || peek->type == TT_PUNCT_CLOSE_BRACE
@@ -702,14 +713,14 @@ intpt_begin_frame(struct interpreter *intpt )
     result &= symtable_result;
     
     intpt->vms.num_bits = 0;
-    intpt->ast.num_tokens = 0;
+    intpt->ast.num_nodes = 0;
     intpt->vmi.num_inputs = 0;
 
     
 
     struct ast *ast = & intpt->ast;
     assert(intpt->vms.num_bits == 0);
-    assert(intpt->ast.num_tokens == 0);
+    assert(intpt->ast.num_nodes == 0);
     assert(symtable_num_ids(& (intpt->symtable)) == 0);
     assert(intpt->vmi.num_inputs == 0);
     return result;
@@ -729,11 +740,11 @@ preprocess_command ( struct interpreter *intpt )
     struct ast *ast = & intpt->ast;
     struct symtable *symtable = & intpt->symtable;
 
-    Token *t;
+    struct ast_node *node;
     size_t it;
-    ast_for(it, *ast, t) {
-        if ( t->type == TT_CONSTANT ) {
-            bool valid = valid_constant(t);
+    ast_for(it, *ast, node) {
+        if ( node->type == AST_NODE_TYPE_CONSTANT ) {
+            bool valid = valid_constant(node);
             if ( ! valid ) {
                 intpt_info_printf(intpt, " ### %.*s is not a valid constant: valid constants are {`0`, `1`}\n", t->text_len, t->text);
                 goto INVALID_EXPR;

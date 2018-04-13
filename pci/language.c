@@ -59,6 +59,34 @@ static const struct operator_infos {
     enum operator_associativity associativity;
     enum operator_prefixing prefixing;
 } OPS[] = {
+    [OPERATOR_NONE] =              { INT_MIN, 0, 0, POSTFIX_OP},
+    [OPERATOR_NEGATE] =            { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
+    [OPERATOR_AND] =               { 11, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_OR] =                { 12, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_XOR] =               { 9, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_IMPLY] =             { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_DOUBLE_IMPLY] =      { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_EQUAL] =             { 7, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_NOT_EQUAL] =         { 7, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_GREATER] =           { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_GREATER_EQUAL] =     { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_LESS] =              { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_LESS_EQUAL] =        { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_ASSIGN] =            { 14, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_DEREF] =             { 0, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_FNCALL] =            { 0, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_INDEX] =             { 0, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_LIST] =              { -1, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
+    [OPERATOR_COMPOUND] =          { 0, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_BLOCK] =             { -1, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
+    [OPERATOR_ENUMERATE] =         { 14, 1, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
+    [OPERATOR_EXIST] =             { 14, 1, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
+    [OPERATOR_IN] =                { 13, 1, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
+    [OPERATOR_TERNARY] =           { 14, 3, RIGHT_ASSOCIATIVE_OP, POSTFIX_OP },
+    [OPERATOR_COMMA] =             { 15, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_SEMICOLON] =         { 16, 1, LEFT_ASSOCIATIVE_OP, POSTFIX_OP },
+
+#if 0
     [TT_PUNCT_SEMICOLON]  = { 16, 1, LEFT_ASSOCIATIVE_OP, POSTFIX_OP },
     [TT_PUNCT_COMMA]      = { 15, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
 
@@ -109,61 +137,230 @@ static const struct operator_infos {
     // Not valid set of operator types.
     [0 ... TT_PUNCT_ENUM_OPERATORS_START_MARKER] = { -1, 0, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS ... TT_PUNCT_ENUM_LAST_VALUE ]  = { -1, 0, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+#endif
 };
 
+
+enum ast_node_type {
+    AST_NODE_TYPE_NONE,
+    AST_NODE_TYPE_OPERATOR,
+    AST_NODE_TYPE_IDENTIFIER,
+    AST_NODE_TYPE_KEYWORD,
+    AST_NODE_TYPE_CONSTANT,
+};
+
+
+struct ast_node {
+    char *text;
+    i32 text_len;
+    enum ast_node_type type;
+    union {
+        enum operator op;
+    };
+};
+
+
+bool
+ast_node_is_valid(struct ast_node *node)
+{
+    assert(node);
+    return node->type != AST_NODE_TYPE_NONE;
+}
+
+void
+ast_node_invalidate(struct ast_node *node)
+{
+    assert(node);
+    node->type = AST_NODE_TYPE_NONE;
+}
+
+void
+ast_node_print( FILE *f, struct ast_node *node )
+{
+    assert(node);
+    assert(ast_node_is_valid(node));
+    
+    FILE *stream = f ? f : stdout;
+    char *text = node->text;
+    int text_len = node->text_len;
+    if ( node->op == OPERATOR_FNCALL ) {
+        text = "`fncall`";
+        text_len = sizeof("`fncall`") - 1;
+    } else if ( node->op == OPERATOR_INDEX )  {
+        text = "`index`";
+        text_len = sizeof("`index`") - 1;
+    } else if ( node->op == OPERATOR_COMPOUND ) {
+        text = "`compound`";
+        text_len = sizeof("`compound`") - 1;
+    } else if ( node->op == OPERATOR_DEREF ) {
+        text = "`deref`";
+        text_len = sizeof("`deref`") - 1;
+    } else if ( node->op == OPERATOR_LIST ) {
+        text = "`list`";
+        text_len = sizeof("`list`") - 1;
+    } else if ( node->op == OPERATOR_BLOCK ) {
+        text = "`block`";
+        text_len = sizeof("`block`") - 1;
+    }
+    fprintf(stream, "%.*s", text_len, text);
+}
+
+
+bool
+ast_node_from_token( struct ast_node *node,
+                     Token *curr_t,
+                     Token *prev_t )
+{
+    assert(curr_t);
+    
+    bool result = true;
+    node->text = curr_t->text;
+    node->text_len = curr_t->text_len;
+
+    if ( curr_t->type == TT_IDENTIFIER ) {
+        node->type = AST_NODE_TYPE_IDENTIFIER;
+    } else if ( curr_t->type == TT_KEYWORD ) {
+        if ( strncmp ("in", curr_t->text, curr_t->text_len) == 0) {
+            node->type = AST_NODE_TYPE_OPERATOR;
+            node->op = OPERATOR_IN;
+        } else {
+            node->type = AST_NODE_TYPE_KEYWORD;
+        }
+    } else if (curr_t->type == TT_CONSTANT ) {
+        node->type = AST_NODE_TYPE_CONSTANT;
+    }else {
+        node->type = AST_NODE_TYPE_OPERATOR;
+        switch( curr_t->type ) {
+        case TT_PUNCT_LOGICAL_NOT: case TT_PUNCT_BITWISE_NOT: { node->op = OPERATOR_NEGATE; } break;
+        case TT_PUNCT_LOGICAL_AND: case TT_PUNCT_BITWISE_AND: { node->op = OPERATOR_AND; } break;
+        case TT_PUNCT_LOGICAL_OR: case TT_PUNCT_BITWISE_OR: { node->op = OPERATOR_OR; } break;
+        case TT_PUNCT_BITWISE_XOR: { node->op = OPERATOR_XOR; } break;
+        case TT_PUNCT_ARROW: { node->op = OPERATOR_IMPLY; } break;
+        case TT_PUNCT_BOTHDIR_ARROW: { node->op = OPERATOR_DOUBLE_IMPLY; } break;
+        case TT_PUNCT_EQUAL: { node->op = OPERATOR_ASSIGN; } break;
+        case TT_PUNCT_EQUAL_EQUAL: { node->op = OPERATOR_EQUAL; } break;
+        case TT_PUNCT_NOT_EQUAL: { node->op = OPERATOR_NOT_EQUAL; } break;
+        case TT_PUNCT_GREATER: { node->op = OPERATOR_GREATER; } break;
+        case TT_PUNCT_GREATER_OR_EQUAL: { node->op = OPERATOR_GREATER_EQUAL; } break;
+        case TT_PUNCT_LESS: { node->op = OPERATOR_LESS; } break;
+        case TT_PUNCT_LESS_OR_EQUAL: { node->op = OPERATOR_LESS_EQUAL; } break;
+        case TT_PUNCT_POUND: { node->op = OPERATOR_ENUMERATE; } break;
+        case TT_PUNCT_DOLLAR_SIGN: { node->op = OPERATOR_EXIST; } break;
+        case TT_PUNCT_AT_SIGN: { node->op = OPERATOR_IN; } break;
+
+
+            // @ TODO: REVISIT TERNARY OPERATORS
+        case TT_PUNCT_QUESTION_MARK: case TT_PUNCT_COLON: { node->op = OPERATOR_TERNARY; } break;
+        case TT_PUNCT_COMMA: { node->op = OPERATOR_COMMA; } break;
+        case TT_PUNCT_SEMICOLON: { node->op = OPERATOR_SEMICOLON; } break;
+            
+
+        case TT_PUNCT_ASTERISK: {
+            if (prev_t && prev_t->type == TT_IDENTIFIER) {
+                node->op = OPERATOR_DEREF;
+            } else {
+                ast_node_invalidate(node);
+                result = false;
+            }
+        } break;
+
+        case TT_PUNCT_OPEN_PAREN: {
+            if (prev_t && prev_t->type == TT_IDENTIFIER) {
+                node->op = OPERATOR_FNCALL;
+            } else {
+                ast_node_invalidate(node);
+            }
+        } break;
+        case TT_PUNCT_OPEN_BRACKET: {
+            if (prev_t && prev_t->type == TT_IDENTIFIER) {
+                node->op = OPERATOR_INDEX;
+            } else {
+                node->op = OPERATOR_LIST;
+            }
+        } break;
+
+        case TT_PUNCT_OPEN_BRACE: {
+            if (prev_t && prev_t->type == TT_IDENTIFIER) {
+                node->op = OPERATOR_COMPOUND;
+            } else {
+                node->op = OPERATOR_BLOCK;
+            }
+        } break;
+            
+        default: {
+            // Not understood operator
+            ast_node_invalidate(node);
+            result = false;
+        } break;
+        }
+    }
+
+    return result;
+          
+}
+
+static inline bool
+ast_node_is_operator (struct ast_node *node)
+{
+    assert(node);
+    return node->type == AST_NODE_TYPE_OPERATOR;
+}
+
+
+
 static inline int
-operator_precedence(Token *t)
+operator_precedence(struct ast_node *node)
 {
-    assert(token_is_operator(t));
-    return OPS[t->type].precedence;
+    assert(ast_node_is_operator(node));
+    return OPS[node->type].precedence;
 }
 
 static inline bool
-op_is_left_associative(Token *t)
+op_is_left_associative(struct ast_node *node)
 {
-    assert(token_is_operator(t));
-    return (OPS[t->type].associativity == LEFT_ASSOCIATIVE_OP);
+    assert(ast_node_is_operator(node));
+    return (OPS[node->type].associativity == LEFT_ASSOCIATIVE_OP);
 }
 
 static inline bool
-is_prefix_operator(Token *t)
+is_prefix_operator(struct ast_node *node)
 {
-    assert(token_is_operator(t));
-    return (OPS[t->type].prefixing == PREFIX_OP);
+    assert(ast_node_is_operator(node));
+    return (OPS[node->type].prefixing == PREFIX_OP);
 }
 
 static inline bool
-is_postfix_operator(Token *t)
+is_postfix_operator(struct ast_node *node)
 {
-    assert(token_is_operator(t));
-    return (OPS[t->type].prefixing == POSTFIX_OP);
+    assert(ast_node_is_operator(node));
+    return (OPS[node->type].prefixing == POSTFIX_OP);
 }
 
 static inline bool
-is_infix_operator(Token *t)
+is_infix_operator(struct ast_node *node)
 {
-    assert(token_is_operator(t));
-    return (OPS[t->type].prefixing == INFIX_OP);
+    assert(ast_node_is_operator(node));
+    return (OPS[node->type].prefixing == INFIX_OP);
 }
 
 
 static inline bool
-op_greater_precedence(Token *sample,
-                      Token *tested )
+op_greater_precedence(struct ast_node *n1,
+                      struct ast_node *n2 )
 {
-    int p1 = operator_precedence(sample);
-    int p2 = operator_precedence(tested);
+    int p1 = operator_precedence(n1);
+    int p2 = operator_precedence(n2);
     assert(p1 >= 0);
     assert(p2 >= 0);
     return p1 < p2;
 }
 
 static inline bool
-op_eq_precedence(Token *sample,
-                 Token *tested )
+op_eq_precedence(struct ast_node *n1,
+                 struct ast_node *n2 )
 {
-    int p1 = operator_precedence(sample);
-    int p2 = operator_precedence(tested);
+    int p1 = operator_precedence(n1);
+    int p2 = operator_precedence(n2);
     assert(p1 >= 0);
     assert(p2 >= 0);
     return p1 == p2;
@@ -171,10 +368,10 @@ op_eq_precedence(Token *sample,
 
 
 static inline uint
-operator_numofoperands(Token *t)
+operator_numofoperands(struct ast_node *node)
 {
-    assert(token_is_operator(t));
-    return OPS[t->type].numofoperands;
+    assert(ast_node_is_operator(node));
+    return OPS[node->type].numofoperands;
     return 0;
 }
 

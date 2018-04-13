@@ -90,131 +90,10 @@ struct vm_outputs {
 
 
 
-enum ast_node_type {
-    AST_NODE_TYPE_NONE,
-    AST_NODE_TYPE_OPERATOR,
-    AST_NODE_TYPE_IDENTIFIER,
-    AST_NODE_TYPE_KEYWORD,
-};
-
-
-struct ast_node {
-    char *text;
-    i32 text_len;
-    enum ast_node_type type;
-    union {
-        enum operator op;
-    };
-};
-
-bool
-ast_node_is_valid(struct ast_node *node)
-{
-    assert(node);
-    return node->type != AST_NODE_TYPE_NONE;
-}
-
-void
-ast_node_invalidate(struct ast_node *node)
-{
-    assert(node);
-    node->type = AST_NODE_TYPE_NONE;
-}
-
-bool
-ast_node_from_token( struct ast_node *node,
-                     Token *curr_t,
-                     Token *prev_t )
-{
-    assert(curr_t);
-    
-    bool result = true;
-    node->text = curr_t->text;
-    node->text_len = curr_t->text_len;
-
-    if ( curr_t->type == TT_IDENTIFIER ) {
-        node->type = AST_NODE_TYPE_IDENTIFIER;
-    } else if ( curr_t->type == TT_KEYWORD ) {
-        if ( strncmp ("in", curr_t->text, curr_t->text_len) == 0) {
-            node->type = AST_NODE_TYPE_OPERATOR;
-            node->op = OPERATOR_IN;
-        } else {
-            node->type = AST_NODE_TYPE_KEYWORD;
-        }
-    } else {
-        node->type = AST_NODE_TYPE_OPERATOR;
-        switch( curr_t->type ) {
-        case TT_PUNCT_LOGICAL_NOT: case TT_PUNCT_BITWISE_NOT: { node->op = OPERATOR_NEGATE; } break;
-        case TT_PUNCT_LOGICAL_AND: case TT_PUNCT_BITWISE_AND: { node->op = OPERATOR_AND; } break;
-        case TT_PUNCT_LOGICAL_OR: case TT_PUNCT_BITWISE_OR: { node->op = OPERATOR_OR; } break;
-        case TT_PUNCT_BITWISE_XOR: { node->op = OPERATOR_XOR; } break;
-        case TT_PUNCT_ARROW: { node->op = OPERATOR_IMPLY; } break;
-        case TT_PUNCT_BOTHDIR_ARROW: { node->op = OPERATOR_DOUBLE_IMPLY; } break;
-        case TT_PUNCT_EQUAL: { node->op = OPERATOR_ASSIGN; } break;
-        case TT_PUNCT_EQUAL_EQUAL: { node->op = OPERATOR_EQUAL; } break;
-        case TT_PUNCT_NOT_EQUAL: { node->op = OPERATOR_NOT_EQUAL; } break;
-        case TT_PUNCT_GREATER: { node->op = OPERATOR_GREATER; } break;
-        case TT_PUNCT_GREATER_OR_EQUAL: { node->op = OPERATOR_GREATER_EQUAL; } break;
-        case TT_PUNCT_LESS: { node->op = OPERATOR_LESS; } break;
-        case TT_PUNCT_LESS_OR_EQUAL: { node->op = OPERATOR_LESS_EQUAL; } break;
-        case TT_PUNCT_POUND: { node->op = OPERATOR_ENUMERATE; } break;
-        case TT_PUNCT_DOLLAR_SIGN: { node->op = OPERATOR_EXIST; } break;
-        case TT_PUNCT_AT_SIGN: { node->op = OPERATOR_IN; } break;
-
-
-            // @ TODO: REVISIT TERNARY OPERATORS
-        case TT_PUNCT_QUESTION_MARK: case TT_PUNCT_COLON: { node->op = OPERATOR_TERNARY; } break;
-        case TT_PUNCT_COMMA: { node->op = OPERATOR_COMMA; } break;
-        case TT_PUNCT_SEMICOLON: { node->op = OPERATOR_SEMICOLON; } break;
-            
-
-        case TT_PUNCT_ASTERISK: {
-            if (prev_t && prev_t->type == TT_IDENTIFIER) {
-                node->op = OPERATOR_DEREF;
-            } else {
-                ast_node_invalidate(node);
-                result = false;
-            }
-        } break;
-
-        case TT_PUNCT_OPEN_PAREN: {
-            if (prev_t && prev_t->type == TT_IDENTIFIER) {
-                node->op = OPERATOR_FNCALL;
-            } else {
-                ast_node_invalidate(node);
-            }
-        } break;
-        case TT_PUNCT_OPEN_BRACKET: {
-            if (prev_t && prev_t->type == TT_IDENTIFIER) {
-                node->op = OPERATOR_INDEX;
-            } else {
-                node->op = OPERATOR_LIST;
-            }
-        } break;
-
-        case TT_PUNCT_OPEN_BRACE: {
-            if (prev_t && prev_t->type == TT_IDENTIFIER) {
-                node->op = OPERATOR_COMPOUND;
-            } else {
-                node->op = OPERATOR_BLOCK;
-            }
-        } break;
-            
-        default: {
-            // Not understood operator
-            ast_node_invalidate(node);
-            result = false;
-        } break;
-        }
-    }
-
-    return result;
-          
-}
 struct ast {
-#define AST_MAX_TOKENS_COUNT 1024
-    Token tokens[AST_MAX_TOKENS_COUNT];
-    size_t num_tokens;
+#define AST_MAX_NODES_COUNT 1024
+    struct ast_node nodes[AST_MAX_NODES_COUNT];
+    size_t num_nodes;
 };
 
 
@@ -358,20 +237,20 @@ void
 ast_clear( struct ast *ast )
 {
     assert(ast);
-    ast->num_tokens = 0;
+    ast->num_nodes = 0;
 }
 
-#define ast_for( iterator, ast, token)        \
-    for (((iterator) = 0), ((token) = (ast).tokens);      \
-         ((iterator) < (ast).num_tokens);                 \
-         ((token) = & ((ast).tokens[++(iterator)])))      \
+#define ast_for( iterator, ast, node)        \
+    for (((iterator) = 0), ((node) = (ast).nodes);      \
+         ((iterator) < (ast).num_nodes);                 \
+         ((node) = & ((ast).nodes[++(iterator)])))      \
         if (true)
 
-#define ast_for_bwd( iterator, ast, token)                          \
-    for (( (iterator) = ((ast).num_tokens - 1)),                    \
-             ((token) = (ast).tokens + (ast).num_tokens - 1);     \
+#define ast_for_bwd( iterator, ast, node)                          \
+    for (( (iterator) = ((ast).num_nodes - 1)),                    \
+             ((node) = (ast).nodes + (ast).num_nodes - 1);     \
          (iterator) >= 0;                                             \
-         ((token) = & ((ast).tokens[--(iterator)])))                \
+         ((node) = & ((ast).nodes[--(iterator)])))                \
         if (true)
 
 #define ast_symtable_for(iterator, symtable, key, value)      \
@@ -379,21 +258,21 @@ ast_clear( struct ast *ast )
 
 void
 ast_push(struct ast *ast,
-         Token *token)
+         struct ast_node *node)
 {
-    assert(ast->num_tokens != AST_MAX_TOKENS_COUNT);
-    ast->tokens[(ast->num_tokens) ++] = *token;
+    assert(ast->num_nodes != AST_MAX_NODES_COUNT);
+    ast->nodes[(ast->num_nodes) ++] = *node;
 }
 
 void
 ast_dbglog(struct ast* ast)
 {
     assert(ast);
-    printf("{ ast->num_tokens = %zu", ast->num_tokens);
-    for ( size_t i = 0; i < ast->num_tokens; i++ ) {
-        printf(", [+");
-        log_token_text(stdout, & (ast->tokens[i]));
-        printf("+]");
+    printf("{ ast->num_nodes = %zu", ast->num_nodes);
+    for ( size_t i = 0; i < ast->num_nodes; i++ ) {
+        printf(", [\"");
+        ast_node_print(stderr, & ast->nodes[i]);
+        printf("\"]");
     }
     printf(" }\n");
 }
@@ -463,19 +342,18 @@ symtable_num_ids ( struct symtable *symtable )
 
 void
 symtable_add_identifier(struct symtable *symtable,
-                        Token *t)
+                        char *string, size_t string_len)
 {
     assert(symtable && symtable->dict);
-    assert(t->text);
-    assert(t->text_len);
+    assert(string);
 
     // null terminate before adding
-    char temp = t->text[t->text_len];
-    t->text[t->text_len] = 0;
-    int result = stb_sdict_set(symtable->dict, t->text, NULL);
+    char temp = string[string_len];
+    string[string_len] = 0;
+    int result = stb_sdict_set(symtable->dict, string, NULL);
 
     // restore null termination
-    t->text[t->text_len] = temp;
+    string[string_len] = temp;
 }
 
 
@@ -492,16 +370,15 @@ symtable_set_identifier_value( struct symtable *symtable,
 
 size_t
 symtable_get_identifier_value( struct symtable *symtable,
-                               Token *t )
+                               char *string, size_t string_len )
 {
     assert(symtable && symtable->dict);
-    assert(t->text);
-    assert(t->text_len);
+    assert(string);
 
-    char temp = t->text[t->text_len];
-    t->text[t->text_len] = 0;
-    size_t result = (size_t) stb_sdict_get(symtable->dict, t->text);
-    t->text[t->text_len] = temp;
+    char temp = string[string_len];
+    string[string_len] = 0;
+    size_t result = (size_t) stb_sdict_get(symtable->dict, string);
+    string[string_len] = temp;
     return result;
 }
 
