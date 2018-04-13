@@ -524,7 +524,7 @@ ast_build_from_command( struct interpreter *intpt,
 #define SHUNTING_YARD_DEBUG 1
     
 #if SHUNTING_YARD_DEBUG == 1
-#define SHUNT_DBG() do { token_stack_dbglog( & stack ); ast_dbglog( ast ); printf("\n"); } while(0);
+#define SHUNT_DBG() do { ast_node_stack_dbglog( & stack ); ast_dbglog( ast ); printf("\n"); } while(0);
 #else
 #define SHUNT_DBG() do { } while(0)
 #endif
@@ -543,38 +543,22 @@ ast_build_from_command( struct interpreter *intpt,
     // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 
     // operator stack
-    static struct token_stack stack;
-    stack.num_tokens = 0;
+    static struct ast_node_stack stack;
+    stack.num_nodes = 0;
     bool prev_was_identifier = false;
 
     while (get_next_token( &tknzr, curr_t)) {
         SHUNT_DBG();
+        struct ast_node node;
         // NOTE: At every iteration the tokenizer error is cleared with the call to get_next_token
         if ( tknzr.err ) {
             puts(tknzr.err_desc);
-            assert_msg(0, "We got an error boys");
-        }    
+            intpt_info_printf( intpt, " Internal parsing error\n");
+            goto parse_end;
 
-
-        if ( prev_was_identifier ) {
-            if ( curr_t->type ==  TT_PUNCT_OPEN_PAREN ) {
-                curr_t->type = TT_PUNCT_META_FNCALL;
-            } else if (curr_t->type == TT_PUNCT_OPEN_BRACKET ) {
-                curr_t->type = TT_PUNCT_META_INDEX;
-            } else if ( curr_t->type == TT_PUNCT_OPEN_BRACE ) {
-                curr_t->type = TT_PUNCT_META_COMPOUND;
-            }
-        } else {
-            if ( curr_t->type == TT_PUNCT_ASTERISK ) {
-                curr_t->type = TT_PUNCT_META_DEREF;
-            }
         }
-        
-        // log_token(curr_t);
+        ast_node_from_token(&node, curr_t, prev_t);
 
-
-
-        
         // Extensions ->
         //   Postfix operators do an uncoditional push onto
         //                 ast_token_queue_push(queue, curr_t)
@@ -590,49 +574,49 @@ ast_build_from_command( struct interpreter *intpt,
                 if ( curr_t->type == TT_IDENTIFIER ) {
                     prev_was_identifier = true;
                 }
-                token_stack_push( & stack, curr_t);
+                ast_node_stack_push( & stack, & node);
                 // ast_push(ast, curr_t);
             } /* else if ( is function ) */
             else {
                 if ( curr_t->type == TT_PUNCT_OPEN_PAREN ) {
-                    token_stack_push( & stack, curr_t);
+                    ast_node_stack_push( & stack, & node);
                 } else if ( curr_t->type == TT_PUNCT_CLOSE_PAREN
                             || curr_t->type == TT_PUNCT_CLOSE_BRACE
                             || curr_t->type == TT_PUNCT_CLOSE_BRACKET) {
-                    Token *peek = NULL;
-                    while ((stack.num_nodes != 0) && (peek = token_stack_peek_addr(&stack))) {
+                    struct ast_node *peek = NULL;
+                    while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
                         if ( peek->type != TT_PUNCT_OPEN_PAREN ) {
                             ast_push(ast, peek);
-                            token_stack_pop( & stack);
+                            ast_node_stack_pop( & stack);
                         } else { break; }
                     }
                     if ( stack.num_nodes == 0 ) {
                         if ( peek && peek->type != TT_PUNCT_OPEN_PAREN ) {
                             // Mismatched parentheses
-                            intpt_info_printf(intpt, "Mismatched parens\n");
+                            intpt_info_printf(intpt, " ### Mismatched parens\n");
                             goto parse_end;
                         }
                     } else {
                         // pop the open paren from the stack
                         if ( peek && peek->type == TT_PUNCT_OPEN_PAREN )
-                            token_stack_pop( & stack );
+                            ast_node_stack_pop( & stack );
                     }
                 } else if ( token_is_operator(curr_t)) {
-                    bool ispostfix = is_postfix_operator( curr_t);
-                    Token *peek = NULL;
-                    while ((stack.num_nodes != 0) && (peek = token_stack_peek_addr(&stack))) {
+                    bool ispostfix = is_postfix_operator( & node);
+                    struct ast_node *peek = NULL;
+                    while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
                         if ( !(peek->type == TT_PUNCT_OPEN_PAREN)
                              && ( (peek->type == TT_IDENTIFIER || peek->type == TT_CONSTANT)
-                                  || (op_greater_precedence(peek, curr_t))
-                                  || ((op_eq_precedence(peek, curr_t)) && (op_is_left_associative(peek))))) {
+                                  || (op_greater_precedence(peek, & node))
+                                  || ((op_eq_precedence(peek, & node)) && (op_is_left_associative(peek))))) {
                             ast_push(ast, peek);
-                            token_stack_pop( & stack);
+                            ast_node_stack_pop( & stack);
                         } else { break; }
                     }
                     if ( ispostfix ) {
-                        ast_push(ast, curr_t);
+                        ast_push(ast, & node);
                     } else {
-                        token_stack_push( & stack, curr_t);
+                        ast_node_stack_push( & stack, & node);
                     }
                 } else {
                     invalid_code_path();
@@ -640,13 +624,13 @@ ast_build_from_command( struct interpreter *intpt,
 
                 if ( prev_was_identifier && curr_t->type == TT_PUNCT_META_FNCALL ) {
                     curr_t->type = TT_PUNCT_OPEN_PAREN;
-                    token_stack_push( & stack, curr_t);
+                    ast_node_stack_push( & stack, & node);
                 }
 
                 if ( curr_t->type == TT_PUNCT_OPEN_BRACE || curr_t->type == TT_PUNCT_OPEN_BRACKET
                      || curr_t->type == TT_PUNCT_META_INDEX || curr_t->type == TT_PUNCT_META_COMPOUND) {
                     curr_t->type = TT_PUNCT_OPEN_PAREN;
-                    token_stack_push ( & stack, curr_t );
+                    ast_node_stack_push ( & stack, & node );
                 }
                 
                 prev_was_identifier = false;
@@ -666,8 +650,8 @@ ast_build_from_command( struct interpreter *intpt,
     /* 		/\* if the operator token on the top of the stack is a bracket, then there are mismatched parentheses. *\/ */
     /* 		pop the operator from the operator stack onto the output queue. */
 
-    Token *peek = NULL;
-    while ( ( (stack.num_nodes) != 0 && (peek = token_stack_peek_addr(&stack)))) {
+    struct ast_node *peek = NULL;
+    while ( ( (stack.num_nodes) != 0 && (peek = ast_node_stack_peek_addr(&stack)))) {
         SHUNT_DBG();
         if ( peek->type == TT_PUNCT_OPEN_PAREN || peek->type == TT_PUNCT_CLOSE_PAREN
              || peek->type == TT_PUNCT_CLOSE_BRACE
@@ -676,7 +660,7 @@ ast_build_from_command( struct interpreter *intpt,
             goto parse_end;
         }
         ast_push( ast, peek );
-        token_stack_pop ( & stack );
+        ast_node_stack_pop ( & stack );
     }
 
 #if SHUNTING_YARD_DEBUG == 1
@@ -684,7 +668,7 @@ ast_build_from_command( struct interpreter *intpt,
     SHUNT_DBG();
 #endif
     
-    token_stack_dbglog( & stack );
+    ast_node_stack_dbglog( & stack );
     ast_dbglog( ast );
     printf("\n");
 
@@ -746,7 +730,7 @@ preprocess_command ( struct interpreter *intpt )
         if ( node->type == AST_NODE_TYPE_CONSTANT ) {
             bool valid = valid_constant(node);
             if ( ! valid ) {
-                intpt_info_printf(intpt, " ### %.*s is not a valid constant: valid constants are {`0`, `1`}\n", t->text_len, t->text);
+                intpt_info_printf(intpt, " ### %.*s is not a valid constant: valid constants are {`0`, `1`}\n", node->text_len, node->text);
                 goto INVALID_EXPR;
             }
         }

@@ -28,17 +28,13 @@ enum operator {
     OPERATOR_DEREF,
     OPERATOR_FNCALL,
     OPERATOR_INDEX,
-    OPERATOR_LIST,
     OPERATOR_COMPOUND,
-    OPERATOR_BLOCK,
 
     OPERATOR_ENUMERATE,
     OPERATOR_EXIST,
     OPERATOR_IN,
     
     OPERATOR_TERNARY,
-    OPERATOR_COMMA,
-    OPERATOR_SEMICOLON,
 };
 
 enum operator_associativity {
@@ -76,15 +72,11 @@ static const struct operator_infos {
     [OPERATOR_DEREF] =             { 0, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_FNCALL] =            { 0, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_INDEX] =             { 0, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [OPERATOR_LIST] =              { -1, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_COMPOUND] =          { 0, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [OPERATOR_BLOCK] =             { -1, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_ENUMERATE] =         { 14, 1, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_EXIST] =             { 14, 1, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_IN] =                { 13, 1, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_TERNARY] =           { 14, 3, RIGHT_ASSOCIATIVE_OP, POSTFIX_OP },
-    [OPERATOR_COMMA] =             { 15, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [OPERATOR_SEMICOLON] =         { 16, 1, LEFT_ASSOCIATIVE_OP, POSTFIX_OP },
 
 #if 0
     [TT_PUNCT_SEMICOLON]  = { 16, 1, LEFT_ASSOCIATIVE_OP, POSTFIX_OP },
@@ -147,6 +139,26 @@ enum ast_node_type {
     AST_NODE_TYPE_IDENTIFIER,
     AST_NODE_TYPE_KEYWORD,
     AST_NODE_TYPE_CONSTANT,
+    AST_NODE_TYPE_OPEN_DELIMITER,
+    AST_NODE_TYPE_CLOSE_DELIMITER,    
+};
+
+
+enum open_delimiter {
+    OPEN_DELIMITER_UKNOWN,
+    OPEN_DELIMITER_PAREN,
+    OPEN_DELIMITER_BRACKET,
+    OPEN_DELIMITER_BRACE,
+    OPEN_DELIMITER_QUESTION_MARK,
+};
+
+enum closing_delimiter {
+    CLOSE_DELIMITER_PAREN,
+    CLOSE_DELIMITER_BRACKET,
+    CLOSE_DELIMITER_BRACE,
+    CLOSE_DELIMITER_COLON,
+    CLOSE_DELIMITER_COMMA,
+    CLOSE_DELIMITER_SEMICOLON,
 };
 
 
@@ -156,6 +168,8 @@ struct ast_node {
     enum ast_node_type type;
     union {
         enum operator op;
+        enum open_delimiter opdel;
+        enum closing_delimiter cldel;
     };
 };
 
@@ -195,13 +209,16 @@ ast_node_print( FILE *f, struct ast_node *node )
     } else if ( node->op == OPERATOR_DEREF ) {
         text = "`deref`";
         text_len = sizeof("`deref`") - 1;
-    } else if ( node->op == OPERATOR_LIST ) {
+    }
+#if 0
+    else if ( node->op == OPERATOR_LIST ) {
         text = "`list`";
         text_len = sizeof("`list`") - 1;
     } else if ( node->op == OPERATOR_BLOCK ) {
         text = "`block`";
         text_len = sizeof("`block`") - 1;
     }
+#endif
     fprintf(stream, "%.*s", text_len, text);
 }
 
@@ -228,7 +245,85 @@ ast_node_from_token( struct ast_node *node,
         }
     } else if (curr_t->type == TT_CONSTANT ) {
         node->type = AST_NODE_TYPE_CONSTANT;
-    }else {
+    }
+
+    else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
+        if (prev_t && prev_t->type == TT_IDENTIFIER) {
+            node->op = OPERATOR_FNCALL;
+        } else {
+            node->type = AST_NODE_TYPE_OPEN_DELIMITER;
+            node->opdel = OPEN_DELIMITER_PAREN;
+        }
+    } else if (curr_t->type == TT_PUNCT_OPEN_BRACKET) {
+        if (prev_t && prev_t->type == TT_IDENTIFIER) {
+            node->op = OPERATOR_INDEX;
+        } else {
+            node->type = AST_NODE_TYPE_OPEN_DELIMITER;
+            node->opdel = OPEN_DELIMITER_BRACKET;
+        }
+    } else if (curr_t->type == TT_PUNCT_OPEN_BRACE) {
+        if (prev_t && prev_t->type == TT_IDENTIFIER) {
+            node->op = OPERATOR_COMPOUND;
+        } else {
+            node->type = AST_NODE_TYPE_OPEN_DELIMITER;
+            node->opdel = OPEN_DELIMITER_BRACE;
+        }
+    }
+
+    else if (curr_t->type == TT_PUNCT_CLOSE_PAREN) {
+        node->type = AST_NODE_TYPE_CLOSE_DELIMITER;
+        node->opdel = CLOSE_DELIMITER_PAREN;
+    } else if (curr_t->type == TT_PUNCT_CLOSE_BRACKET) {
+        node->type = AST_NODE_TYPE_CLOSE_DELIMITER;
+        node->opdel = CLOSE_DELIMITER_BRACKET;
+    } else if (curr_t->type == TT_PUNCT_CLOSE_BRACE) {
+        node->type = AST_NODE_TYPE_CLOSE_DELIMITER;
+        node->opdel = CLOSE_DELIMITER_BRACE;
+    }
+
+    
+    else if (curr_t->type == TT_PUNCT_COMMA) {
+        node->type = AST_NODE_TYPE_CLOSE_DELIMITER;
+        node->opdel = CLOSE_DELIMITER_COMMA;
+    } else if (curr_t->type == TT_PUNCT_SEMICOLON) {
+        node->type = AST_NODE_TYPE_CLOSE_DELIMITER;
+        node->opdel = CLOSE_DELIMITER_SEMICOLON;
+    } else if (curr_t->type == TT_PUNCT_QUESTION_MARK) {
+        node->type = AST_NODE_TYPE_OPEN_DELIMITER;
+        node->opdel = OPEN_DELIMITER_QUESTION_MARK;
+    } else if (curr_t->type == TT_PUNCT_COLON) {
+        node->type = AST_NODE_TYPE_CLOSE_DELIMITER;
+        node->opdel = CLOSE_DELIMITER_COLON;
+    }
+
+
+    
+    
+    else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
+        
+    } else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
+        
+    } else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
+        
+    } else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
+        
+    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
+        
+    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
+        
+    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
+        
+    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
+        
+    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
+        
+    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
+        
+    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
+        
+    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
+        
+    } else {
         node->type = AST_NODE_TYPE_OPERATOR;
         switch( curr_t->type ) {
         case TT_PUNCT_LOGICAL_NOT: case TT_PUNCT_BITWISE_NOT: { node->op = OPERATOR_NEGATE; } break;
@@ -250,10 +345,10 @@ ast_node_from_token( struct ast_node *node,
 
 
             // @ TODO: REVISIT TERNARY OPERATORS
-        case TT_PUNCT_QUESTION_MARK: case TT_PUNCT_COLON: { node->op = OPERATOR_TERNARY; } break;
-        case TT_PUNCT_COMMA: { node->op = OPERATOR_COMMA; } break;
-        case TT_PUNCT_SEMICOLON: { node->op = OPERATOR_SEMICOLON; } break;
-            
+        case TT_PUNCT_QUESTION_MARK: case TT_PUNCT_COLON: {
+            assert_msg(0, "Ternary operator needs testing\n");
+            node->op = OPERATOR_TERNARY;
+        } break;            
 
         case TT_PUNCT_ASTERISK: {
             if (prev_t && prev_t->type == TT_IDENTIFIER) {
@@ -264,29 +359,6 @@ ast_node_from_token( struct ast_node *node,
             }
         } break;
 
-        case TT_PUNCT_OPEN_PAREN: {
-            if (prev_t && prev_t->type == TT_IDENTIFIER) {
-                node->op = OPERATOR_FNCALL;
-            } else {
-                ast_node_invalidate(node);
-            }
-        } break;
-        case TT_PUNCT_OPEN_BRACKET: {
-            if (prev_t && prev_t->type == TT_IDENTIFIER) {
-                node->op = OPERATOR_INDEX;
-            } else {
-                node->op = OPERATOR_LIST;
-            }
-        } break;
-
-        case TT_PUNCT_OPEN_BRACE: {
-            if (prev_t && prev_t->type == TT_IDENTIFIER) {
-                node->op = OPERATOR_COMPOUND;
-            } else {
-                node->op = OPERATOR_BLOCK;
-            }
-        } break;
-            
         default: {
             // Not understood operator
             ast_node_invalidate(node);

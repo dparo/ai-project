@@ -43,10 +43,10 @@ struct symtable {
     stb_sdict *dict;
 };
 
-struct token_stack {
-#define TOKEN_STACK_MAX_TOKENS_COUNT 1024
-    Token tokens[TOKEN_STACK_MAX_TOKENS_COUNT];
-    size_t num_tokens;
+struct ast_node_stack {
+#define AST_NODE_STACK_MAX_NODES_COUNT 1024
+    struct ast_node nodes[AST_NODE_STACK_MAX_NODES_COUNT];
+    size_t num_nodes;
 };
 
 typedef uint32_t packed_bool;
@@ -141,33 +141,33 @@ vm_inputs_size(struct vm_inputs *vmi)
 
 
 void
-token_stack_push(struct token_stack *stack,
-                     Token *token)
+ast_node_stack_push(struct ast_node_stack *stack,
+                    struct ast_node *node)
 {
-    assert(stack->num_tokens != TOKEN_STACK_MAX_TOKENS_COUNT);
-    stack->tokens[(stack->num_tokens) ++] = *token;
+    assert(stack->num_nodes != AST_NODE_STACK_MAX_NODES_COUNT);
+    stack->nodes[(stack->num_nodes) ++] = *node;
 }
 
 
-Token*
-token_stack_peek_addr(struct token_stack *stack)
+struct ast_node*
+ast_node_stack_peek_addr(struct ast_node_stack *stack)
 {
-    assert(stack->num_tokens);
-    return &(stack->tokens[stack->num_tokens - 1]);
+    assert(stack->num_nodes);
+    return &(stack->nodes[stack->num_nodes - 1]);
 }
 
 void
-token_stack_pop(struct token_stack *stack)
+ast_node_stack_pop(struct ast_node_stack *stack)
 {
-    assert(stack->num_tokens);
-    (stack->num_tokens) --;
+    assert(stack->num_nodes);
+    (stack->num_nodes) --;
 }
 
-Token
-token_stack_pop_value(struct token_stack *stack)
+struct ast_node
+ast_node_stack_pop_value(struct ast_node_stack *stack)
 {
-    assert(stack->num_tokens);
-    Token result = stack->tokens[--(stack->num_tokens)];
+    assert(stack->num_nodes);
+    struct ast_node result = stack->nodes[--(stack->num_nodes)];
     return result;
 }
 
@@ -175,22 +175,22 @@ token_stack_pop_value(struct token_stack *stack)
 
 // Highly discouraged pointer may point to invalid
 // memory after a new push
-Token*
-token_stack_pop_value_addr(struct token_stack *stack)
+struct ast_node*
+ast_node_stack_pop_value_addr(struct ast_node_stack *stack)
 {
-    assert(stack->num_tokens);
-    Token *result = &(stack->tokens[--(stack->num_tokens)]);
+    assert(stack->num_nodes);
+    struct ast_node *result = &(stack->nodes[--(stack->num_nodes)]);
     return result;
 }
 
 void
-token_stack_dbglog(struct token_stack *stack)
+ast_node_stack_dbglog(struct ast_node_stack *stack)
 {
     assert(stack);
-    printf("{ stack->num_tokens = %zu", stack->num_tokens);
-    for ( size_t i = 0; i < stack->num_tokens; i++ ) {
+    printf("{ stack->num_nodes = %zu", stack->num_nodes);
+    for ( size_t i = 0; i < stack->num_nodes; i++ ) {
         printf(", [+");
-        log_token_text(stdout, & (stack->tokens[i]));
+        ast_node_print(stdout, & (stack->nodes[i]));
         printf("+]");
     }
     printf(" }\n");
