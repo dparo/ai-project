@@ -189,9 +189,9 @@ ast_node_stack_dbglog(struct ast_node_stack *stack)
     assert(stack);
     printf("{ stack->num_nodes = %zu", stack->num_nodes);
     for ( size_t i = 0; i < stack->num_nodes; i++ ) {
-        printf(", [+");
+        printf(", [\"");
         ast_node_print(stdout, & (stack->nodes[i]));
-        printf("+]");
+        printf("\"]");
     }
     printf(" }\n");
 }
@@ -271,7 +271,7 @@ ast_dbglog(struct ast* ast)
     printf("{ ast->num_nodes = %zu", ast->num_nodes);
     for ( size_t i = 0; i < ast->num_nodes; i++ ) {
         printf(", [\"");
-        ast_node_print(stderr, & ast->nodes[i]);
+        ast_node_print(stdout, & ast->nodes[i]);
         printf("\"]");
     }
     printf(" }\n");

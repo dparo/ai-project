@@ -578,34 +578,7 @@ ast_build_from_command( struct interpreter *intpt,
                 // ast_push(ast, curr_t);
             } /* else if ( is function ) */
             else {
-                if ( is_infix_delimiter( & node ) && is_postfix_delimiter(& node)) {
-                    struct ast_node *peek = NULL;
-                    while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
-                        if ( !is_prefix_delimiter(peek)) {
-                            ast_push(ast, peek);
-                            ast_node_stack_pop( & stack);
-                        } else { break; }
-                    }
-                    if ( stack.num_nodes == 0 ) {
-                        if ( peek && !is_prefix_delimiter(peek)) {
-                            // Mismatched parentheses
-                            intpt_info_printf(intpt, " ### Mismatched parens\n");
-                            goto parse_failed;
-                        }
-                    } else {
-                        // pop the open paren from the stack
-                        if ( peek && is_prefix_delimiter(peek) ) {
-                            ast_node_stack_pop( & stack );
-                            if ( peek->type == AST_NODE_TYPE_OPERATOR ) {
-                                ast_push(ast, peek);
-                            }
-                        }
-                    }
-                }
-                if ( is_prefix_delimiter(& node) || is_infix_delimiter( & node)) {
-                    ast_node_stack_push( & stack, & node);
-                }
-                else if ( node.type == AST_NODE_TYPE_OPERATOR ) {
+                if ( node.type == AST_NODE_TYPE_OPERATOR ) {
                     bool ispostfix = is_postfix_operator( & node);
                     struct ast_node *peek = NULL;
                     while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
@@ -622,13 +595,40 @@ ast_build_from_command( struct interpreter *intpt,
                     } else {
                         ast_node_stack_push( & stack, & node);
                     }
-                } else {
-                    invalid_code_path();
+                }
+                if ( node.type != AST_NODE_TYPE_OPERATOR
+                     && is_postfix_delimiter(& node)) {
+                    struct ast_node *peek = NULL;
+                    while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
+                        if ( ! (is_prefix_delimiter(peek) || is_infix_delimiter(peek))) {
+                            ast_push(ast, peek);
+                            ast_node_stack_pop( & stack);
+                        } else { break; }
+                    }
+                    if ( stack.num_nodes == 0 ) {
+                        if ( peek && ! (is_prefix_delimiter(peek) || is_infix_delimiter(peek))) {
+                            // Mismatched parentheses
+                            intpt_info_printf(intpt, " ### Mismatched parens\n");
+                            goto parse_failed;
+                        }
+                    } else {
+                        // pop the open paren from the stack
+                        if ( peek && is_prefix_delimiter(peek) ) {
+                            ast_node_stack_pop( & stack );
+                            if ( peek->type == AST_NODE_TYPE_OPERATOR ) {
+                                ast_push(ast, peek);
+                            }
+                        }
+                    }
+                }
+                if ( node.type != AST_NODE_TYPE_OPERATOR
+                     && (is_prefix_delimiter(& node) || is_infix_delimiter( & node))) {
+                    ast_node_stack_push( & stack, & node);
                 }
             }
         }
         prev_t = curr_t;
-        curr_t += sizeof(t[0]);
+        curr_t += 1;
         if (curr_t >= (t + ARRAY_LEN(t))) { curr_t = t; }
     }
 
@@ -644,7 +644,7 @@ ast_build_from_command( struct interpreter *intpt,
     struct ast_node *peek = NULL;
     while ( ( (stack.num_nodes) != 0 && (peek = ast_node_stack_peek_addr(&stack)))) {
         SHUNT_DBG();
-        if ( is_prefix_delimiter(peek) || is_postfix_delimiter(peek)
+        if ( /* is_prefix_delimiter(peek) || */ is_postfix_delimiter(peek)
              || is_infix_delimiter(peek)) {
             intpt_info_printf( intpt, " ### Mismatched parens\n");
             goto parse_failed;

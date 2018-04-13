@@ -147,8 +147,7 @@ enum delimiter {
     // It's not a delimiter
     DELIMITER_NONE,
     
-    PREFIX_DELIMITER_UKNOWN = 1,
-    PREFIX_DELIMITER_PAREN,
+    PREFIX_DELIMITER_PAREN = 1,
     PREFIX_DELIMITER_BRACKET,
     PREFIX_DELIMITER_BRACE,
     PREFIX_DELIMITER_QUESTION_MARK,
@@ -189,7 +188,8 @@ is_prefix_delimiter(struct ast_node *node)
 {
     assert(node);
     assert(ast_node_is_valid(node));
-    if ( node->type == AST_NODE_TYPE_DELIMITER || node->type == AST_NODE_TYPE_OPERATOR) {
+    if ( (node->type == AST_NODE_TYPE_DELIMITER || node->type == AST_NODE_TYPE_OPERATOR)
+         && (node->del != DELIMITER_NONE)) {
         enum delimiter d = node->del;
         int mask = 0;
         mask |= 1 << 8;
@@ -209,7 +209,8 @@ is_infix_delimiter(struct ast_node *node)
 {
     assert(node);
     assert(ast_node_is_valid(node));
-    if ( node->type == AST_NODE_TYPE_DELIMITER || node->type == AST_NODE_TYPE_OPERATOR) {
+    if ( (node->type == AST_NODE_TYPE_DELIMITER || node->type == AST_NODE_TYPE_OPERATOR)
+         && (node->del != DELIMITER_NONE)) {
         enum delimiter d = node->del;
         int mask = 0;
         mask |= 1 << 8;
@@ -231,7 +232,8 @@ is_postfix_delimiter(struct ast_node *node)
 {
     assert(node);
     assert(ast_node_is_valid(node));
-    if ( node->type == AST_NODE_TYPE_DELIMITER || node->type == AST_NODE_TYPE_OPERATOR) {
+    if ( (node->type == AST_NODE_TYPE_DELIMITER || node->type == AST_NODE_TYPE_OPERATOR)
+         && (node->del != DELIMITER_NONE)) {
         enum delimiter d = node->del;
         int mask = 0;
         mask |= 1 << 16;
@@ -262,6 +264,7 @@ ast_node_print( FILE *f, struct ast_node *node )
     FILE *stream = f ? f : stdout;
     char *text = node->text;
     int text_len = node->text_len;
+   
     if ( node->op == OPERATOR_FNCALL ) {
         text = "`fncall`";
         text_len = sizeof("`fncall`") - 1;
@@ -274,16 +277,47 @@ ast_node_print( FILE *f, struct ast_node *node )
     } else if ( node->op == OPERATOR_DEREF ) {
         text = "`deref`";
         text_len = sizeof("`deref`") - 1;
+    } else if ( node->type == AST_NODE_TYPE_DELIMITER ) {
+        if (node->del == DELIMITER_NONE) {
+            text = "`__none__`";
+            text_len = sizeof("`__none__`") - 1;
+        } else if (node->del == PREFIX_DELIMITER_PAREN) {
+            text = "`(`";
+            text_len = sizeof("`(`") - 1;
+        } else if (node->del == PREFIX_DELIMITER_BRACKET) {
+            text = "`[`";
+            text_len = sizeof("`[`") - 1;
+        }else if (node->del == PREFIX_DELIMITER_BRACE) {
+            text = "`{`";
+            text_len = sizeof("`{`") - 1;
+
+        } else if (node->del == INFIX_DELIMITER_COMMA ) {
+            text = "`,`";
+            text_len = sizeof("`,`") - 1;
+
+        } else if (node->del == POSTFIX_DELIMITER_PAREN) {
+            text = "`)`";
+            text_len = sizeof("`)`") - 1;
+
+        } else if (node->del == POSTFIX_DELIMITER_BRACKET) {
+            text = "`]`";
+            text_len = sizeof("]`") - 1;
+
+        } else if (node->del == POSTFIX_DELIMITER_BRACE) {
+            text = "`}`";
+            text_len = sizeof("`}`") - 1;
+
+        } else if (node->del == POSTFIX_DELIMITER_COLON) {
+            text = "`:`";
+            text_len = sizeof("`:`") - 1;
+
+        } else if (node->del == POSTFIX_DELIMITER_SEMICOLON) {
+            text = "`;`";
+            text_len = sizeof("`;`") - 1;
+
+        }
     }
-#if 0
-    else if ( node->op == OPERATOR_LIST ) {
-        text = "`list`";
-        text_len = sizeof("`list`") - 1;
-    } else if ( node->op == OPERATOR_BLOCK ) {
-        text = "`block`";
-        text_len = sizeof("`block`") - 1;
-    }
-#endif
+                        
     fprintf(stream, "%.*s", text_len, text);
 }
 
@@ -441,7 +475,12 @@ ast_node_from_token( struct ast_node *node,
 
     if ( result == true ) {
         assert(node->type != AST_NODE_TYPE_NONE);
-        assert( (node->op != OPERATOR_NONE) || ( (node->type == AST_NODE_TYPE_DELIMITER) && (node->del != DELIMITER_NONE)));
+        bool check = false;
+        if ( node->type == AST_NODE_TYPE_IDENTIFIER ) check |= true;
+        if ( node->type == AST_NODE_TYPE_CONSTANT ) check |= true;
+        if ( node->type == AST_NODE_TYPE_OPERATOR && node->op != OPERATOR_NONE) check |= true;
+        if ( node->type == AST_NODE_TYPE_DELIMITER && node->del != DELIMITER_NONE) check |= true;
+        assert( check );
     }
     return result;
           
