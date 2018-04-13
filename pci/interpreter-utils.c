@@ -87,8 +87,130 @@ struct vm_outputs {
     packed_bool *outputs;   // 2D array of results
 };
 
-    
 
+
+
+enum ast_node_type {
+    AST_NODE_TYPE_NONE,
+    AST_NODE_TYPE_OPERATOR,
+    AST_NODE_TYPE_IDENTIFIER,
+    AST_NODE_TYPE_KEYWORD,
+};
+
+
+struct ast_node {
+    char *text;
+    i32 text_len;
+    enum ast_node_type type;
+    union {
+        enum operator op;
+    };
+};
+
+bool
+ast_node_is_valid(struct ast_node *node)
+{
+    assert(node);
+    return node->type != AST_NODE_TYPE_NONE;
+}
+
+void
+ast_node_invalidate(struct ast_node *node)
+{
+    assert(node);
+    node->type = AST_NODE_TYPE_NONE;
+}
+
+bool
+ast_node_from_token( struct ast_node *node,
+                     Token *curr_t,
+                     Token *prev_t )
+{
+    assert(curr_t);
+    
+    bool result = true;
+    node->text = curr_t->text;
+    node->text_len = curr_t->text_len;
+
+    if ( curr_t->type == TT_IDENTIFIER ) {
+        node->type = AST_NODE_TYPE_IDENTIFIER;
+    } else if ( curr_t->type == TT_KEYWORD ) {
+        if ( strncmp ("in", curr_t->text, curr_t->text_len) == 0) {
+            node->type = AST_NODE_TYPE_OPERATOR;
+            node->op = OPERATOR_IN;
+        } else {
+            node->type = AST_NODE_TYPE_KEYWORD;
+        }
+    } else {
+        node->type = AST_NODE_TYPE_OPERATOR;
+        switch( curr_t->type ) {
+        case TT_PUNCT_LOGICAL_NOT: case TT_PUNCT_BITWISE_NOT: { node->op = OPERATOR_NEGATE; } break;
+        case TT_PUNCT_LOGICAL_AND: case TT_PUNCT_BITWISE_AND: { node->op = OPERATOR_AND; } break;
+        case TT_PUNCT_LOGICAL_OR: case TT_PUNCT_BITWISE_OR: { node->op = OPERATOR_OR; } break;
+        case TT_PUNCT_BITWISE_XOR: { node->op = OPERATOR_XOR; } break;
+        case TT_PUNCT_ARROW: { node->op = OPERATOR_IMPLY; } break;
+        case TT_PUNCT_BOTHDIR_ARROW: { node->op = OPERATOR_DOUBLE_IMPLY; } break;
+        case TT_PUNCT_EQUAL: { node->op = OPERATOR_ASSIGN; } break;
+        case TT_PUNCT_EQUAL_EQUAL: { node->op = OPERATOR_EQUAL; } break;
+        case TT_PUNCT_NOT_EQUAL: { node->op = OPERATOR_NOT_EQUAL; } break;
+        case TT_PUNCT_GREATER: { node->op = OPERATOR_GREATER; } break;
+        case TT_PUNCT_GREATER_OR_EQUAL: { node->op = OPERATOR_GREATER_EQUAL; } break;
+        case TT_PUNCT_LESS: { node->op = OPERATOR_LESS; } break;
+        case TT_PUNCT_LESS_OR_EQUAL: { node->op = OPERATOR_LESS_EQUAL; } break;
+        case TT_PUNCT_POUND: { node->op = OPERATOR_ENUMERATE; } break;
+        case TT_PUNCT_DOLLAR_SIGN: { node->op = OPERATOR_EXIST; } break;
+        case TT_PUNCT_AT_SIGN: { node->op = OPERATOR_IN; } break;
+
+
+            // @ TODO: REVISIT TERNARY OPERATORS
+        case TT_PUNCT_QUESTION_MARK: case TT_PUNCT_COLON: { node->op = OPERATOR_TERNARY; } break;
+        case TT_PUNCT_COMMA: { node->op = OPERATOR_COMMA; } break;
+        case TT_PUNCT_SEMICOLON: { node->op = OPERATOR_SEMICOLON; } break;
+            
+
+        case TT_PUNCT_ASTERISK: {
+            if (prev_t && prev_t->type == TT_IDENTIFIER) {
+                node->op = OPERATOR_DEREF;
+            } else {
+                ast_node_invalidate(node);
+                result = false;
+            }
+        } break;
+
+        case TT_PUNCT_OPEN_PAREN: {
+            if (prev_t && prev_t->type == TT_IDENTIFIER) {
+                node->op = OPERATOR_FNCALL;
+            } else {
+                ast_node_invalidate(node);
+            }
+        } break;
+        case TT_PUNCT_OPEN_BRACKET: {
+            if (prev_t && prev_t->type == TT_IDENTIFIER) {
+                node->op = OPERATOR_INDEX;
+            } else {
+                node->op = OPERATOR_LIST;
+            }
+        } break;
+
+        case TT_PUNCT_OPEN_BRACE: {
+            if (prev_t && prev_t->type == TT_IDENTIFIER) {
+                node->op = OPERATOR_COMPOUND;
+            } else {
+                node->op = OPERATOR_BLOCK;
+            }
+        } break;
+            
+        default: {
+            // Not understood operator
+            ast_node_invalidate(node);
+            result = false;
+        } break;
+        }
+    }
+
+    return result;
+          
+}
 struct ast {
 #define AST_MAX_TOKENS_COUNT 1024
     Token tokens[AST_MAX_TOKENS_COUNT];

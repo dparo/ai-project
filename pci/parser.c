@@ -18,7 +18,8 @@
 enum Token_Type {
     TT_NONE = 0,
     TT_IDENTIFIER = 1,
-    TT_CONSTANT,
+    TT_KEYWORD = 2,
+    TT_CONSTANT = 3,
 
 
     TT_PUNCT_ENUM_OPERATORS_START_MARKER,
@@ -478,18 +479,9 @@ eat_whitespaces ( Tokenizer *tknzr )
 }
 
 
-
-// -----------------------
-// VERY IMPORTANT: Order does matter: it should align with the order
-// of the enum defined in tokenizer.h
-// Good note: crap like this is fixed in languages like Nim
-// ------------------------
 static char *keywords[] = {
+    "in",
 };
-
-
-
-
 
 
 static void

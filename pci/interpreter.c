@@ -125,7 +125,7 @@ eval_operator( Token *t,
         result = (v[2] ? v[1] : v[0]);
         vm_stack_push(vms, result);
     } break;
-
+     
     case TT_PUNCT_SEMICOLON:
     case TT_PUNCT_QUESTION_MARK: {
         // There's nothing todo here (it pops and push the same value again)
