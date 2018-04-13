@@ -21,3 +21,27 @@ animals = mices + cats
 
 
 siblings[ [sally, erica], [ ... ] ]
+
+
+
+
+
+
+// Questa formula puo' essere implementata dicendo che
+// men e' un subset di people, e' tutti gli elementi di men
+// devono essere in people per essere vera la formula
+#x @ people { men[x] }
+
+// Un atomo puo' essere visto come una lista vuota, oppure contenente solo il suo nome
+// Una costante true o false puo' essere vista come una lista che e' sempre oppure mai
+// il subset di un altra
+
+
+// Formule prenesse
+#x $y (x == y)
+
+// `#` e `$` definiscono variabili -> `x` ed `y`
+// se in forma prenessa l'operatore `$` non deve far altro che verificare la presenza del proprio atomo
+// all'interno del corpo della formula
+// se in forma prenessa l'operatore `#` fa la solita cosa che ha sempre fatto ed itera implicitamente
+// come nel metodo bruteforce.
