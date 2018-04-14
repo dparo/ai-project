@@ -599,12 +599,16 @@ ast_build_from_command( struct interpreter *intpt,
                         ast_node_stack_push( & stack, & node);
                     } else if (is_postfix_delimiter(& node)) {
                         struct ast_node *peek = NULL;
+                        size_t it = 0;
                         while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
                             if ( ! is_prefix_delimiter(peek)) {
                                 if ( !is_infix_delimiter(peek)) {
                                     ast_push(ast, peek);
                                 }
                                 ast_node_stack_pop( & stack);
+                                if (is_infix_delimiter(peek)) {
+                                    it++;
+                                }
                             } else { break; }
                         }
                         if ( stack.num_nodes == 0 ) {
@@ -618,6 +622,13 @@ ast_build_from_command( struct interpreter *intpt,
                             if ( peek ) {
                                 if ( is_prefix_delimiter(peek)) {
                                     ast_node_stack_pop( & stack );
+                                    peek->num_operands = it + 1;
+                                    if ( (peek->type == AST_NODE_TYPE_OPERATOR)
+                                         && (peek->op == OPERATOR_FNCALL ||
+                                             peek->op == OPERATOR_INDEX ||
+                                             peek->op == OPERATOR_COMPOUND)) {
+                                        (peek->num_operands) += 1;
+                                    }
                                     ast_push(ast, peek);
                                 } else if ( is_infix_delimiter(peek)) {
                                     ast_node_stack_pop( & stack );

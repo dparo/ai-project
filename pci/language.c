@@ -457,7 +457,9 @@ ast_node_from_token( struct ast_node *node,
         } break;            
 
         case TT_PUNCT_ASTERISK: {
-            if (prev_t && prev_t->type == TT_IDENTIFIER) {
+            if ( !prev_t || (prev_t->type != TT_IDENTIFIER
+                             && prev_t->type != TT_CONSTANT
+                             && prev_t->type != TT_PUNCT_CLOSE_PAREN)) {
                 node->op = OPERATOR_DEREF;
             } else {
                 ast_node_invalidate(node);
