@@ -15,8 +15,9 @@
      - https://en.wikipedia.org/wiki/Local_search_(constraint_satisfaction)
      - https://en.wikipedia.org/wiki/WalkSAT
      - https://en.wikipedia.org/wiki/Binary_decision_diagram
-     - https://en.wikipedia.org/wiki/Davis%E2%80%93Putnam_algorithm
-   - https://en.wikipedia.org/wiki/DPLL_algorithm
+   - https://en.wikipedia.org/wiki/Davis%E2%80%93Putnam_algorithm
+     - https://en.wikipedia.org/wiki/DPLL_algorithm
+     - https://en.wikipedia.org/wiki/Unit_propagation
    - https://en.wikipedia.org/wiki/Conflict-Driven_Clause_Learning ( modern evolution of DPLL algorithm, state of the art in 2014)
    - http://logictools.org/propositional.html ( Good link to get started on reading )
    - http://minisat.se/

@@ -282,7 +282,6 @@ symtable_build_from_ast ( struct symtable *symtable,
     size_t it;
     ast_for(it, *ast, node) {
         if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
-            //null terminate;
             symtable_add_identifier(symtable, node->text, node->text_len);
         }
     }
