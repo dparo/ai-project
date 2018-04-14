@@ -546,6 +546,10 @@ ast_build_from_command( struct interpreter *intpt,
     static struct ast_node_stack stack;
     stack.num_nodes = 0;
 
+
+    size_t paren_it = 0;
+    size_t operand_it = 0;
+    
     while (get_next_token( &tknzr, curr_t)) {
         SHUNT_DBG();
         struct ast_node node;
@@ -607,11 +611,12 @@ ast_build_from_command( struct interpreter *intpt,
                 } else {
                     if ( is_prefix_delimiter(& node) || is_infix_delimiter( & node)) {
                         ast_node_stack_push( & stack, & node);
+                        if ( is_infix_delimiter( &node )) {
+                            paren_it++;
+                        }
                     }
                     if (is_postfix_delimiter(& node) || is_infix_delimiter( & node)) {
                         struct ast_node *peek = NULL;
-                        size_t operand_it = 0;
-                        size_t paren_it = 0;
                         while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
                             if ( ! (is_prefix_delimiter(peek))) {
                                 if (peek->type == AST_NODE_TYPE_OPERATOR) {
@@ -627,8 +632,8 @@ ast_build_from_command( struct interpreter *intpt,
                                     ast_push(ast, peek);
                                 }
                                 ast_node_stack_pop( & stack);
-                                if (is_infix_delimiter(peek)) {
-                                    paren_it++;
+                                if (0 && is_infix_delimiter(peek)) {
+                                    invalid_code_path();
                                 }
                             } else { break; }
                         }
@@ -651,15 +656,13 @@ ast_build_from_command( struct interpreter *intpt,
                                         (peek->num_operands) += 1;
                                     }
                                     ast_push(ast, peek);
+                                    paren_it = 0;
                                 } else if ( is_infix_delimiter(peek)) {
+                                    invalid_code_path();
                                     ast_node_stack_pop( & stack );
                                 }
-                            } else {
-                                paren_it++;
                             }
                         }
-                    } else {
-                        invalid_code_path();
                     }
                 }
             }
@@ -679,7 +682,7 @@ ast_build_from_command( struct interpreter *intpt,
     /* 		pop the operator from the operator stack onto the output queue. */
 
     struct ast_node *peek = NULL;
-    size_t operand_it = 0;
+    operand_it = 0;
     while ( ( (stack.num_nodes) != 0 && (peek = ast_node_stack_peek_addr(&stack)))) {
         SHUNT_DBG();
         if ( is_prefix_delimiter(peek) || is_postfix_delimiter(peek)) {

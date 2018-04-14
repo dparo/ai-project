@@ -501,35 +501,35 @@ static inline int
 operator_precedence(struct ast_node *node)
 {
     assert(ast_node_is_operator(node));
-    return OPS[node->type].precedence;
+    return OPS[node->op].precedence;
 }
 
 static inline bool
 op_is_left_associative(struct ast_node *node)
 {
     assert(ast_node_is_operator(node));
-    return (OPS[node->type].associativity == LEFT_ASSOCIATIVE_OP);
+    return (OPS[node->op].associativity == LEFT_ASSOCIATIVE_OP);
 }
 
 static inline bool
 is_prefix_operator(struct ast_node *node)
 {
     assert(ast_node_is_operator(node));
-    return (OPS[node->type].prefixing == PREFIX_OP);
+    return (OPS[node->op].prefixing == PREFIX_OP);
 }
 
 static inline bool
 is_postfix_operator(struct ast_node *node)
 {
     assert(ast_node_is_operator(node));
-    return (OPS[node->type].prefixing == POSTFIX_OP);
+    return (OPS[node->op].prefixing == POSTFIX_OP);
 }
 
 static inline bool
 is_infix_operator(struct ast_node *node)
 {
     assert(ast_node_is_operator(node));
-    return (OPS[node->type].prefixing == INFIX_OP);
+    return (OPS[node->op].prefixing == INFIX_OP);
 }
 
 
@@ -560,7 +560,7 @@ static inline uint
 operator_numofoperands(struct ast_node *node)
 {
     assert(ast_node_is_operator(node));
-    return OPS[node->type].numofoperands;
+    return OPS[node->op].numofoperands;
     return 0;
 }
 
