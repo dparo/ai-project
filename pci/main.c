@@ -101,8 +101,8 @@ main( int argc, char **argv)
 
     struct interpreter intpt = {0};
     
-#if 1
-    EVAL_COMMANDLINE_INPLACE ( & intpt, "(a && (a = f | b))");
+#if 0
+    EVAL_COMMANDLINE_INPLACE ( & intpt, "f(a & b, c)");
 #else
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_len = 0; }

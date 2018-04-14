@@ -584,7 +584,6 @@ ast_build_from_command( struct interpreter *intpt,
                 if ( node.type == AST_NODE_TYPE_OPERATOR ) {
                     bool ispostfix = is_postfix_operator( & node);
                     struct ast_node *peek = NULL;
-                    size_t it = 0;
                     while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
                         if ( !(is_prefix_delimiter(peek) || is_infix_delimiter(peek))
                              && ( (peek->type == AST_NODE_TYPE_IDENTIFIER || peek->type == AST_NODE_TYPE_CONSTANT)
@@ -593,17 +592,18 @@ ast_build_from_command( struct interpreter *intpt,
                             if (peek->type == AST_NODE_TYPE_CONSTANT || peek->type == AST_NODE_TYPE_IDENTIFIER) {
                                 peek->num_operands = 0;
                             } else {
-                                peek->num_operands = it + 1;
+                                peek->num_operands = operand_it;
+                                operand_it = 0;
                             }
                             ast_push(ast, peek);
                             ast_node_stack_pop( & stack);
                             if (!is_infix_delimiter(peek)) {
-                                it++;
+                                operand_it ++;
                             }
                         } else { break; }
                     }
                     if ( ispostfix ) {
-                        node.num_operands = it;
+                        node.num_operands = operand_it;
                         ast_push(ast, & node);
                     } else {
                         ast_node_stack_push( & stack, & node);
@@ -617,24 +617,24 @@ ast_build_from_command( struct interpreter *intpt,
                     }
                     if (is_postfix_delimiter(& node) || is_infix_delimiter( & node)) {
                         struct ast_node *peek = NULL;
+                        if (stack.num_nodes == 2) { operand_it = 1; }
+                        else {    operand_it = 0; }
                         while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
                             if ( ! (is_prefix_delimiter(peek))) {
+                                if ( !is_infix_delimiter(peek)) { operand_it ++; }
                                 if (peek->type == AST_NODE_TYPE_OPERATOR) {
-                                    peek->num_operands = operand_it + 1;
+                                    peek->num_operands = operand_it;
                                     operand_it = 0 ;
-                                } else if (peek->type == AST_NODE_TYPE_IDENTIFIER || peek->type == AST_NODE_TYPE_CONSTANT) {
+                                } else if ( peek->type == AST_NODE_TYPE_IDENTIFIER || peek->type == AST_NODE_TYPE_CONSTANT) {
                                     peek->num_operands = 0;
-                                    operand_it ++;
-                                }
-                                
-                                
+                                }                                
+
                                 if ( !is_infix_delimiter(peek)) {
                                     ast_push(ast, peek);
                                 }
+                                
                                 ast_node_stack_pop( & stack);
-                                if (0 && is_infix_delimiter(peek)) {
-                                    invalid_code_path();
-                                }
+
                             } else { break; }
                         }
                         if ( stack.num_nodes == 0 ) {
@@ -682,7 +682,8 @@ ast_build_from_command( struct interpreter *intpt,
     /* 		pop the operator from the operator stack onto the output queue. */
 
     struct ast_node *peek = NULL;
-    operand_it = 0;
+    if (stack.num_nodes == 1) { operand_it = 2; }
+    else {    operand_it = 1; }
     while ( ( (stack.num_nodes) != 0 && (peek = ast_node_stack_peek_addr(&stack)))) {
         SHUNT_DBG();
         if ( is_prefix_delimiter(peek) || is_postfix_delimiter(peek)) {
@@ -691,8 +692,8 @@ ast_build_from_command( struct interpreter *intpt,
         }
 
         if (peek->type == AST_NODE_TYPE_OPERATOR) {
-            peek->num_operands = operand_it + 1;
-            operand_it = 0 ;
+            peek->num_operands = operand_it;
+            operand_it = 1;
         } else if (peek->type == AST_NODE_TYPE_IDENTIFIER || peek->type == AST_NODE_TYPE_CONSTANT) {
             peek->num_operands = 0;
             operand_it ++;
@@ -706,7 +707,7 @@ ast_build_from_command( struct interpreter *intpt,
     }
 
 #if SHUNTING_YARD_DEBUG == 1
-    printf("Final: ");
+    printf("Final: \n");
     SHUNT_DBG();
 #endif
     
