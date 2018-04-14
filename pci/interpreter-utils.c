@@ -191,7 +191,7 @@ ast_node_stack_dbglog(struct ast_node_stack *stack)
     for ( size_t i = 0; i < stack->num_nodes; i++ ) {
         printf(", [\"");
         ast_node_print(stdout, & (stack->nodes[i]));
-        printf("\"], [%d]", (stack->nodes)[i].num_operands);
+        printf("\"]{%d}", (stack->nodes)[i].num_operands);
     }
     printf(" }\n");
 }
@@ -272,7 +272,7 @@ ast_dbglog(struct ast* ast)
     for ( size_t i = 0; i < ast->num_nodes; i++ ) {
         printf(", [\"");
         ast_node_print(stdout, & ast->nodes[i]);
-        printf("\"], [%d]", (ast->nodes[i]).num_operands);
+        printf("\"]{%d}", (ast->nodes[i]).num_operands);
     }
     printf(" }\n");
 }

@@ -508,11 +508,16 @@ ast_representation_dbglog(struct interpreter *intpt)
 
 
 
-// I'm too difficult to understand don't even bother
-// this entire function was a super hack/extension
+// I'm too difficult to understand don't even bother.
+// This entire function was a super hack/extension
 // around shunting yard algorithm. All the time spent to make this
 // work, was probably better invested into reading a book about
 // how to properly implement a full descent parser
+// ---
+// If you're feeling adventurous you can rewrite this entire
+// function and use a full descent parser instead.
+// This function is pretty self-contained. The interpreter
+// cares only about the AST which is pretty stable at this point.
 bool
 ast_build_from_command( struct interpreter *intpt,
                         char *commandline, size_t commandline_len )
@@ -525,7 +530,7 @@ ast_build_from_command( struct interpreter *intpt,
     assert(commandline[commandline_len] == 0);
 
 
-#define SHUNTING_YARD_DEBUG 1
+#define SHUNTING_YARD_DEBUG 0
     
 #if SHUNTING_YARD_DEBUG == 1
 #define SHUNT_DBG() do { ast_node_stack_dbglog( & stack ); ast_dbglog( ast ); printf("\n"); } while(0);
@@ -565,7 +570,7 @@ ast_build_from_command( struct interpreter *intpt,
         }
         bool conversion = ast_node_from_token(&node, curr_t, prev_t);
         if ( !conversion ) {
-            intpt_info_printf(intpt, " ### Parsing error\n ### Operator %.*s is not supported\n", curr_t->text_len, curr_t->text );
+            intpt_info_printf(intpt, " ### Parsing error\n ### Operator `%.*s` is not supported\n", curr_t->text_len, curr_t->text );
             goto parse_failed;
         }
 
@@ -615,9 +620,12 @@ ast_build_from_command( struct interpreter *intpt,
                         }
                         if ( stack.num_nodes == 0 ) {
                             if ( peek && ! (is_prefix_delimiter(peek) || is_infix_delimiter(peek))) {
-                                // Mismatched parentheses
-                                intpt_info_printf(intpt, " ### Mismatched parens\n");
-                                goto parse_failed;
+                                if (!(node.type == AST_NODE_TYPE_DELIMITER && node.del == POSTFIX_DELIMITER_SEMICOLON)) {
+                                    // Mismatched parentheses
+                                    printf("Vaffanculo\n");
+                                    intpt_info_printf(intpt, " ### Mismatched parens\n");
+                                    goto parse_failed;
+                                }
                             }
                         } else {
                             // pop the open paren from the stack
