@@ -102,7 +102,7 @@ main( int argc, char **argv)
     struct interpreter intpt = {0};
     
 #if 1
-    EVAL_COMMANDLINE_INPLACE ( & intpt, "a(1) && b(1)");
+    EVAL_COMMANDLINE_INPLACE ( & intpt, "people = [john, carmak, lezzo, muratori motherfucker lezzino]");
 #else
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_len = 0; }

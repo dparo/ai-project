@@ -574,15 +574,14 @@ ast_build_from_command( struct interpreter *intpt,
         {
             if ( node.type == AST_NODE_TYPE_CONSTANT
                  || node.type == AST_NODE_TYPE_IDENTIFIER ) {
-                ast_node_stack_push( & stack, & node);
-                // ast_push(ast, curr_t);
-            } /* else if ( is function ) */
-            else {
+                node.num_operands = 0;
+                ast_node_stack_push( & stack, & node );
+            } else {
                 if ( node.type == AST_NODE_TYPE_OPERATOR ) {
                     bool ispostfix = is_postfix_operator( & node);
                     struct ast_node *peek = NULL;
                     while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
-                        if ( !(is_prefix_delimiter(peek))
+                        if ( !(is_prefix_delimiter(peek) || is_infix_delimiter(peek))
                              && ( (peek->type == AST_NODE_TYPE_IDENTIFIER || peek->type == AST_NODE_TYPE_CONSTANT)
                                   || (op_greater_precedence(peek, & node))
                                   || ((op_eq_precedence(peek, & node)) && (op_is_left_associative(peek))))) {
@@ -595,35 +594,39 @@ ast_build_from_command( struct interpreter *intpt,
                     } else {
                         ast_node_stack_push( & stack, & node);
                     }
-                }
-                if ( node.type != AST_NODE_TYPE_OPERATOR
-                     && is_postfix_delimiter(& node)) {
-                    struct ast_node *peek = NULL;
-                    while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
-                        if ( ! (is_prefix_delimiter(peek) || is_infix_delimiter(peek))) {
-                            ast_push(ast, peek);
-                            ast_node_stack_pop( & stack);
-                        } else { break; }
-                    }
-                    if ( stack.num_nodes == 0 ) {
-                        if ( peek && ! (is_prefix_delimiter(peek) || is_infix_delimiter(peek))) {
-                            // Mismatched parentheses
-                            intpt_info_printf(intpt, " ### Mismatched parens\n");
-                            goto parse_failed;
+                } else {
+                    if ( is_prefix_delimiter(& node) || is_infix_delimiter( & node)) {
+                        ast_node_stack_push( & stack, & node);
+                    } else if (is_postfix_delimiter(& node)) {
+                        struct ast_node *peek = NULL;
+                        while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
+                            if ( ! is_prefix_delimiter(peek)) {
+                                if ( !is_infix_delimiter(peek)) {
+                                    ast_push(ast, peek);
+                                }
+                                ast_node_stack_pop( & stack);
+                            } else { break; }
                         }
-                    } else {
-                        // pop the open paren from the stack
-                        if ( peek && is_prefix_delimiter(peek) ) {
-                            ast_node_stack_pop( & stack );
-                            if ( peek->type == AST_NODE_TYPE_OPERATOR ) {
-                                ast_push(ast, peek);
+                        if ( stack.num_nodes == 0 ) {
+                            if ( peek && ! (is_prefix_delimiter(peek) || is_infix_delimiter(peek))) {
+                                // Mismatched parentheses
+                                intpt_info_printf(intpt, " ### Mismatched parens\n");
+                                goto parse_failed;
+                            }
+                        } else {
+                            // pop the open paren from the stack
+                            if ( peek ) {
+                                if ( is_prefix_delimiter(peek)) {
+                                    ast_node_stack_pop( & stack );
+                                    ast_push(ast, peek);
+                                } else if ( is_infix_delimiter(peek)) {
+                                    ast_node_stack_pop( & stack );
+                                }
                             }
                         }
+                    } else {
+                        invalid_code_path();
                     }
-                }
-                if ( node.type != AST_NODE_TYPE_OPERATOR
-                     && (is_prefix_delimiter(& node) || is_infix_delimiter( & node))) {
-                    ast_node_stack_push( & stack, & node);
                 }
             }
         }
@@ -644,12 +647,13 @@ ast_build_from_command( struct interpreter *intpt,
     struct ast_node *peek = NULL;
     while ( ( (stack.num_nodes) != 0 && (peek = ast_node_stack_peek_addr(&stack)))) {
         SHUNT_DBG();
-        if ( /* is_prefix_delimiter(peek) || */ is_postfix_delimiter(peek)
-             || is_infix_delimiter(peek)) {
+        if ( /* is_prefix_delimiter(peek) || */ is_postfix_delimiter(peek)) {
             intpt_info_printf( intpt, " ### Mismatched parens\n");
             goto parse_failed;
         }
-        ast_push( ast, peek );
+        if ( !is_infix_delimiter(peek)) {
+            ast_push( ast, peek );
+        }
         ast_node_stack_pop ( & stack );
     }
 
@@ -757,7 +761,7 @@ eval_ast(struct interpreter *intpt )
     
     if (preprocess_command (intpt)) {
 #if 1
-        intpt_print_header(intpt);
+        //intpt_print_header(intpt);
 #else
         bruteforce_solve(intpt);
 #endif
