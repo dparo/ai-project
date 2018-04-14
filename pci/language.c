@@ -253,6 +253,18 @@ is_postfix_delimiter(struct ast_node *node)
     }
 }
 
+
+static inline bool
+is_delimiter(struct ast_node *node)
+{
+    bool result = false;
+    result |= is_prefix_delimiter(node);
+    result |= is_infix_delimiter(node);
+    result |= is_postfix_delimiter(node);
+    return result;
+}
+
+
 void
 ast_node_invalidate(struct ast_node *node)
 {
@@ -401,6 +413,8 @@ operator_num_operands(struct ast_node *node)
 {
     if ( ast_node_is_operator(node)) {
         return OPS[node->op].numofoperands;
+    } else if (is_delimiter(node)) {
+        return node->num_operands;
     } else {
         return 0;
     }

@@ -64,6 +64,8 @@ void
 eval_operator( struct ast_node *node,
                struct vm_stack *vms )
 {
+
+    assert(node->type == AST_NODE_TYPE_OPERATOR);
     bool result = 0;
     uint numofoperands = operator_num_operands(node);
     if (! ((vms->num_bits) >= (operator_num_operands(node)) )) {
@@ -80,15 +82,8 @@ eval_operator( struct ast_node *node,
 
     // NOTE v[0] Contains the last operand v[numberofoperands-1] contains the first operand
 
-    switch (node->type) {
-    default: {
-        assert_msg(0, "Needs implementation motherfucker");
-    } break;
-        
-        
-
-#if 0
-    case TT_PUNCT_ARROW: {
+    switch (node->op) {
+            case OPERATOR_IMPLY: {
         // or equivalently
         // result = (!v[1]) || v[0];
         result = (v[1] == true && v[0] == false) ? false : true;
@@ -96,42 +91,37 @@ eval_operator( struct ast_node *node,
     } break;
 
         
-    case TT_PUNCT_COMMA:
-    case TT_PUNCT_LOGICAL_AND:
-    case TT_PUNCT_BITWISE_AND: {
+    case OPERATOR_AND: {
         result = v[0] && v[1];
         vm_stack_push(vms, result);
     } break;
 
-    case TT_PUNCT_LOGICAL_OR:
-    case TT_PUNCT_BITWISE_OR: {
+    case OPERATOR_OR: {
         result = v[0] || v[1];
         vm_stack_push(vms, result);
     } break;
 
-    case TT_PUNCT_BITWISE_XOR: {
+    case OPERATOR_XOR: {
         result = v[0] ^ v[1];
         vm_stack_push(vms, result);
     } break;
         
-    case TT_PUNCT_LOGICAL_NOT:
-    case TT_PUNCT_BITWISE_NOT: {
+    case OPERATOR_NEGATE: {
         result = !v[0];
         vm_stack_push(vms, result);
     } break;
 
-    case TT_PUNCT_EQUAL:
-    case TT_PUNCT_BOTHDIR_ARROW:
-    case TT_PUNCT_EQUAL_EQUAL: {
+    case OPERATOR_EQUAL: {
         result = (v[0] == v[1]);
         vm_stack_push(vms, result);
     } break;
 
-    case TT_PUNCT_COLON: {
+    case OPERATOR_TERNARY: {
         result = (v[2] ? v[1] : v[0]);
         vm_stack_push(vms, result);
     } break;
-     
+
+#if 0
     case TT_PUNCT_SEMICOLON:
     case TT_PUNCT_QUESTION_MARK: {
         // There's nothing todo here (it pops and push the same value again)
@@ -139,28 +129,28 @@ eval_operator( struct ast_node *node,
         // the right number of operands for the other operators
         vm_stack_push(vms, v[0]);
     } break;
-
-    case TT_PUNCT_NOT_EQUAL : {
+#endif
+    case OPERATOR_NOT_EQUAL: {
         result = (v[0] != v[1]);
         vm_stack_push(vms, result);
     } break;
 
-    case TT_PUNCT_GREATER: {
+    case OPERATOR_GREATER: {
         result = (v[1] > v[0]);
         vm_stack_push(vms, result);
     } break;
         
-    case TT_PUNCT_LESS: {
+    case OPERATOR_LESS: {
         result = (v[1] < v[0]);
         vm_stack_push(vms, result);
     } break;
         
-    case TT_PUNCT_GREATER_OR_EQUAL: {
+    case OPERATOR_GREATER_EQUAL: {
         result = (v[1] >= v[0]);
         vm_stack_push(vms, result);
     } break;
         
-    case TT_PUNCT_LESS_OR_EQUAL: {
+    case OPERATOR_LESS_EQUAL: {
         result = (v[1] <= v[0]);
         vm_stack_push(vms, result);
     } break;
@@ -171,7 +161,6 @@ eval_operator( struct ast_node *node,
         assert_msg(0, "Invalid code path we should assert before when we require "
                    "the number of operands in operator_numofoperands");
     } break;
-#endif
     }
 
     return;
