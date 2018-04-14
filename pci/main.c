@@ -102,7 +102,7 @@ main( int argc, char **argv)
     struct interpreter intpt = {0};
     
 #if 1
-    EVAL_COMMANDLINE_INPLACE ( & intpt, "a & b");
+    EVAL_COMMANDLINE_INPLACE ( & intpt, "f[1, a | b, c | d, e]");
 #else
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_len = 0; }
