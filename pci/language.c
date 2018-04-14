@@ -322,6 +322,86 @@ ast_node_print( FILE *f, struct ast_node *node )
 }
 
 
+static inline bool
+ast_node_is_operator (struct ast_node *node)
+{
+    assert(node);
+    return node->type == AST_NODE_TYPE_OPERATOR;
+}
+
+
+
+static inline int
+operator_precedence(struct ast_node *node)
+{
+    assert(ast_node_is_operator(node));
+    return OPS[node->op].precedence;
+}
+
+static inline bool
+op_is_left_associative(struct ast_node *node)
+{
+    assert(ast_node_is_operator(node));
+    return (OPS[node->op].associativity == LEFT_ASSOCIATIVE_OP);
+}
+
+static inline bool
+is_prefix_operator(struct ast_node *node)
+{
+    assert(ast_node_is_operator(node));
+    return (OPS[node->op].prefixing == PREFIX_OP);
+}
+
+static inline bool
+is_postfix_operator(struct ast_node *node)
+{
+    assert(ast_node_is_operator(node));
+    return (OPS[node->op].prefixing == POSTFIX_OP);
+}
+
+static inline bool
+is_infix_operator(struct ast_node *node)
+{
+    assert(ast_node_is_operator(node));
+    return (OPS[node->op].prefixing == INFIX_OP);
+}
+
+
+static inline bool
+op_greater_precedence(struct ast_node *n1,
+                      struct ast_node *n2 )
+{
+    int p1 = operator_precedence(n1);
+    int p2 = operator_precedence(n2);
+    assert(p1 >= 0);
+    assert(p2 >= 0);
+    return p1 < p2;
+}
+
+static inline bool
+op_eq_precedence(struct ast_node *n1,
+                 struct ast_node *n2 )
+{
+    int p1 = operator_precedence(n1);
+    int p2 = operator_precedence(n2);
+    assert(p1 >= 0);
+    assert(p2 >= 0);
+    return p1 == p2;
+}
+
+
+
+static inline uint
+operator_num_operands(struct ast_node *node)
+{
+    if ( ast_node_is_operator(node)) {
+        return OPS[node->op].numofoperands;
+    } else {
+        return 0;
+    }
+}
+
+
 bool
 ast_node_from_token( struct ast_node *node,
                      Token *curr_t,
@@ -335,7 +415,6 @@ ast_node_from_token( struct ast_node *node,
     node->text_len     = curr_t->text_len;
     node->op           = OPERATOR_NONE;
     node->del          = DELIMITER_NONE;
-    node->num_operands = 0;
 
     if ( curr_t->type == TT_IDENTIFIER ) {
         node->type = AST_NODE_TYPE_IDENTIFIER;
@@ -484,84 +563,10 @@ ast_node_from_token( struct ast_node *node,
         if ( node->type == AST_NODE_TYPE_DELIMITER && node->del != DELIMITER_NONE) check |= true;
         assert( check );
     }
+    node->num_operands = operator_num_operands(node);
+    
     return result;
           
-}
-
-static inline bool
-ast_node_is_operator (struct ast_node *node)
-{
-    assert(node);
-    return node->type == AST_NODE_TYPE_OPERATOR;
-}
-
-
-
-static inline int
-operator_precedence(struct ast_node *node)
-{
-    assert(ast_node_is_operator(node));
-    return OPS[node->op].precedence;
-}
-
-static inline bool
-op_is_left_associative(struct ast_node *node)
-{
-    assert(ast_node_is_operator(node));
-    return (OPS[node->op].associativity == LEFT_ASSOCIATIVE_OP);
-}
-
-static inline bool
-is_prefix_operator(struct ast_node *node)
-{
-    assert(ast_node_is_operator(node));
-    return (OPS[node->op].prefixing == PREFIX_OP);
-}
-
-static inline bool
-is_postfix_operator(struct ast_node *node)
-{
-    assert(ast_node_is_operator(node));
-    return (OPS[node->op].prefixing == POSTFIX_OP);
-}
-
-static inline bool
-is_infix_operator(struct ast_node *node)
-{
-    assert(ast_node_is_operator(node));
-    return (OPS[node->op].prefixing == INFIX_OP);
-}
-
-
-static inline bool
-op_greater_precedence(struct ast_node *n1,
-                      struct ast_node *n2 )
-{
-    int p1 = operator_precedence(n1);
-    int p2 = operator_precedence(n2);
-    assert(p1 >= 0);
-    assert(p2 >= 0);
-    return p1 < p2;
-}
-
-static inline bool
-op_eq_precedence(struct ast_node *n1,
-                 struct ast_node *n2 )
-{
-    int p1 = operator_precedence(n1);
-    int p2 = operator_precedence(n2);
-    assert(p1 >= 0);
-    assert(p2 >= 0);
-    return p1 == p2;
-}
-
-
-static inline uint
-operator_numofoperands(struct ast_node *node)
-{
-    assert(ast_node_is_operator(node));
-    return OPS[node->op].numofoperands;
-    return 0;
 }
 
 

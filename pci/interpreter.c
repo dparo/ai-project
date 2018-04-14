@@ -65,8 +65,8 @@ eval_operator( struct ast_node *node,
                struct vm_stack *vms )
 {
     bool result = 0;
-    uint numofoperands = operator_numofoperands(node);
-    if (! ((vms->num_bits) >= (operator_numofoperands(node)) )) {
+    uint numofoperands = operator_num_operands(node);
+    if (! ((vms->num_bits) >= (operator_num_operands(node)) )) {
         goto not_enough_operands;                                 
     }
 
@@ -338,7 +338,7 @@ ast_get_operand_index( struct ast *ast,
         }
 
         if (ast_node_is_operator(node)) {
-            it += operator_numofoperands(node);
+            it += operator_num_operands(node);
         }
         it--;
     } while( fixed_index != 0 ? fixed_index-- : fixed_index);
@@ -358,7 +358,7 @@ ast_print_expr ( struct interpreter *intpt,
     } else if (ast_node_is_operator(node)) {
         assert(ast_node_is_operator(node));
         
-        uint numofoperands = operator_numofoperands(node);
+        uint numofoperands = operator_num_operands(node);
         assert_msg(index >= numofoperands, "Inconsistent formula");
 
         intpt_out_printf(intpt, index == (ast->num_nodes - 1) ? "result: (" : "(");
@@ -508,7 +508,11 @@ ast_representation_dbglog(struct interpreter *intpt)
 
 
 
-
+// I'm too difficult to understand don't even bother
+// this entire function was a super hack/extension
+// around shunting yard algorithm. All the time spent to make this
+// work, was probably better invested into reading a book about
+// how to properly implement a full descent parser
 bool
 ast_build_from_command( struct interpreter *intpt,
                         char *commandline, size_t commandline_len )
@@ -547,8 +551,7 @@ ast_build_from_command( struct interpreter *intpt,
     stack.num_nodes = 0;
 
 
-    size_t paren_it = 0;
-    size_t operand_it = 0;
+    size_t va_args_noperands = 0;
     
     while (get_next_token( &tknzr, curr_t)) {
         SHUNT_DBG();
@@ -566,15 +569,6 @@ ast_build_from_command( struct interpreter *intpt,
             goto parse_failed;
         }
 
-        // Extensions ->
-        //   Postfix operators do an uncoditional push onto
-        //                 ast_token_queue_push(queue, curr_t)
-        // 
-        // Prefix operators do an uncoditional push onto    ???(Needs testing)???
-        //                   ast_token_stack_push(&stack, curr_t);
-        
-        // Shunting-yard algorithm
-        // @NOTE: Does not handle functions
         {
             if ( node.type == AST_NODE_TYPE_CONSTANT
                  || node.type == AST_NODE_TYPE_IDENTIFIER ) {
@@ -589,21 +583,11 @@ ast_build_from_command( struct interpreter *intpt,
                              && ( (peek->type == AST_NODE_TYPE_IDENTIFIER || peek->type == AST_NODE_TYPE_CONSTANT)
                                   || (op_greater_precedence(peek, & node))
                                   || ((op_eq_precedence(peek, & node)) && (op_is_left_associative(peek))))) {
-                            if (peek->type == AST_NODE_TYPE_CONSTANT || peek->type == AST_NODE_TYPE_IDENTIFIER) {
-                                peek->num_operands = 0;
-                            } else {
-                                peek->num_operands = operand_it;
-                                operand_it = 0;
-                            }
                             ast_push(ast, peek);
                             ast_node_stack_pop( & stack);
-                            if (!is_infix_delimiter(peek)) {
-                                operand_it ++;
-                            }
                         } else { break; }
                     }
                     if ( ispostfix ) {
-                        node.num_operands = operand_it;
                         ast_push(ast, & node);
                     } else {
                         ast_node_stack_push( & stack, & node);
@@ -612,22 +596,14 @@ ast_build_from_command( struct interpreter *intpt,
                     if ( is_prefix_delimiter(& node) || is_infix_delimiter( & node)) {
                         ast_node_stack_push( & stack, & node);
                         if ( is_infix_delimiter( &node )) {
-                            paren_it++;
+                            va_args_noperands++;
                         }
                     }
                     if (is_postfix_delimiter(& node) || is_infix_delimiter( & node)) {
                         struct ast_node *peek = NULL;
-                        if (stack.num_nodes == 2) { operand_it = 1; }
-                        else {    operand_it = 0; }
+
                         while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
                             if ( ! (is_prefix_delimiter(peek))) {
-                                if ( !is_infix_delimiter(peek)) { operand_it ++; }
-                                if (peek->type == AST_NODE_TYPE_OPERATOR) {
-                                    peek->num_operands = operand_it;
-                                    operand_it = 0 ;
-                                } else if ( peek->type == AST_NODE_TYPE_IDENTIFIER || peek->type == AST_NODE_TYPE_CONSTANT) {
-                                    peek->num_operands = 0;
-                                }                                
 
                                 if ( !is_infix_delimiter(peek)) {
                                     ast_push(ast, peek);
@@ -648,7 +624,7 @@ ast_build_from_command( struct interpreter *intpt,
                             if ( peek && (!is_infix_delimiter(& node))) {
                                 if ( is_prefix_delimiter(peek)) {
                                     ast_node_stack_pop( & stack );
-                                    peek->num_operands = paren_it + 1;
+                                    peek->num_operands = va_args_noperands + 1;
                                     if ( (peek->type == AST_NODE_TYPE_OPERATOR)
                                          && (peek->op == OPERATOR_FNCALL ||
                                              peek->op == OPERATOR_INDEX ||
@@ -656,7 +632,7 @@ ast_build_from_command( struct interpreter *intpt,
                                         (peek->num_operands) += 1;
                                     }
                                     ast_push(ast, peek);
-                                    paren_it = 0;
+                                    va_args_noperands = 0;
                                 } else if ( is_infix_delimiter(peek)) {
                                     invalid_code_path();
                                     ast_node_stack_pop( & stack );
@@ -682,23 +658,13 @@ ast_build_from_command( struct interpreter *intpt,
     /* 		pop the operator from the operator stack onto the output queue. */
 
     struct ast_node *peek = NULL;
-    if (stack.num_nodes == 1) { operand_it = 2; }
-    else {    operand_it = 1; }
     while ( ( (stack.num_nodes) != 0 && (peek = ast_node_stack_peek_addr(&stack)))) {
+            
         SHUNT_DBG();
         if ( is_prefix_delimiter(peek) || is_postfix_delimiter(peek)) {
             intpt_info_printf( intpt, " ### Mismatched parens\n");
             goto parse_failed;
         }
-
-        if (peek->type == AST_NODE_TYPE_OPERATOR) {
-            peek->num_operands = operand_it;
-            operand_it = 1;
-        } else if (peek->type == AST_NODE_TYPE_IDENTIFIER || peek->type == AST_NODE_TYPE_CONSTANT) {
-            peek->num_operands = 0;
-            operand_it ++;
-        }
-                                
                                 
         if ( !is_infix_delimiter(peek)) {
             ast_push(ast, peek);
