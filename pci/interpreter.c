@@ -471,6 +471,10 @@ bool
 dpll_recurse(struct interpreter *intpt,
              struct ast_node *head)
 {
+
+
+
+    return false;
 }
 
 
@@ -538,6 +542,9 @@ dpll_solve(struct interpreter *intpt,
         }
     }
 #endif
+
+
+    return false;
 }
 
 
@@ -627,6 +634,8 @@ ast_to_prenex_form( struct interpreter *intpt)
 
 
     return true;
+    goto failed; // @ NOTE: Compiler shut up!
+    
 failed: {
         return false;
     }
