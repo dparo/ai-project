@@ -39,14 +39,27 @@
       >> ((size_t)(bit_index) - ((size_t)(((size_t)bit_index) / ( sizeof(typeof_arraymember) * 8))) * sizeof(typeof_arraymember) * 8))) \
 
 
+
+struct symbol_info {
+    bool has_value_assigned;
+    bool value;
+    size_t vmi_index; // bit index in the vm_inputs associated with this symbol
+};
+
 struct symtable {
-    stb_sdict *dict;
+    stb_sdict *dict; // the name of the symbol will be stored in the dictionary
+    // the dictionary stores as a key the symbol name,
+    // and as a value the pointer inside the following stack
+    // that determines additional infos
+#define SYMTABLE_STACK_MAX_SYMBOLS_COUNT 1024
+    size_t num_syms;
+    struct symbol_info syms[SYMTABLE_STACK_MAX_SYMBOLS_COUNT];
 };
 
 struct ast_node_stack {
 #define AST_NODE_STACK_MAX_NODES_COUNT 1024
-    struct ast_node nodes[AST_NODE_STACK_MAX_NODES_COUNT];
     size_t num_nodes;
+    struct ast_node nodes[AST_NODE_STACK_MAX_NODES_COUNT];
 };
 
 typedef uint32_t packed_bool;
@@ -68,7 +81,6 @@ struct vm_inputs {
     BOOL_PACKED_ARRAY_NELEMS(VM_INPUTS_MAX_NUMBITS, sizeof(packed_bool))
     // Flexible array member
     packed_bool inputs[VM_INPUTS_MAX_NUMELEMS];
-    packed_bool assigned[VM_INPUTS_MAX_NUMELEMS];
     size_t num_inputs;
 };
 
@@ -241,21 +253,21 @@ ast_clear( struct ast *ast )
     ast->num_nodes = 0;
 }
 
-#define ast_for( iterator, ast, node)        \
-    for (((iterator) = 0), ((node) = (ast).nodes);      \
-         ((iterator) < (ast).num_nodes);                 \
-         ((node) = & ((ast).nodes[++(iterator)])))      \
+#define ast_for( iterator, ast, node)                  \
+    for (((iterator) = 0), ((node) = (ast).nodes);     \
+         ((iterator) < (ast).num_nodes);               \
+         ((node) = & ((ast).nodes[++(iterator)])))     \
         if (true)
 
-#define ast_for_bwd( iterator, ast, node)                          \
-    for (( (iterator) = ((ast).num_nodes - 1)),                    \
-             ((node) = (ast).nodes + (ast).num_nodes - 1);     \
-         (iterator) >= 0;                                             \
-         ((node) = & ((ast).nodes[--(iterator)])))                \
+#define ast_for_bwd( iterator, ast, node)                   \
+    for (( (iterator) = ((ast).num_nodes - 1)),             \
+             ((node) = (ast).nodes + (ast).num_nodes - 1);  \
+         (iterator) >= 0;                                   \
+         ((node) = & ((ast).nodes[--(iterator)])))          \
         if (true)
 
-#define ast_symtable_for(iterator, symtable, key, value)      \
-    stb_sdict_for((symtable)->dict, (iterator), (key), value) \
+#define ast_symtable_for(iterator, symtable, key, value)         \
+    stb_sdict_for((symtable)->dict, (iterator), (key), value)    \
 
 void
 ast_push(struct ast *ast,
@@ -293,6 +305,7 @@ symtable_new(struct symtable *symtable)
 {
     symtable->dict = stb_sdict_new(1);
     bool alloc_result = symtable->dict != NULL;
+    symtable->num_syms = 0;
     return alloc_result;
 }
 
@@ -303,6 +316,7 @@ void symtable_delete(struct symtable *symtable)
         stb_sdict_delete(symtable->dict);
         symtable->dict = NULL;
     }
+    symtable->num_syms = 0;
 }
 
 
@@ -318,6 +332,7 @@ symtable_clear( struct symtable *symtable )
         bool alloc_result = symtable_new(symtable);
         return alloc_result;
     }
+    symtable->num_syms = 0;
     return true;
 }
 
@@ -330,10 +345,14 @@ vm_stack_clear( struct vm_stack *vms )
 }
 
 size_t
-symtable_num_ids ( struct symtable *symtable )
+symtable_num_syms ( struct symtable *symtable )
 {
     if (symtable_is_valid(symtable)) {
         int result = stb_sdict_count(symtable->dict);
+        size_t numsyms = symtable->num_syms;
+        assert((size_t)((int)numsyms) == numsyms);
+        assert(result >= 0);
+        assert(numsyms == (size_t)result);
         assert(result >= 0);
         return (size_t) result;
     } else {
@@ -341,45 +360,46 @@ symtable_num_ids ( struct symtable *symtable )
     }
 }
 
-void
-symtable_add_identifier(struct symtable *symtable,
-                        char *string, size_t string_len)
+struct symbol_info *
+symtable_get_syminfo( struct symtable *symtable,
+                      char *sym_name, size_t sym_name_len)
+{
+    char temp = sym_name[sym_name_len];
+    sym_name[sym_name_len] = 0;
+    void *q = stb_sdict_get(symtable->dict, sym_name);
+    sym_name[sym_name_len] = temp;
+     
+    struct symbol_info *info = (struct symbol_info *) q;
+    return info;
+}
+
+
+
+struct symbol_info *
+symtable_add_identifier( struct symtable *symtable,
+                         char *string, size_t string_len )
 {
     assert(symtable && symtable->dict);
     assert(string);
+
+    assert(symtable->num_syms < SYMTABLE_STACK_MAX_SYMBOLS_COUNT);
+
+    // Not already inside the symtable
 
     // null terminate before adding
     char temp = string[string_len];
     string[string_len] = 0;
-    int result = stb_sdict_set(symtable->dict, string, NULL);
+
+    // assert symbol is not already present inside the symbol table
+    assert(symtable_get_syminfo(symtable, string, string_len) == NULL);
+    
+    stb_sdict_set(symtable->dict, string, NULL);
 
     // restore null termination
     string[string_len] = temp;
-}
 
-
-void
-symtable_set_identifier_value( struct symtable *symtable,
-                               char   *id_name,
-                               size_t  value)
-{
-    assert(symtable);
-    assert(symtable_is_valid(symtable));
-    void *value_ = (void*) value;
-    stb_sdict_set(symtable->dict, id_name, value_);
-}
-
-size_t
-symtable_get_identifier_value( struct symtable *symtable,
-                               char *string, size_t string_len )
-{
-    assert(symtable && symtable->dict);
-    assert(string);
-
-    char temp = string[string_len];
-    string[string_len] = 0;
-    size_t result = (size_t) stb_sdict_get(symtable->dict, string);
-    string[string_len] = temp;
+    struct symbol_info *result = & symtable->syms[(symtable->num_syms)];
+    symtable->syms[(symtable->num_syms) ++ ] = (struct symbol_info) { 0 };
     return result;
 }
 
@@ -388,11 +408,10 @@ void
 vm_inputs_init_from_symtable(struct vm_inputs *vmi,
                              struct symtable *symtable)
 {
-    assert(symtable_num_ids(symtable) < VM_INPUTS_MAX_NUMBITS);
-    vmi->num_inputs = symtable_num_ids(symtable);
+    assert(symtable_num_syms(symtable) < VM_INPUTS_MAX_NUMBITS);
+    vmi->num_inputs = symtable_num_syms(symtable);
     size_t size = vm_inputs_size(vmi);
     memset(vmi->inputs, 0, size);
-    memset(vmi->assigned, 0, size);
 }
 
 
@@ -403,9 +422,6 @@ vm_inputs_assign_value( struct vm_inputs *vmi,
 {
     assert(input_index < vmi->num_inputs );
     BOOL_PACK_INTO_ARRAY( value, input_index, vmi->inputs,
-                          vm_inputs_numelems(vmi),
-                          packed_bool );
-    BOOL_PACK_INTO_ARRAY( value, input_index, vmi->assigned,
                           vm_inputs_numelems(vmi),
                           packed_bool );
 }
@@ -421,18 +437,6 @@ vm_inputs_get_value( struct vm_inputs *vmi,
                                        packed_bool);
     return result;
 }
-
-bool
-vm_inputs_is_assigned( struct vm_inputs *vmi,
-                       size_t input_index )
-{
-    assert(input_index < vmi->num_inputs );
-    bool result = BOOL_UNPACK_FROM_ARRAY(input_index, vmi->assigned,
-                                       vm_inputs_numelems(vmi),
-                                       packed_bool);
-    return result;
-}
-
 
 void
 vm_inputs_increment(struct vm_inputs *vmi )
@@ -474,7 +478,6 @@ vm_inputs_clear(struct vm_inputs *vmi)
 {
     size_t size = vm_inputs_size(vmi);
     memset(vmi->inputs, 0, size);
-    memset(vmi->assigned, 0, size);
     vmi->num_inputs = 0;
 }
 

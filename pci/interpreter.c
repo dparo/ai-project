@@ -250,10 +250,11 @@ eval_entire_expr( struct interpreter *intpt )
             if ( node->type == AST_NODE_TYPE_IDENTIFIER  || node->type == AST_NODE_TYPE_CONSTANT) {
                 bool value;
                 if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
-                    size_t input_index = symtable_get_identifier_value(symtable, node->text, node->text_len);
+                    struct symbol_info *syminfo = symtable_get_syminfo(symtable, node->text, node->text_len);
+                    assert_msg(syminfo, "This may fail ? ? ?\n Technically no, if there's the preprocess phase");
+                    size_t vmi_index = syminfo->vmi_index;
 
-                    value = vm_inputs_get_value( vmi,
-                                                 input_index );
+                    value = vm_inputs_get_value( vmi, vmi_index );
                     // printf(" bit_index: %zx | unpacked bool: %d\n", bit_index, value);
                 } else if ( node->type == AST_NODE_TYPE_CONSTANT ) {
                     value = ast_node_constant_to_bool(node);
@@ -352,7 +353,7 @@ ast_print_expr ( struct interpreter *intpt,
         intpt_out_printf(intpt, index == (ast->num_nodes - 1) ? "result: (" : "(");
         intpt_print_node(intpt, node);
         intpt_print_node(intpt, node);
-
+        
 
         for( size_t operand_num = 1;
              operand_num <= numofoperands;
@@ -410,8 +411,10 @@ intpt_print_inputs( struct interpreter *intpt )
     char *k;
     void *v;
     ast_symtable_for(it, symtable, k, v) {
-        size_t index = (size_t) v;
-        bool bool_value = vm_inputs_get_value(vmi, index);
+        struct symbol_info *syminfo = (struct symbol_info*) v;
+        assert(syminfo);
+        size_t vmi_index = syminfo->vmi_index;
+        bool bool_value = vm_inputs_get_value(vmi, vmi_index);
         intpt_out_printf(intpt, "%d", bool_value);
         print_tab(intpt);
     }
@@ -426,10 +429,11 @@ symtable_preprocess_expr ( struct symtable *symtable )
 
     char *id_name;
     void *value; (void) value;
-    
+
+    // Assigns a unique identifier index inside the vm_inputs
     ast_symtable_for(it1, symtable, id_name, value) {
-        symtable_set_identifier_value(symtable, id_name, it2 ++);
-        //printf("k : %s | v: %zu\n", k, (size_t) v);
+        struct symbol_info *syminfo = (struct symbol_info*) value;
+        syminfo->vmi_index = (it2 ++);
     }
 }
 
@@ -522,10 +526,13 @@ dpll_solve(struct interpreter *intpt,
     void *value; (void) value;
     
     ast_symtable_for(it, symtable, id_name, value) {
-        size_t input_index = (size_t) value;
-        bool assigned = vm_inputs_is_assigned(vmi, input_index);
-        if ( !assigned ) {
-            vm_inputs_assign_value(vmi, 1, input_index);
+        struct symbol_info *syminfo = (struct symbol_info*) value;
+        size_t vmi_index = syminfo->vmi_index;
+        bool has_value_assigned = syminfo->has_value_assigned;
+        if ( ! has_value_assigned ) {
+            vm_inputs_assign_value(vmi, 1, vmi_index);
+            syminfo->has_value_assigned = true;
+            syminfo->value = true;
 
             // propagate
         }
@@ -544,7 +551,7 @@ bruteforce_solve(struct interpreter *intpt)
     
     intpt_print_header(intpt);
         
-    size_t max_it = 1 << symtable_num_ids(symtable);
+    size_t max_it = 1 << symtable_num_syms(symtable);
 
 
     for (size_t i = 0; i < max_it; i ++ ) {
@@ -843,7 +850,7 @@ intpt_begin_frame(struct interpreter *intpt )
     struct ast *ast = & intpt->ast;
     assert(intpt->vms.num_bits == 0);
     assert(intpt->ast.num_nodes == 0);
-    assert(symtable_num_ids(& (intpt->symtable)) == 0);
+    assert(symtable_num_syms(& (intpt->symtable)) == 0);
     assert(intpt->vmi.num_inputs == 0);
     return result;
 }
