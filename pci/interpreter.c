@@ -469,6 +469,10 @@ dpll_recurse(struct interpreter *intpt,
 {
 }
 
+
+
+
+
 // input in the ast there should be a formula
 // of this kind: c1 || c2 || c3 || c4
 // Where ci denotes the i-th unit clause (a or ~a) and `||` the `OR` operator
@@ -481,11 +485,35 @@ dpll_solve(struct interpreter *intpt,
     intpt_info_printf(intpt, "Input to the dpll solver is:\n\t");
     ast_representation_dbglog(intpt);
 
-    /* if (consistent_set_of_formulas )  { return true; } */
-    
+/* Algorithm DPLL */
+/*   Input: A set of clauses Φ. */
+/*   Output: A Truth Value. */
 
-    /* for every unit clause {l} in Φ
-      Φ ← unit-propagate(l, Φ); */
+/* function DPLL(Φ) */
+
+//  I still do not understand this one
+/*    if Φ is a consistent set of literals */
+/*        then return true; */
+
+//    AST Has been reduced to 0 nodes
+/*    if Φ contains an empty clause */
+/*        then return false; */
+
+// Literal atomic formula or its negation: any symbol and constants
+// a unit clause: clauses that are composed of a single literal.
+// Because each clause needs to be satisfied, we know that this literal must be true
+/*    for every unit clause {l} in Φ */
+/*       Φ ← unit-propagate(l, Φ); */
+
+
+// A Pure literal is any literal that does not appear with its' negation in the formula
+//        a & b  // a and b are both pure
+//        a & (!a | b)   // a is not pure in this case
+/*    for every literal l that occurs pure in Φ */
+/*       Φ ← pure-literal-assign(l, Φ); */
+
+/*    l ← choose-literal(Φ); */
+/*    return DPLL(Φ ∧ {l}) or DPLL(Φ ∧ {not(l)}); */
     
     
 #if 0
