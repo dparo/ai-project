@@ -352,7 +352,6 @@ ast_print_expr ( struct interpreter *intpt,
 
         intpt_out_printf(intpt, index == (ast->num_nodes - 1) ? "result: (" : "(");
         intpt_print_node(intpt, node);
-        intpt_print_node(intpt, node);
         
 
         for( size_t operand_num = 1;
@@ -448,10 +447,6 @@ ast_representation_dbglog(struct interpreter *intpt)
     size_t it;
 
     intpt_info_printf(intpt, "AST DEBUG LOG: ################################\n");
-    ast_for(it, *ast, node) {
-        ast_node_print(stdout, node);
-    }
-    intpt_info_printf(intpt, "\n\n");
     // Debug expression printing
     ast_for(it, *ast, node) {
         if ( ast_node_is_operator(node) ) {
@@ -459,7 +454,7 @@ ast_representation_dbglog(struct interpreter *intpt)
             print_tab(intpt);
         }
     }
-    intpt_info_printf(intpt, "\n########################################\n");
+    intpt_info_printf(intpt, "\n###############################################\n");
     intpt_info_printf(intpt, "\n\n");
 }
 
@@ -770,9 +765,11 @@ ast_build_from_command( struct interpreter *intpt,
                                     peek->num_operands = va_args_noperands + 1;
                                     if ( (peek->type == AST_NODE_TYPE_OPERATOR)
                                          && (peek->op == OPERATOR_FNCALL ||
-                                             peek->op == OPERATOR_INDEX ||
-                                             peek->op == OPERATOR_COMPOUND)) {
+                                             peek->op == OPERATOR_INDEX )) {
                                         (peek->num_operands) += 1;
+                                    } else if ((peek->type == AST_NODE_TYPE_OPERATOR)
+                                               && (peek->op == OPERATOR_COMPOUND)) {
+                                        peek->num_operands = 1;
                                     }
                                     if (!(peek->type == AST_NODE_TYPE_DELIMITER && peek->del == PREFIX_DELIMITER_PAREN && (peek->num_operands == 1))) {
                                         ast_push(ast, peek);
