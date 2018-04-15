@@ -25,6 +25,11 @@
    - http://www.satcompetition.org/
    - [[https://en.wikipedia.org/wiki/SLD_resolution]]
 
+** DPLL Implementation
+- http://www.dis.uniroma1.it/~liberato/ar/dpll/dpll.html
+- http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.380.2837&rep=rep1&type=pdf
+- https://stackoverflow.com/questions/12547160/how-does-the-dpll-algorithm-work
+
 ** AST Generation:
 
   - https://en.wikipedia.org/wiki/Shunting-yard_algorithm ( READ )
