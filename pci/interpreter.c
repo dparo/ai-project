@@ -494,6 +494,61 @@ ast_representation_dbglog(struct interpreter *intpt)
 
 
 
+bool
+ast_check_validity( struct interpreter *intpt)
+{
+    return true;
+}
+
+
+
+
+void
+ast_node_swap( struct interpreter *intpt,
+               size_t ast_node1_index,
+               size_t ast_node2_index )
+{
+    assert(intpt);
+    assert(ast_node1_index < intpt->ast.num_nodes);
+    assert(ast_node2_index < intpt->ast.num_nodes);
+
+    void *dest, *src;
+    size_t n = 10;
+    
+    memmove(dest, src, n);
+}
+
+bool
+ast_to_prenex_form( struct interpreter *intpt)
+{
+
+    assert_msg(0, "Needs implementation, for now we always suppose to have prenex formula");
+    size_t it;
+    struct ast *ast = & (intpt->ast);
+    struct ast_node *node;
+    
+    ast_for(it, *ast, node) {
+        for(size_t operands = 1; operands <= operator_num_operands(node); operands++) {
+            size_t operand_index = ast_get_operand_index( ast, it, operands);
+
+            struct ast_node *child_node = & (ast->nodes[operand_index]);
+            if (child_node->type == AST_NODE_TYPE_OPERATOR
+                && (child_node->op == OPERATOR_ENUMERATE || child_node->op == OPERATOR_EXIST)) {
+                if (node->type == AST_NODE_TYPE_OPERATOR && node->op == OPERATOR_AND) {
+                    
+                }
+            }
+        }
+            
+    }
+
+
+    return true;
+failed: {
+        return false;
+    }
+}
+
 
 
 // I'm too difficult to understand don't even bother.
@@ -518,7 +573,7 @@ ast_build_from_command( struct interpreter *intpt,
     assert(commandline[commandline_len] == 0);
 
 
-#define SHUNTING_YARD_DEBUG 0
+#define SHUNTING_YARD_DEBUG 1
     
 #if SHUNTING_YARD_DEBUG == 1
 #define SHUNT_DBG() do { ast_node_stack_dbglog( & stack ); ast_dbglog( ast ); printf("\n"); } while(0);
@@ -627,7 +682,9 @@ ast_build_from_command( struct interpreter *intpt,
                                              peek->op == OPERATOR_COMPOUND)) {
                                         (peek->num_operands) += 1;
                                     }
-                                    ast_push(ast, peek);
+                                    if (!(peek->type == AST_NODE_TYPE_DELIMITER && peek->del == PREFIX_DELIMITER_PAREN && (peek->num_operands == 1))) {
+                                        ast_push(ast, peek);
+                                    }
                                     va_args_noperands = 0;
                                 } else if ( is_infix_delimiter(peek)) {
                                     invalid_code_path();
