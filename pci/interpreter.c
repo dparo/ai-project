@@ -252,8 +252,8 @@ eval_entire_expr( struct interpreter *intpt )
                 if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
                     size_t input_index = symtable_get_identifier_value(symtable, node->text, node->text_len);
 
-                    value = vm_inputs_unpack_bool( vmi,
-                                                   input_index );
+                    value = vm_inputs_get_value( vmi,
+                                                 input_index );
                     // printf(" bit_index: %zx | unpacked bool: %d\n", bit_index, value);
                 } else if ( node->type == AST_NODE_TYPE_CONSTANT ) {
                     value = ast_node_constant_to_bool(node);
@@ -411,7 +411,7 @@ intpt_print_inputs( struct interpreter *intpt )
     void *v;
     ast_symtable_for(it, symtable, k, v) {
         size_t index = (size_t) v;
-        bool bool_value = vm_inputs_unpack_bool(vmi, index);
+        bool bool_value = vm_inputs_get_value(vmi, index);
         intpt_out_printf(intpt, "%d", bool_value);
         print_tab(intpt);
     }
@@ -431,6 +431,78 @@ symtable_preprocess_expr ( struct symtable *symtable )
         symtable_set_identifier_value(symtable, id_name, it2 ++);
         //printf("k : %s | v: %zu\n", k, (size_t) v);
     }
+}
+
+
+
+
+void
+ast_representation_dbglog(struct interpreter *intpt)
+{
+    struct ast *ast = & intpt->ast;
+    struct ast_node *node;
+    size_t it;
+
+    intpt_info_printf(intpt, "AST DEBUG LOG: ################################\n");
+    ast_for(it, *ast, node) {
+        ast_node_print(stdout, node);
+    }
+    intpt_info_printf(intpt, "\n\n");
+    // Debug expression printing
+    ast_for(it, *ast, node) {
+        if ( ast_node_is_operator(node) ) {
+            ast_print_expr(intpt, it);
+            print_tab(intpt);
+        }
+    }
+    intpt_info_printf(intpt, "\n########################################\n");
+    intpt_info_printf(intpt, "\n\n");
+}
+
+
+
+
+
+bool
+dpll_recurse(struct interpreter *intpt,
+             struct ast_node *head)
+{
+}
+
+// input in the ast there should be a formula
+// of this kind: c1 || c2 || c3 || c4
+// Where ci denotes the i-th unit clause (a or ~a) and `||` the `OR` operator
+bool
+dpll_solve(struct interpreter *intpt,
+           struct ast *clauses_ast)
+{
+    struct symtable *symtable = & intpt->symtable;
+    struct vm_inputs *vmi = & intpt->vmi;
+    intpt_info_printf(intpt, "Input to the dpll solver is:\n\t");
+    ast_representation_dbglog(intpt);
+
+    /* if (consistent_set_of_formulas )  { return true; } */
+    
+
+    /* for every unit clause {l} in Φ
+      Φ ← unit-propagate(l, Φ); */
+    
+    
+#if 0
+    int it = 0, it2 = 0;
+    char *id_name;
+    void *value; (void) value;
+    
+    ast_symtable_for(it, symtable, id_name, value) {
+        size_t input_index = (size_t) value;
+        bool assigned = vm_inputs_is_assigned(vmi, input_index);
+        if ( !assigned ) {
+            vm_inputs_assign_value(vmi, 1, input_index);
+
+            // propagate
+        }
+    }
+#endif
 }
 
 
@@ -469,30 +541,6 @@ bruteforce_solve(struct interpreter *intpt)
 #include "test.c"
 
 
-void
-ast_representation_dbglog(struct interpreter *intpt)
-{
-    struct ast *ast = & intpt->ast;
-    struct ast_node *node;
-    size_t it;
-
-    intpt_info_printf(intpt, "AST DEBUG LOG: ################################\n");
-    ast_for(it, *ast, node) {
-        ast_node_print(stdout, node);
-    }
-    intpt_info_printf(intpt, "\n\n");
-    // Debug expression printing
-    ast_for(it, *ast, node) {
-        if ( ast_node_is_operator(node) ) {
-            ast_print_expr(intpt, it);
-            print_tab(intpt);
-        }
-    }
-    intpt_info_printf(intpt, "\n########################################\n");
-    intpt_info_printf(intpt, "\n\n");
-}
-
-
 
 bool
 ast_check_validity( struct interpreter *intpt)
@@ -515,7 +563,7 @@ ast_node_swap( struct interpreter *intpt,
     void *dest, *src;
     size_t n = 10;
     
-    memmove(dest, src, n);
+    //memmove(dest, src, n);
 }
 
 bool
@@ -854,7 +902,7 @@ eval_commandline ( struct interpreter *intpt,
     
     if ( intpt_begin_frame(intpt)) {
         if ( ast_build_from_command( intpt, commandline, commandline_len ) ) {
-# if 0
+# if 1
             ast_representation_dbglog(intpt);
 # else
             if ( eval_ast( intpt ) ) {

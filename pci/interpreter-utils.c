@@ -68,6 +68,7 @@ struct vm_inputs {
     BOOL_PACKED_ARRAY_NELEMS(VM_INPUTS_MAX_NUMBITS, sizeof(packed_bool))
     // Flexible array member
     packed_bool inputs[VM_INPUTS_MAX_NUMELEMS];
+    packed_bool assigned[VM_INPUTS_MAX_NUMELEMS];
     size_t num_inputs;
 };
 
@@ -391,68 +392,47 @@ vm_inputs_init_from_symtable(struct vm_inputs *vmi,
     vmi->num_inputs = symtable_num_ids(symtable);
     size_t size = vm_inputs_size(vmi);
     memset(vmi->inputs, 0, size);
+    memset(vmi->assigned, 0, size);
 }
 
 
 void
-vm_inputs_pack_bool( struct vm_inputs *vmi,
-                     bool value,
-                     size_t input_index )
+vm_inputs_assign_value( struct vm_inputs *vmi,
+                        bool value,
+                        size_t input_index )
 {
     assert(input_index < vmi->num_inputs );
-# if __DEBUG
-    size_t index = input_index / ( sizeof(packed_bool) * 8);
-    size_t mask = vmi->inputs[index] & ~((size_t)1 << ((size_t)input_index - index * sizeof(packed_bool) * 8));
-    vmi->inputs[index] = mask | (size_t)value << ((size_t)input_index - index * sizeof(packed_bool) * 8);
-
-    { // TODO: The above code has moved in the BOOL_PACK_IN_ARRAY define
-        // should check that both the ways to do it are identical
-        packed_bool temp = vmi->inputs[index];
-#endif
-        BOOL_PACK_INTO_ARRAY( value, input_index, vmi->inputs,
-                            vm_inputs_numelems(vmi),
-                            packed_bool );
-#if __DEBUG
-        assert ( temp == (input_index / ( sizeof(packed_bool) * 8)));
-    }
-#endif
-    
-#if 0
-    printf("bi: %zu | index: %zx | mask: %zx | vmi->inputs[index]: %zx\n",
-           input_index, index, mask, vmi->inputs[index]);
-#endif
+    BOOL_PACK_INTO_ARRAY( value, input_index, vmi->inputs,
+                          vm_inputs_numelems(vmi),
+                          packed_bool );
+    BOOL_PACK_INTO_ARRAY( value, input_index, vmi->assigned,
+                          vm_inputs_numelems(vmi),
+                          packed_bool );
 }
 
 
 bool
-vm_inputs_unpack_bool( struct vm_inputs *vmi,
-                             size_t input_index)
+vm_inputs_get_value( struct vm_inputs *vmi,
+                     size_t input_index )
 {
     assert(input_index < vmi->num_inputs );
-    bool result;
-#if __DEBUG
-    size_t index = input_index / ( sizeof(packed_bool) * 8);
-    size_t local_input_index = ((size_t)input_index - index * sizeof(packed_bool) * 8);
-    size_t mask = ( (size_t) 1 << local_input_index);
-    result = (vmi->inputs[index] &  mask) >> local_input_index;
-#endif
-    
-    bool temp = BOOL_UNPACK_FROM_ARRAY(input_index, vmi->inputs,
+    bool result = BOOL_UNPACK_FROM_ARRAY(input_index, vmi->inputs,
                                        vm_inputs_numelems(vmi),
                                        packed_bool);
-#if __DEBUG
-    assert(result == temp);
-#endif
-    result = temp;
-
-    
-#if 0
-        printf("bi: %zu | index: %zx | local_input_index: %zd | mask: %zx | result: %d\n",
-               input_index, index, local_input_index, mask, result);
-#endif
-
     return result;
 }
+
+bool
+vm_inputs_is_assigned( struct vm_inputs *vmi,
+                       size_t input_index )
+{
+    assert(input_index < vmi->num_inputs );
+    bool result = BOOL_UNPACK_FROM_ARRAY(input_index, vmi->assigned,
+                                       vm_inputs_numelems(vmi),
+                                       packed_bool);
+    return result;
+}
+
 
 void
 vm_inputs_increment(struct vm_inputs *vmi )
@@ -487,6 +467,15 @@ vm_inputs_increment(struct vm_inputs *vmi )
         }
         break;
     }
+}
+
+void
+vm_inputs_clear(struct vm_inputs *vmi)
+{
+    size_t size = vm_inputs_size(vmi);
+    memset(vmi->inputs, 0, size);
+    memset(vmi->assigned, 0, size);
+    vmi->num_inputs = 0;
 }
 
 void
