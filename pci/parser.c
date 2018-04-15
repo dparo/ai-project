@@ -13,7 +13,6 @@
 
 #define TOKENIZER_CACHING_ENABLED 1
 #define TOKENIZER_STATE_LIST_ENABLED 1
-#define TOKENIZER_DOLLAR_SIGN_VALID_IDENTIFIER (1)
 
 enum Token_Type {
     TT_NONE = 0,
@@ -58,9 +57,7 @@ enum Token_Type {
     TT_PUNCT_COLON,     // :
 
 
-#if TOKENIZER_DOLLAR_SIGN_VALID_IDENTIFIER == 1
     TT_PUNCT_DOLLAR_SIGN, // $
-#endif
 
     TT_PUNCT_AT_SIGN, // @
     TT_PUNCT_POUND, // #
@@ -336,9 +333,6 @@ is_alpha ( char c )
     return ( (c >= 'A' && c <= 'Z')
              || (c >= 'a' && c <= 'z')
              || (c == '_')
-#        if TOKENIZER_DOLLAR_SIGN_VALID_IDENTIFIER
-             || (c== '$')
-#        endif
         );
 }
 
@@ -421,18 +415,13 @@ eat_comment ( Tokenizer *tknzr )
 static inline bool
 is_punctuator (char c)
 {
-    // NOTE: See ascii table
-#if TOKENIZER_DOLLAR_SIGN_VALID_IDENTIFIER
-    if ( c == '$' ) {
-        return false;
-    }
-#endif
     return ( (c >= 0x21 && c <= 0x2F)
              || (c >= 0x3A && c <= 0x40)
              || (c >= 0x5B && c <= 0x5E)
              || (c >= 0x7B)
              || (c ==  0x60)  /* ` backtick apostrophe */
              || (c == '#' )
+             || ( c == '$')
         ); 
 }
 
@@ -684,12 +673,10 @@ parse_punctuator ( Tokenizer *tknzr,
           token->type = TT_PUNCT_BACKWARD_APOSTROPHE;
           token->text_len = 1;
      }
-#if !TOKENIZER_DOLLAR_SIGN_VALID_IDENTIFIER
      else if (c1 == '$') {
           token->type = TT_PUNCT_DOLLAR_SIGN;
           token->text_len = 1;
      }
-#endif
      else if (c1 == '@') {
           token->type = TT_PUNCT_AT_SIGN;
           token->text_len = 1;

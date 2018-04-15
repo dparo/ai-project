@@ -158,6 +158,8 @@ enum delimiter {
     PREFIX_DELIMITER_QUESTION_MARK,
 
     INFIX_DELIMITER_COMMA = 1 << 8,
+    INFIX_DELIMITER_EXIST,
+    INFIX_DELIMITER_ENUMERATE,
 
     POSTFIX_DELIMITER_PAREN = 1 << 16,
     POSTFIX_DELIMITER_BRACKET,
@@ -500,34 +502,7 @@ ast_node_from_token( struct ast_node *node,
         node->del = POSTFIX_DELIMITER_COLON;
     }
 
-
-    
-    
-    else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
-        
-    } else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
-        
-    } else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
-        
-    } else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
-        
-    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
-        
-    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
-        
-    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
-        
-    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
-        
-    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
-        
-    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
-        
-    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
-        
-    }  else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
-        
-    } else {
+    else {
         node->type = AST_NODE_TYPE_OPERATOR;
         switch( curr_t->type ) {
         case TT_PUNCT_LOGICAL_NOT: case TT_PUNCT_BITWISE_NOT: { node->op = OPERATOR_NEGATE; } break;
@@ -545,8 +520,8 @@ ast_node_from_token( struct ast_node *node,
         case TT_PUNCT_GREATER_OR_EQUAL: { node->op = OPERATOR_GREATER_EQUAL; } break;
         case TT_PUNCT_LESS: { node->op = OPERATOR_LESS; } break;
         case TT_PUNCT_LESS_OR_EQUAL: { node->op = OPERATOR_LESS_EQUAL; } break;
-        case TT_PUNCT_POUND: { node->op = OPERATOR_ENUMERATE; } break;
-        case TT_PUNCT_DOLLAR_SIGN: { node->op = OPERATOR_EXIST; } break;
+        case TT_PUNCT_POUND:       { node->op = OPERATOR_ENUMERATE; } break;
+        case TT_PUNCT_DOLLAR_SIGN: { printf("#############Hello motherfucker################3\n"); node->op = OPERATOR_EXIST; } break;
         case TT_PUNCT_AT_SIGN: { node->op = OPERATOR_IN; } break;
 
 
