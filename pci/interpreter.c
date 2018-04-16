@@ -664,6 +664,12 @@ dpll_is_pure_literal( struct interpreter *intpt,
 // input in the ast there should be a formula
 // of this kind: c1 & c2 & c3 & c4
 // Where ci denotes the i-th unit clause (a or ~a) and `&` the `AND` operator
+// ---------------------------------------------------------
+/* Algorithm DPLL */
+/*   Input: A set of clauses Φ. */
+/*   Output: A Truth Value. */
+// --------------------------------------------------------
+/* function DPLL(Φ) */
 bool
 dpll_solve(struct interpreter *intpt,
            struct ast *clauses_ast)
@@ -677,13 +683,11 @@ dpll_solve(struct interpreter *intpt,
     assert_msg(0, "Needs implementation for the propagation of the AST"
                " It needs to recompact or choose a deferred less recursive aproach");
 
-/* Algorithm DPLL */
-/*   Input: A set of clauses Φ. */
-/*   Output: A Truth Value. */
-
-/* function DPLL(Φ) */
 
 //  I still do not understand this one
+    // Verifies validity of the formula either by solving it.
+    // or by waiting for the recursion to create an ast
+    // with a formula containing a `true` or `false` constant.
 /*    if Φ is a consistent set of literals */
 /*        then return true; */
     if ( dpll_is_consistent(intpt, clauses_ast) )
@@ -842,11 +846,11 @@ ast_to_prenex_form( struct interpreter *intpt)
 {
 
     assert_msg(0, "Needs implementation, for now we always suppose to have prenex formula");
-    size_t it;
+    int it;
     struct ast *ast = & (intpt->ast);
     struct ast_node *node;
     
-    ast_for(it, *ast, node) {
+    ast_for_bwd(it, *ast, node) {
         for(size_t operands = 1; operands <= operator_num_operands(node); operands++) {
             size_t operand_index = ast_get_operand_index( ast, it, operands);
 
@@ -1110,8 +1114,8 @@ preprocess_command ( struct interpreter *intpt )
     struct symtable *symtable = & intpt->symtable;
 
     struct ast_node *node;
-    size_t it;
-    ast_for(it, *ast, node) {
+    int it;
+    ast_for_bwd(it, *ast, node) {
         if ( node->type == AST_NODE_TYPE_CONSTANT ) {
             bool valid = valid_constant(node);
             if ( ! valid ) {
