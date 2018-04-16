@@ -798,7 +798,7 @@ ast_build_from_command( struct interpreter *intpt,
         }
         bool conversion = ast_node_from_token(&node, curr_t, prev_t);
         if ( !conversion ) {
-            intpt_info_printf(intpt, " ### Parsing error\n ### Operator `%.*s` is not supported\n", curr_t->text_len, curr_t->text );
+            intpt_info_printf(intpt, " ### Parsing error\n ### Token `%.*s` is not supported\n", curr_t->text_len, curr_t->text );
             goto parse_failed;
         }
 

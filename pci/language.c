@@ -444,6 +444,8 @@ ast_node_from_token( struct ast_node *node,
 
     if ( curr_t->type == TT_IDENTIFIER ) {
         node->type = AST_NODE_TYPE_IDENTIFIER;
+    } else if (curr_t->type == TT_STRING_LITERAL) {
+        result = false;
     } else if ( curr_t->type == TT_KEYWORD ) {
         if ( strncmp ("in", curr_t->text, curr_t->text_len) == 0) {
             node->type = AST_NODE_TYPE_OPERATOR;
@@ -541,20 +543,20 @@ ast_node_from_token( struct ast_node *node,
                              && prev_t->type != TT_PUNCT_CLOSE_PAREN)) {
                 node->op = OPERATOR_DEREF;
             } else {
-                ast_node_invalidate(node);
                 result = false;
             }
         } break;
 
         default: {
             // Not understood operator
-            ast_node_invalidate(node);
             result = false;
         } break;
         }
     }
 
-    if ( result == true ) {
+    if ( result == false ) {
+        ast_node_invalidate(node);
+    } else {
         assert(node->type != AST_NODE_TYPE_NONE);
         bool check = false;
         if ( node->type == AST_NODE_TYPE_IDENTIFIER ) check |= true;
@@ -562,8 +564,9 @@ ast_node_from_token( struct ast_node *node,
         if ( node->type == AST_NODE_TYPE_OPERATOR && node->op != OPERATOR_NONE) check |= true;
         if ( node->type == AST_NODE_TYPE_DELIMITER && node->del != DELIMITER_NONE) check |= true;
         assert( check );
+
+        node->num_operands = operator_num_operands(node);
     }
-    node->num_operands = operator_num_operands(node);
     
     return result;
           

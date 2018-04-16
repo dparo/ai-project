@@ -18,6 +18,7 @@ enum Token_Type {
     TT_NONE = 0,
     TT_IDENTIFIER = 1,
     TT_KEYWORD,
+    TT_STRING_LITERAL,
     TT_CONSTANT = 3,
 
 
@@ -557,6 +558,53 @@ tokenizer_adv_over_start_of_string ( Tokenizer *tknzr, char* punct )
 
 
 static void
+parse_char_const_or_string_literal ( Tokenizer *tknzr,
+                                     Token *token )
+{
+     char str_end_punct;
+     token->text_len = 0;
+     (token->text_len) += tokenizer_adv_over_start_of_string( tknzr, &str_end_punct );
+     assert ( str_end_punct == '\'' || str_end_punct == '\"');
+     if ( str_end_punct == '\"') {
+          token->type = TT_STRING_LITERAL;
+     }
+     else {
+          token->type = TT_CONSTANT;
+     }
+     int counter = 0;
+     bool is_prev_backslash = false;
+     for (; !tokenizer_is_end(tknzr); ++counter ) {
+          if ( *tknzr->at == '\\' ) {
+               if (is_prev_backslash ) {
+                    is_prev_backslash = false;
+               }
+               else {
+                    is_prev_backslash = true;
+               }
+               tokenizer_adv(tknzr);
+          }
+          else if ( tokenizer_deref(tknzr) == str_end_punct
+                    && is_prev_backslash == false) {
+               if (is_prev_backslash == false ) {
+                    break;
+               }
+               else {
+                    tokenizer_adv(tknzr);
+                    is_prev_backslash = false;
+               }
+          }
+          else {
+               tokenizer_adv(tknzr);
+               is_prev_backslash = false;
+          }
+     }
+     token->text_len += counter + 1;
+     tokenizer_adv (tknzr);
+}
+
+
+
+static void
 parse_digit ( Tokenizer *tknzr,
               Token * token )
 {
@@ -895,7 +943,10 @@ get_next_token ( Tokenizer *tknzr,
           token->column = tknzr->column;
           if ( is_digit( tknzr ) ) {
                parse_digit ( tknzr, token );
-          } else if ( is_punctuator (tokenizer_deref(tknzr) )) {
+          } else if ( is_start_of_char_const_or_string_literal(tknzr)) {
+              parse_char_const_or_string_literal (tknzr, token );
+          }
+          else if ( is_punctuator (tokenizer_deref(tknzr) )) {
                parse_punctuator(tknzr, token);
           } else if ( is_alpha (tokenizer_deref(tknzr)) || tokenizer_deref(tknzr) == '_' ) {
                parse_identifier_or_keyword ( tknzr, token );
