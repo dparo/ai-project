@@ -547,7 +547,7 @@ dpll_next_unit_clause(struct interpreter *intpt,
 {
     assert(node);
     struct ast_node *result = NULL;
-    struct ast_node *start;
+    struct ast_node *start = NULL;
     
     if (clauses_ast->num_nodes == 0) {
         *node = NULL;
@@ -561,6 +561,8 @@ dpll_next_unit_clause(struct interpreter *intpt,
         // Start from the head
         start = & clauses_ast->nodes[clauses_ast->num_nodes - 1];
     }
+    
+    assert(start);
     if ( !((start >= clauses_ast->nodes)
            && (start < & clauses_ast->nodes[clauses_ast->num_nodes]))) {
         // Not in bounds
@@ -630,6 +632,7 @@ dpll_solve(struct interpreter *intpt,
 /*       Φ ← unit-propagate(l, Φ); */
     struct ast_node *node = NULL;
     while ( dpll_next_unit_clause(intpt, clauses_ast, &node) ) {
+        assert_msg(0, "Handle unit clauses with not operators\n");
         ast_node_convert_to_constant(node, 1);
         // Now handle the propagation, not really necessary to rebuild
         // the ast it can be defered somewhere else.
