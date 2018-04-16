@@ -704,7 +704,6 @@ dpll_solve(struct interpreter *intpt,
     struct ast_node *node = NULL;
     bool is_negated = false;
     while ( dpll_next_unit_clause(intpt, clauses_ast, &node, & is_negated) ) {
-        assert_msg(0, "Handle unit clauses with not operators\n");
         const bool value =  ! is_negated;
         ast_node_convert_to_constant(node, value);
         // Now handle the propagation, not really necessary to rebuild
@@ -713,7 +712,7 @@ dpll_solve(struct interpreter *intpt,
         
 
 
-// A Pure literal is any literal that does not appear with its' negation in the formula
+    // A Pure literal is any literal that does not appear with its' negation in the formula
     // WIKIPEDIA DEF: In the context of a formula in the
     //                conjunctive normal form, a literal is pure if the literal's
     //                complement does not appear in the formula.
