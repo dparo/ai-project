@@ -183,7 +183,7 @@ struct ast_node {
 
 
 void
-ast_node_make_constant (struct ast_node *node,
+ast_node_convert_to_constant (struct ast_node *node,
                         bool value)
 {
     static char true_string[] = "1";
