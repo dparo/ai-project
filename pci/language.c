@@ -302,7 +302,7 @@ ast_node_print( FILE *f, struct ast_node *node )
         text = "`deref`";
         text_len = sizeof("`deref`") - 1;
     } else if ( node->type == AST_NODE_TYPE_DELIMITER ) {
-        if (node->del == DELIMITER_NONE) {
+        if ( node->del == DELIMITER_NONE ) {
             text = "`__none__`";
             text_len = sizeof("`__none__`") - 1;
         } else if (node->del == PREFIX_DELIMITER_PAREN) {
@@ -311,7 +311,7 @@ ast_node_print( FILE *f, struct ast_node *node )
         } else if (node->del == PREFIX_DELIMITER_BRACKET) {
             text = "`[`";
             text_len = sizeof("`[`") - 1;
-        }else if (node->del == PREFIX_DELIMITER_BRACE) {
+        } else if (node->del == PREFIX_DELIMITER_BRACE) {
             text = "`{`";
             text_len = sizeof("`{`") - 1;
 

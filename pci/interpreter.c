@@ -475,11 +475,22 @@ dpll_recurse(struct interpreter *intpt,
 
 
 bool
-dpll_contains_empty_clause( struct interpreter *intpt,
+dpll_is_empty_clause( struct interpreter *intpt,
                             struct ast *clauses_ast )
 {
-    return (clauses_ast->num_nodes == 0);
-    return false;
+    bool result = true;
+    size_t it = 0;
+    struct ast_node *node = NULL;
+    ast_for(it, *clauses_ast, node) {
+        if ( node->type == AST_NODE_TYPE_IDENTIFIER
+             || node->type == AST_NODE_TYPE_CONSTANT) {
+            result = false;
+            break;
+        }
+    }
+    assert ( result == true && clauses_ast->num_nodes == 0);
+    
+    return result;
 }
 
 bool
@@ -498,6 +509,7 @@ dpll_is_consistent( struct interpreter *intpt,
                 break;
             }
         } else if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
+            // There's still an unassigned value
             result = false;
             break;
         } else if ( node->type == AST_NODE_TYPE_CONSTANT ) {
@@ -539,11 +551,16 @@ dpll_solve(struct interpreter *intpt,
 //  I still do not understand this one
 /*    if Φ is a consistent set of literals */
 /*        then return true; */
-
+    if ( dpll_is_consistent(intpt, clauses_ast) )
+        return true;
+    
 //    AST Has been reduced to 0 nodes
 /*    if Φ contains an empty clause */
 /*        then return false; */
+    if ( dpll_is_empty_clause(intpt, clauses_ast))
+        return false;
 
+        
 // Literal atomic formula or its negation: any symbol and constants
 // a unit clause: clauses that are composed of a single literal.
 // Because each clause needs to be satisfied, we know that this literal must be true
