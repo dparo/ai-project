@@ -235,7 +235,14 @@ dpll_solve(struct interpreter *intpt,
     if ( dpll_is_empty_clause(intpt, clauses_ast))
         return false;
 
-        
+    /* Optimization possibility:
+       ===================================
+       while we iterate over the AST to check the presence of unit clauses
+       we can test if the formula is computable by keeping a flag and `orring` and
+       `clearing` it based on the fact that every identifier has a value assigned
+       or not.
+     */
+    
 // Literal atomic formula or its negation: any symbol and constants
 // a unit clause: clauses that are composed of a single literal.
 // Because each clause needs to be satisfied, we know that this literal must be true
