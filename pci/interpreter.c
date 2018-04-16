@@ -613,6 +613,54 @@ dpll_next_unit_clause( struct interpreter *intpt,
     
 }
 
+
+bool
+dpll_is_pure_literal( struct interpreter *intpt,
+                      struct ast *clauses_ast,
+                      struct ast_node *node,
+                      bool *appears_negated )
+{
+    assert(node);
+    bool result = true;
+    bool found_negated = false;
+    bool found_normal = false;
+
+    assert(clauses_ast->num_nodes > 0);
+
+    struct ast_node *n;
+    for ( n = & clauses_ast->nodes[clauses_ast->num_nodes - 1];
+          n >= clauses_ast->nodes;
+          n-- ) {
+        if (n->type == AST_NODE_TYPE_OPERATOR && n->op == OPERATOR_NEGATE) {
+            n--;
+            assert_msg(n >= clauses_ast->nodes, "Malformed formula");
+            if (n->type == AST_NODE_TYPE_IDENTIFIER || n->type == AST_NODE_TYPE_CONSTANT) {
+                if ( strncmp(n->text, node->text, MIN(node->text_len, n->text_len)) == 0 ) {
+                    found_negated = true;
+                    if ( found_negated && found_normal ) { result = false; break; }
+                }
+
+            } else {
+                // skip childs
+                size_t operator_index = n - clauses_ast->nodes;
+                size_t first_operand_index = ast_get_operand_index( clauses_ast, operator_index, 1);
+                n = (& clauses_ast->nodes[first_operand_index]);
+            }
+        } else if (n->type == AST_NODE_TYPE_IDENTIFIER || n->type == AST_NODE_TYPE_CONSTANT) {
+            if ( strncmp(n->text, node->text, MIN(node->text_len, n->text_len)) == 0 ) {
+                found_normal = true;
+                if ( found_negated && found_normal ) { result = false; break; }
+            // return this
+            }            
+        }
+    }
+    if (result) {
+        *appears_negated = found_negated;
+    }
+    return result;
+}
+
+
 // input in the ast there should be a formula
 // of this kind: c1 & c2 & c3 & c4
 // Where ci denotes the i-th unit clause (a or ~a) and `&` the `AND` operator
@@ -653,19 +701,35 @@ dpll_solve(struct interpreter *intpt,
     bool is_negated = false;
     while ( dpll_next_unit_clause(intpt, clauses_ast, &node, & is_negated) ) {
         assert_msg(0, "Handle unit clauses with not operators\n");
-        ast_node_convert_to_constant(node, 1);
-        printf("{negated: %d}\n", is_negated);
+        const bool value =  ! is_negated;
+        ast_node_convert_to_constant(node, value);
         // Now handle the propagation, not really necessary to rebuild
-        // the ast it can be defered somewhere else.
+        // the ast it can be deferred somewhere else.
     }
         
 
 
 // A Pure literal is any literal that does not appear with its' negation in the formula
-//        a & b  // a and b are both pure
-//        a & (!a | b)   // a is not pure in this case
+    // WIKIPEDIA DEF: In the context of a formula in the
+    //                conjunctive normal form, a literal is pure if the literal's
+    //                complement does not appear in the formula.
 /*    for every literal l that occurs pure in Φ */
 /*       Φ ← pure-literal-assign(l, Φ); */
+    {
+        struct ast_node *node = NULL;
+        size_t it = 0;
+        ast_for(it, *clauses_ast, node) {
+            if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
+                bool appears_negated;
+                bool is_pure = dpll_is_pure_literal( intpt, clauses_ast, node, & appears_negated );
+                if (is_pure) {
+                    const bool value = 1;
+                    ast_node_convert_to_constant(node, value);
+                }
+            }
+            
+        }
+    }
 
 /*    l ← choose-literal(Φ); */
 /*    return DPLL(Φ ∧ {l}) or DPLL(Φ ∧ {not(l)}); */
