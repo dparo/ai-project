@@ -35,6 +35,7 @@ enum operator {
 
     OPERATOR_ENUMERATE,
     OPERATOR_EXIST,
+    OPERATOR_ON,
     OPERATOR_IN,
     
     OPERATOR_TERNARY,
@@ -80,6 +81,7 @@ static const struct operator_infos {
     [OPERATOR_COMPOUND] =          { 0, 1, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_ENUMERATE] =         { 14, 2, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_EXIST] =             { 14, 2, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
+    [OPERATOR_ON] =                { 13, 2, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_IN] =                { 13, 2, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_TERNARY] =           { 14, 3, RIGHT_ASSOCIATIVE_OP, POSTFIX_OP },
 
@@ -287,6 +289,9 @@ ast_node_print( FILE *f, struct ast_node *node )
     if ( node->op == OPERATOR_FNCALL ) {
         text = "`fncall`";
         text_len = sizeof("`fncall`") - 1;
+    } else if (node->op == OPERATOR_IN) {
+        text = "`in`";
+        text_len = sizeof("`in`") - 1;
     } else if ( node->op == OPERATOR_INDEX )  {
         text = "`index`";
         text_len = sizeof("`index`") - 1;
@@ -501,7 +506,6 @@ ast_node_from_token( struct ast_node *node,
         node->type = AST_NODE_TYPE_DELIMITER;
         node->del = POSTFIX_DELIMITER_COLON;
     }
-
     else {
         node->type = AST_NODE_TYPE_OPERATOR;
         switch( curr_t->type ) {

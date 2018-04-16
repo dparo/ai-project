@@ -29,6 +29,7 @@
 - http://www.dis.uniroma1.it/~liberato/ar/dpll/dpll.html
 - http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.380.2837&rep=rep1&type=pdf
 - https://stackoverflow.com/questions/12547160/how-does-the-dpll-algorithm-work
+- https://cs.stackexchange.com/questions/10932/understanding-dpll-algorithm?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
 
 ** AST Generation:
 

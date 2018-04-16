@@ -17,9 +17,11 @@
 enum Token_Type {
     TT_NONE = 0,
     TT_IDENTIFIER = 1,
-    TT_KEYWORD = 2,
+    TT_KEYWORD,
     TT_CONSTANT = 3,
 
+
+    
     TT_PUNCT_EQUAL,
     TT_PUNCT_EQUAL_EQUAL,
     TT_PUNCT_NOT_EQUAL,
@@ -487,13 +489,12 @@ parse_identifier_or_keyword ( Tokenizer *tknzr,
     token->type = TT_IDENTIFIER;
     token->text_len = counter;
     u32 i = 0;
-#if 0
+    
     for ( i = 0; i < sizeof(keywords) / sizeof(keywords[0]); ++i ) {
         if ( strncmp (keywords[i], token->text, token->text_len) == 0 ) {
-            assert_msg(0, "For now keywords are not supported");
+            token->type = TT_KEYWORD;
         }
     }
-#endif
 }
 
 

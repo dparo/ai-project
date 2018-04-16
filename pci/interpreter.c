@@ -474,11 +474,53 @@ dpll_recurse(struct interpreter *intpt,
 
 
 
+bool
+dpll_contains_empty_clause( struct interpreter *intpt,
+                            struct ast *clauses_ast )
+{
+    return (clauses_ast->num_nodes == 0);
+    return false;
+}
+
+bool
+dpll_is_consistent( struct interpreter *intpt,
+                    struct ast *clauses_ast )
+{
+    bool result = true;
+    struct ast_node *node = NULL;
+
+
+    size_t it = 0;
+    ast_for(it, *clauses_ast, node) {
+        if ( ast_node_is_operator(node) ) {
+            if (node->op != OPERATOR_AND) {
+                result = false;
+                break;
+            }
+        } else if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
+            result = false;
+            break;
+        } else if ( node->type == AST_NODE_TYPE_CONSTANT ) {
+            if (ast_node_constant_to_bool( node ) == false) {
+                result = false;
+                break;
+            }
+        } else if ( node->type == AST_NODE_TYPE_DELIMITER ) {
+            
+        } else {
+            result = false;
+            break;
+        }
+    }
+
+    // If gone trough the entire iteration, the result is true
+    return result;
+}
 
 
 // input in the ast there should be a formula
-// of this kind: c1 || c2 || c3 || c4
-// Where ci denotes the i-th unit clause (a or ~a) and `||` the `OR` operator
+// of this kind: c1 & c2 & c3 & c4
+// Where ci denotes the i-th unit clause (a or ~a) and `&` the `AND` operator
 bool
 dpll_solve(struct interpreter *intpt,
            struct ast *clauses_ast)
