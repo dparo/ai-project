@@ -283,7 +283,9 @@ symtable_build_from_ast ( struct symtable *symtable,
     size_t it;
     ast_for(it, *ast, node) {
         if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
-            symtable_add_identifier(symtable, node->text, node->text_len);
+            if (! symtable_is_sym( symtable, node->text, node->text_len )) {
+                symtable_add_identifier(symtable, node->text, node->text_len);
+            }
         }
     }
 }
@@ -1038,6 +1040,7 @@ eval_ast(struct interpreter *intpt )
         struct ast_node *node = NULL;
         while ( dpll_next_unit_clause(intpt, ast, &node) ) {
             int lezzo = 1;
+            ast_node_print(stdout, node);
         }
         int prova = 1;
         // bruteforce_solve(intpt);

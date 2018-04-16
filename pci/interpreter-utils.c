@@ -373,6 +373,13 @@ symtable_get_syminfo( struct symtable *symtable,
     return info;
 }
 
+static inline bool
+symtable_is_sym(struct symtable *symtable,
+                char *sym_name, size_t sym_name_len)
+{
+    return symtable_get_syminfo(symtable, sym_name, sym_name_len);
+}
+
 
 
 struct symbol_info *
@@ -391,7 +398,7 @@ symtable_add_identifier( struct symtable *symtable,
     string[string_len] = 0;
 
     // assert symbol is not already present inside the symbol table
-    assert(symtable_get_syminfo(symtable, string, string_len) == NULL);
+    assert(symtable_is_sym(symtable, string, string_len) == false);
     
 
 
