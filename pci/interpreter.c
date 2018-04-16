@@ -673,6 +673,10 @@ dpll_solve(struct interpreter *intpt,
     intpt_info_printf(intpt, "Input to the dpll solver is:\n\t");
     ast_representation_dbglog(intpt);
 
+
+    assert_msg(0, "Needs implementation for the propagation of the AST"
+               " It needs to recompact or choose a deferred less recursive aproach");
+
 /* Algorithm DPLL */
 /*   Input: A set of clauses Φ. */
 /*   Output: A Truth Value. */
@@ -731,31 +735,46 @@ dpll_solve(struct interpreter *intpt,
         }
     }
 
-/*    l ← choose-literal(Φ); */
-/*    return DPLL(Φ ∧ {l}) or DPLL(Φ ∧ {not(l)}); */
-    
-    
-#if 0
-    int it = 0, it2 = 0;
-    char *id_name;
-    void *value; (void) value;
-    
-    ast_symtable_for(it, symtable, id_name, value) {
-        struct symbol_info *syminfo = (struct symbol_info*) value;
-        size_t vmi_index = syminfo->vmi_index;
-        bool has_value_assigned = syminfo->has_value_assigned;
-        if ( ! has_value_assigned ) {
-            vm_inputs_assign_value(vmi, 1, vmi_index);
-            syminfo->has_value_assigned = true;
-            syminfo->value = true;
+    bool result = false;
+    /*    l ← choose-literal(Φ); */
+    /*    return DPLL(Φ ∧ {l}) or DPLL(Φ ∧ {not(l)}); */
+    {
+        struct ast_node *pick = NULL;
+        size_t it = 0;
+        ast_for(it, *clauses_ast, pick) {
+            if ( pick->type == AST_NODE_TYPE_IDENTIFIER ) {
+                break;
+            }
+        }
+        assert(pick);
+        
+        struct ast_node *node = NULL;
+        ast_for(it, *clauses_ast, node) {
+            if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
+                if ( strncmp(pick->text, node->text, MIN(pick->text_len, node->text_len)) == 0 ) {
+                    const bool value = 1;
+                    ast_node_convert_to_constant(node, value);
+                }
+            }
+        }
 
-            // propagate
+
+        result = dpll_solve(intpt, clauses_ast);
+
+        if ( !result ) { // short circuit optimization 
+            ast_for(it, *clauses_ast, node) {
+                if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
+                    if ( strncmp(pick->text, node->text, MIN(pick->text_len, node->text_len)) == 0 ) {
+                        const bool value = 1;
+                    ast_node_convert_to_constant(node, value);
+                    }
+                }
+            }
+            result |= dpll_solve(intpt, clauses_ast);
         }
     }
-#endif
 
-
-    return false;
+    return result;
 }
 
 
