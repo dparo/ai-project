@@ -541,9 +541,10 @@ dpll_is_consistent( struct interpreter *intpt,
     while (node = dpll_next_unit_clause(intpt, clauses_ast, & node ) { .... }
 */
 struct ast_node *
-dpll_next_unit_clause(struct interpreter *intpt,
-                      struct ast *clauses_ast,
-                      struct ast_node **node)
+dpll_next_unit_clause( struct interpreter *intpt,
+                       struct ast *clauses_ast,
+                       struct ast_node **node,
+                       bool *is_negated )
 {
     assert(node);
     struct ast_node *result = NULL;
@@ -571,18 +572,36 @@ dpll_next_unit_clause(struct interpreter *intpt,
     } else {
         struct ast_node *n = start;
         for ( n = start; n >= clauses_ast->nodes; n-- ) {
-            if (n->type == AST_NODE_TYPE_OPERATOR) {
+            if ( n->type == AST_NODE_TYPE_IDENTIFIER ||
+                 n->type == AST_NODE_TYPE_CONSTANT ||
+                 (n->type == AST_NODE_TYPE_OPERATOR && n->op == OPERATOR_NEGATE)) {
+                     if (n->type == AST_NODE_TYPE_OPERATOR && n->op == OPERATOR_NEGATE) {
+                         n--;
+                         assert_msg(n >= clauses_ast->nodes, "Malformed formula");
+                         if (n->type == AST_NODE_TYPE_IDENTIFIER || n->type == AST_NODE_TYPE_CONSTANT) {
+                             *is_negated = true;
+                             result = n;
+                             break;
+                         } else {
+                             // skip childs
+                             size_t operator_index = n - clauses_ast->nodes;
+                             size_t first_operand_index = ast_get_operand_index( clauses_ast, operator_index, 1);
+                             n = (& clauses_ast->nodes[first_operand_index]);
+                         }
+                     } else {
+                         // return this
+                         *is_negated = false;
+                         result = n;
+                         break;
+
+                     }
+            } else if (n->type == AST_NODE_TYPE_OPERATOR && n->op != OPERATOR_NEGATE) {
                 if ( n->op != OPERATOR_AND ) {
                     // skip childs
                     size_t operator_index = n - clauses_ast->nodes;
                     size_t first_operand_index = ast_get_operand_index( clauses_ast, operator_index, 1);
-                    n = (& clauses_ast->nodes[first_operand_index]) - 1;
+                    n = (& clauses_ast->nodes[first_operand_index]);
                 }
-            } else if ( n->type == AST_NODE_TYPE_IDENTIFIER ||
-                        n->type == AST_NODE_TYPE_CONSTANT) {
-                // return this
-                result = n;
-                break;
             } else {
                 assert_msg(0, "Invalid code path for now");
             }
@@ -631,9 +650,11 @@ dpll_solve(struct interpreter *intpt,
 /*    for every unit clause {l} in Φ */
 /*       Φ ← unit-propagate(l, Φ); */
     struct ast_node *node = NULL;
-    while ( dpll_next_unit_clause(intpt, clauses_ast, &node) ) {
+    bool is_negated = false;
+    while ( dpll_next_unit_clause(intpt, clauses_ast, &node, & is_negated) ) {
         assert_msg(0, "Handle unit clauses with not operators\n");
         ast_node_convert_to_constant(node, 1);
+        printf("{negated: %d}\n", is_negated);
         // Now handle the propagation, not really necessary to rebuild
         // the ast it can be defered somewhere else.
     }
@@ -1052,11 +1073,12 @@ eval_ast(struct interpreter *intpt )
         intpt_print_header(intpt);
 #else
         struct ast_node *node = NULL;
-        while ( dpll_next_unit_clause(intpt, ast, &node) ) {
-            int lezzo = 1;
+        bool is_negated = false;
+        while ( dpll_next_unit_clause(intpt, ast, &node, & is_negated) ) {
             ast_node_print(stdout, node);
+            fprintf(stdout, "{negated: %d}\n", is_negated);
+            int prova = 1;
         }
-        int prova = 1;
         // bruteforce_solve(intpt);
 #endif
 

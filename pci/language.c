@@ -184,7 +184,7 @@ struct ast_node {
 
 void
 ast_node_convert_to_constant (struct ast_node *node,
-                        bool value)
+                              bool value)
 {
     static char true_string[] = "1";
     static char false_string[] = "0";
@@ -199,7 +199,7 @@ ast_node_convert_to_constant (struct ast_node *node,
 
 
 
-bool
+static bool
 ast_node_is_valid(struct ast_node *node)
 {
     assert(node);
