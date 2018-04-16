@@ -775,7 +775,7 @@ ast_build_from_command( struct interpreter *intpt,
     assert(commandline[commandline_len] == 0);
 
 
-#define SHUNTING_YARD_DEBUG 1
+#define SHUNTING_YARD_DEBUG 0
     
 #if SHUNTING_YARD_DEBUG == 1
 #define SHUNT_DBG() do { ast_node_stack_dbglog( & stack ); ast_dbglog( ast ); printf("\n"); } while(0);
@@ -1032,10 +1032,15 @@ eval_ast(struct interpreter *intpt )
 
     
     if (preprocess_command (intpt)) {
-#if 1
-        //intpt_print_header(intpt);
+#if 0
+        intpt_print_header(intpt);
 #else
-        bruteforce_solve(intpt);
+        struct ast_node *node = NULL;
+        while ( dpll_next_unit_clause(intpt, ast, &node) ) {
+            int lezzo = 1;
+        }
+        int prova = 1;
+        // bruteforce_solve(intpt);
 #endif
 
 
@@ -1058,7 +1063,7 @@ eval_commandline ( struct interpreter *intpt,
     
     if ( intpt_begin_frame(intpt)) {
         if ( ast_build_from_command( intpt, commandline, commandline_len ) ) {
-# if 1
+# if 0
             ast_representation_dbglog(intpt);
 # else
             if ( eval_ast( intpt ) ) {

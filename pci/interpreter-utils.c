@@ -393,13 +393,16 @@ symtable_add_identifier( struct symtable *symtable,
     // assert symbol is not already present inside the symbol table
     assert(symtable_get_syminfo(symtable, string, string_len) == NULL);
     
-    stb_sdict_set(symtable->dict, string, NULL);
+
+
+    struct symbol_info *result = & symtable->syms[(symtable->num_syms)];
+    symtable->syms[(symtable->num_syms) ++ ] = (struct symbol_info) { 0 };
+    stb_sdict_set(symtable->dict, string, result);
 
     // restore null termination
     string[string_len] = temp;
 
-    struct symbol_info *result = & symtable->syms[(symtable->num_syms)];
-    symtable->syms[(symtable->num_syms) ++ ] = (struct symbol_info) { 0 };
+    
     return result;
 }
 
