@@ -531,6 +531,15 @@ dpll_is_consistent( struct interpreter *intpt,
     return result;
 }
 
+/*
+    USAGE:
+    struct ast_node *node = NULL; // <--- NULL Initialization is important to determine first call
+    while ( dpll_next_unit_clause(intpt, clauses_ast, &node) ) { ... }
+
+    OR:
+    struct ast_node *node = NULL; // <--- NULL Initialization is important to determine first call
+    while (node = dpll_next_unit_clause(intpt, clauses_ast, & node ) { .... }
+*/
 struct ast_node *
 dpll_next_unit_clause(struct interpreter *intpt,
                       struct ast *clauses_ast,
