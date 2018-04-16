@@ -529,6 +529,40 @@ dpll_is_consistent( struct interpreter *intpt,
     return result;
 }
 
+struct ast_node *
+dpll_next_unit_clause(struct interpreter *intpt,
+                      struct ast *clauses_ast,
+                      struct ast_node **node)
+{
+    assert(node);
+    struct ast_node *result = NULL;
+    struct ast_node *start;
+    size_t it = 0;
+    
+    if (clauses_ast->num_nodes == 0) {
+        *node = NULL;
+        return NULL;
+    }
+    
+    if ( *node ) {
+        // Find next from this one
+        start = (*node) - 1;
+    } else {
+        // Start from the head
+        start = & clauses_ast->nodes[clauses_ast->num_nodes - 1];
+    }
+    if ( !((start >= clauses_ast->nodes)
+           && (start < & clauses_ast->nodes[clauses_ast->num_nodes]))) {
+        // Not in bounds
+        *node = NULL;
+        return NULL;
+    } else {
+        
+    }
+
+    return result;
+    
+}
 
 // input in the ast there should be a formula
 // of this kind: c1 & c2 & c3 & c4
@@ -566,6 +600,11 @@ dpll_solve(struct interpreter *intpt,
 // Because each clause needs to be satisfied, we know that this literal must be true
 /*    for every unit clause {l} in Φ */
 /*       Φ ← unit-propagate(l, Φ); */
+    struct ast_node *node = NULL;
+    while ( dpll_next_unit_clause(intpt, clauses_ast, &node) ) {
+
+    }
+        
 
 
 // A Pure literal is any literal that does not appear with its' negation in the formula
