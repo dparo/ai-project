@@ -564,8 +564,8 @@ failed: {
 // This function is pretty self-contained. The interpreter
 // cares only about the AST which is pretty stable at this point.
 bool
-ast_build_from_command( struct interpreter *intpt,
-                        char *commandline, size_t commandline_len )
+ast_build_from_command ( struct interpreter *intpt,
+                         char *commandline, size_t commandline_len )
 {
     struct ast *ast = & intpt->ast;
     ast_clear(ast);

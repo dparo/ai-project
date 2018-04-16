@@ -17,7 +17,7 @@ dpll_is_empty_clause( struct interpreter *intpt,
     bool result = true;
     size_t it = 0;
     struct ast_node *node = NULL;
-    ast_for(it, *clauses_ast, node) {
+    ast_for ( it, *clauses_ast, node ) {
         if ( node->type == AST_NODE_TYPE_IDENTIFIER
              || node->type == AST_NODE_TYPE_CONSTANT) {
             result = false;
@@ -235,6 +235,11 @@ dpll_solve(struct interpreter *intpt,
     if ( dpll_is_empty_clause(intpt, clauses_ast))
         return false;
 
+# if 0
+    // Substitute with a straight solve request if every identifier is assigned
+    // watchout for meta-constant operators like `in` and alikes.
+#endif
+    
     /* Optimization possibility:
        ===================================
        while we iterate over the AST to check the presence of unit clauses
@@ -322,8 +327,6 @@ dpll_solve(struct interpreter *intpt,
 
     return result;
 }
-
-
 
 
 
