@@ -537,7 +537,6 @@ dpll_next_unit_clause(struct interpreter *intpt,
     assert(node);
     struct ast_node *result = NULL;
     struct ast_node *start;
-    size_t it = 0;
     
     if (clauses_ast->num_nodes == 0) {
         *node = NULL;
@@ -557,9 +556,27 @@ dpll_next_unit_clause(struct interpreter *intpt,
         *node = NULL;
         return NULL;
     } else {
-        
+        struct ast_node *n = start;
+        for ( n = start; n >= clauses_ast->nodes; n-- ) {
+            if (n->type == AST_NODE_TYPE_OPERATOR) {
+                if ( n->op != OPERATOR_AND ) {
+                    // skip childs
+                    size_t operator_index = n - clauses_ast->nodes;
+                    size_t first_operand_index = ast_get_operand_index( clauses_ast, operator_index, 1);
+                    n = (& clauses_ast->nodes[first_operand_index]) - 1;
+                }
+            } else if ( n->type == AST_NODE_TYPE_IDENTIFIER ||
+                        n->type == AST_NODE_TYPE_CONSTANT) {
+                // return this
+                result = n;
+                break;
+            } else {
+                assert_msg(0, "Invalid code path for now");
+            }
+        }
     }
 
+    *node = result;
     return result;
     
 }
