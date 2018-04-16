@@ -97,7 +97,7 @@ main( int argc, char **argv)
     UNUSED(argc), UNUSED(argv);
 
     char * commandline = NULL;
-    size_t commandline_len;
+    size_t commandline_len = 0;
 
     struct interpreter intpt = {0};
     

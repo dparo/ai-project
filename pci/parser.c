@@ -561,7 +561,7 @@ static void
 parse_char_const_or_string_literal ( Tokenizer *tknzr,
                                      Token *token )
 {
-     char str_end_punct;
+     char str_end_punct = 0;
      token->text_len = 0;
      (token->text_len) += tokenizer_adv_over_start_of_string( tknzr, &str_end_punct );
      assert ( str_end_punct == '\'' || str_end_punct == '\"');
