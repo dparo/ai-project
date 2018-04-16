@@ -182,6 +182,21 @@ struct ast_node {
 };
 
 
+void
+ast_node_make_constant (struct ast_node *node,
+                        bool value)
+{
+    static char true_string[] = "1";
+    static char false_string[] = "0";
+    node->text = value ? true_string : false_string;
+    node->text_len = 1;
+    node->num_operands = 0;
+    node->type = AST_NODE_TYPE_CONSTANT;
+    node->op = OPERATOR_NONE;
+    node->del = DELIMITER_NONE;
+}
+
+
 
 
 bool

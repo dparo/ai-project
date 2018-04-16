@@ -621,7 +621,9 @@ dpll_solve(struct interpreter *intpt,
 /*       Φ ← unit-propagate(l, Φ); */
     struct ast_node *node = NULL;
     while ( dpll_next_unit_clause(intpt, clauses_ast, &node) ) {
-
+        ast_node_make_constant(node, 1);
+        // Now handle the propagation, not really necessary to rebuild
+        // the ast it can be defered somewhere else.
     }
         
 
