@@ -292,6 +292,27 @@ dpll_is_pure_literal( struct interpreter *intpt,
     return result;
 }
 
+void
+dpll_preprocess( struct interpreter *intpt,
+                 struct ast         *clauses_ast)
+{
+    size_t it = 0;
+    struct ast_node *node = NULL;
+    ast_for ( it, *clauses_ast, node ) {
+        if (node->type == AST_NODE_TYPE_OPERATOR) {
+            size_t num_operands = operator_num_operands(node);
+            // Now do we want to propagate the constant assignment by executing ?
+            size_t operand = 1;
+            for ( operand = 1; operand <= num_operands; operand++ ) {
+                size_t operand_index = ast_get_operand_index( clauses_ast, node - clauses_ast->nodes, operand);
+                struct ast_node *n = & clauses_ast->nodes[operand_index];
+                // ....
+                
+            }
+        }
+    }
+
+}
 
 // input in the ast there should be a formula
 // of this kind: c1 & c2 & c3 & c4
@@ -315,6 +336,8 @@ dpll_solve(struct interpreter *intpt,
     assert_msg(0, "Needs implementation for the propagation of the AST"
                " It needs to recompact or choose a deferred less recursive aproach");
 
+    dpll_preprocess(intpt, clauses_ast);
+    
 
 //  I still do not understand this one
     // Verifies validity of the formula either by solving it.
