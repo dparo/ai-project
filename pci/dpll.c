@@ -186,9 +186,25 @@ dpll_next_unit_clause_symbol( struct interpreter *intpt,
         for ( n = start; n >= clauses_ast->nodes; n-- ) {
             if ( n->type == AST_NODE_TYPE_IDENTIFIER ||
                  n->type == AST_NODE_TYPE_CONSTANT) {
+                bool v1;
+                bool has_v1 = ast_node_value_assigned(& intpt->symtable, n, & v1);
+                if ( ! has_v1 ) {
+                    *is_negated = false;
+                    result  = n;
+                    break;
+                }
             } else if (n->type == AST_NODE_TYPE_OPERATOR) {
                 if (n->op == OPERATOR_NEGATE) {
-
+                    size_t first_operand = ast_get_operand_index( clauses_ast,
+                    struct ast_node *n1 = & clauses_ast->nodes[first_operand];
+                    if ( n1->type == AST_NODE_TYPE_OPERATOR) {
+                        bool has_v1 = ast_node_value_assigned(& intpt->symtable, n, & v1);
+                        if ( ! has_v1 ) {
+                            *is_negated = true;
+                            result  = n;
+                            break;
+                        }
+                    }
                 } else if ( n->op == OPERATOR_AND ) {
                     // Top level ANDS are always unit_clauses
                     size_t second_operand = ast_get_operand_index( clauses_ast,
@@ -198,13 +214,20 @@ dpll_next_unit_clause_symbol( struct interpreter *intpt,
 
                     struct ast_node *n2 = & clauses_ast->nodes[second_operand];
                     struct ast_node *n1 = & clauses_ast->nodes[first_operand];
-                    bool v1, v2, has_v1, has_v2;
                     // Il primo e' identifier e non assegnato e il secondo e' non assegnato oppure identifier
                     if (n1->type == AST_NODE_TYPE_IDENTIFIER ) {
+                        bool v1;
                         bool has_v1 = ast_node_value_assigned(& intpt->symtable, n1, & v1);
-                        bool has_v2 = ast_node_value_assigned(& intpt->symtable, n2, & v2);
-                        if (! has_v1 && n1->type != AST_NODE_TYPE_IDENTIFIER ) {
-                            
+                        if ( ! has_v1 ) {
+                            result  = n;
+                            break;
+                        }
+                    } else if (n2->type == AST_NODE_TYPE_IDENTIFIER ) {
+                        bool v2;
+                        bool has_v2 = ast_node_value_assgined( & intpt->symtable, n2, &v2);
+                        if (!has_v2 ) {
+                            result = n;
+                            break;
                         }
                     }
                 } else {
