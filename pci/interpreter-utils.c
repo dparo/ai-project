@@ -18,15 +18,15 @@
 #define BOOL_PACKED_ARRAY_NELEMS(bitscount, typeof_arraymember)  \
     ((((bitscount) - 1) / (sizeof(typeof_arraymember) * 8)) + 1)
 
-#define BOOL_PACKED_ARRAY_SIZE(bitscount, typeof_arraymember)      \
+#define BOOL_PACKED_ARRAY_SIZE(bitscount, typeof_arraymember)           \
     BOOL_PACKED_ARRAY_NELEMS(bitscount, typeof_arraymember) * sizeof(typeof_arraymember)
 
 #define BOOL_PACK_INTO_ARRAY(val, bit_index, array, array_num_members, typeof_arraymember) \
     do {                                                                \
         assert(bit_index < (array_num_members) * sizeof(typeof_arraymember) * 8); \
         size_t ___index___ = ((size_t)bit_index) / ( sizeof(typeof_arraymember) * 8); \
-        (array)[___index___] =                                                \
-            (typeof_arraymember)((array)[___index___]                         \
+        (array)[___index___] =                                          \
+            (typeof_arraymember)((array)[___index___]                   \
                                  & ~((typeof_arraymember)1 << ((size_t)(bit_index) - ___index___ * sizeof(typeof_arraymember) * 8))) \
             | (typeof_arraymember)(val) << ((size_t)(bit_index) - ___index___ * sizeof(typeof_arraymember) * 8); \
     } while(0)
@@ -337,13 +337,6 @@ symtable_clear( struct symtable *symtable )
 }
 
 
-void
-vm_stack_clear( struct vm_stack *vms )
-{
-    assert(vms);
-    vms->num_bits = 0;
-}
-
 size_t
 symtable_num_syms ( struct symtable *symtable )
 {
@@ -411,6 +404,40 @@ symtable_add_identifier( struct symtable *symtable,
 
     
     return result;
+}
+
+
+
+// Returns bool if it has a value assigned
+// and populates *value with the corresponding assigned value
+// If no value is assigned it returns false and *value is not
+// guaranteed to contain legit data (btw it get's cleared to zero)
+bool
+ast_node_value_assigned(struct symtable *symtable,
+                        struct ast_node *node,
+                        bool *value)
+{
+    assert(node->type == AST_NODE_TYPE_IDENTIFIER);
+    
+    char temp = node->text[node->text_len];
+    node->text[node->text_len] = 0;
+
+    struct symbol_info *info =
+        symtable_get_syminfo( symtable,
+                              node->text, node->text_len);
+    // restore null termination
+    node->text[node->text_len] = temp;
+
+    bool result;
+    if ( info ) {
+        result = true;
+        *value = info->value;
+    } else {
+        result = false;
+        *value = 0;
+    }
+    return result;
+
 }
 
 
@@ -618,6 +645,15 @@ vm_outputs_dbglog(struct vm_outputs *vmo)
     printf("\n");
 }
 #endif
+
+
+
+void
+vm_stack_clear( struct vm_stack *vms )
+{
+    assert(vms);
+    vms->num_bits = 0;
+}
 
 
 void
