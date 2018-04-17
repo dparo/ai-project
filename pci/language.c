@@ -495,7 +495,7 @@ ast_node_from_token( struct ast_node *node,
         case TT_PUNCT_LESS: { node->op = OPERATOR_LESS; } break;
         case TT_PUNCT_LESS_OR_EQUAL: { node->op = OPERATOR_LESS_EQUAL; } break;
         case TT_PUNCT_POUND:       { node->op = OPERATOR_ENUMERATE; } break;
-        case TT_PUNCT_DOLLAR_SIGN: { printf("#############Hello motherfucker################3\n"); node->op = OPERATOR_EXIST; } break;
+        case TT_PUNCT_DOLLAR_SIGN: { node->op = OPERATOR_EXIST; } break;
         case TT_PUNCT_AT_SIGN: { node->op = OPERATOR_IN; } break;
 
 
