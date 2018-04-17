@@ -196,8 +196,10 @@ dpll_next_unit_clause_symbol( struct interpreter *intpt,
             } else if (n->type == AST_NODE_TYPE_OPERATOR) {
                 if (n->op == OPERATOR_NEGATE) {
                     size_t first_operand = ast_get_operand_index( clauses_ast,
+                                                                  n - clauses_ast->nodes, 1);
                     struct ast_node *n1 = & clauses_ast->nodes[first_operand];
                     if ( n1->type == AST_NODE_TYPE_OPERATOR) {
+                        bool v1;
                         bool has_v1 = ast_node_value_assigned(& intpt->symtable, n, & v1);
                         if ( ! has_v1 ) {
                             *is_negated = true;
@@ -224,7 +226,7 @@ dpll_next_unit_clause_symbol( struct interpreter *intpt,
                         }
                     } else if (n2->type == AST_NODE_TYPE_IDENTIFIER ) {
                         bool v2;
-                        bool has_v2 = ast_node_value_assgined( & intpt->symtable, n2, &v2);
+                        bool has_v2 = ast_node_value_assigned( & intpt->symtable, n2, &v2);
                         if (!has_v2 ) {
                             result = n;
                             break;

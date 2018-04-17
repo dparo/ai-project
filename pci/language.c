@@ -172,7 +172,15 @@ enum delimiter {
 
 
 
+struct ast_node_flags {
+    bool has_value_assigned;
+    bool value;
+
+    bool is_unit_clause;
+};
+
 struct ast_node {
+    struct ast_node_flags flags;
     char *text;
     i32 text_len;
     int num_operands;
