@@ -84,59 +84,6 @@ static const struct operator_infos {
     [OPERATOR_ON] =                { 13, 2, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_IN] =                { 13, 2, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_TERNARY] =           { 14, 3, RIGHT_ASSOCIATIVE_OP, POSTFIX_OP },
-
-#if 0
-    [TT_PUNCT_SEMICOLON]  = { 16, 1, LEFT_ASSOCIATIVE_OP, POSTFIX_OP },
-    [TT_PUNCT_COMMA]      = { 15, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-
-    // C++ precedence: Place the ternary operator to the same precedence of equal
-    //                 to avoid parsing failures.
-    [TT_PUNCT_COLON]         = { 14, 3, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_QUESTION_MARK] = { 14, 1, RIGHT_ASSOCIATIVE_OP, POSTFIX_OP },
-    [TT_PUNCT_POUND]         = { 14, 1, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
-    [TT_PUNCT_DOLLAR_SIGN]   = { 14, 1, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
-    [TT_PUNCT_AT_SIGN]       = { 13, 1, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
-        
-    [TT_PUNCT_EQUAL]         = { 14, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_LOGICAL_OR]    = { 12, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_LOGICAL_AND]   = { 11, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_BITWISE_OR]    = { 10, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_BITWISE_XOR]   = { 9, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_BITWISE_AND]   = { 8, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-
-    [TT_PUNCT_EQUAL_EQUAL]   = { 7, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_NOT_EQUAL ]    = { 7, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-
-    // Place to insert bigger, bigger or equal, less, less or equal
-    /* {   } */
-    [TT_PUNCT_GREATER]          = {6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_LESS]             = {6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_GREATER_OR_EQUAL] = {6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_LESS_OR_EQUAL]    = {6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-
-
-    [TT_PUNCT_META_DEREF]    = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
-    [TT_PUNCT_LOGICAL_NOT]   = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
-    [TT_PUNCT_BITWISE_NOT]   = { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
-
-    [TT_PUNCT_BOTHDIR_ARROW] = { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    // C-SPEC defines the arrow to be left associative. In propositional
-    // calculus we use implication `->` right associative
-    [TT_PUNCT_ARROW]         = { 1, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
-
-
-    [TT_PUNCT_META_FNCALL]     = { 0, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_META_INDEX]      = { 0, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_META_COMPOUND]   = { 0, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-
-    
-    [TT_PUNCT_OPEN_BRACE]      = { 0, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
-    [TT_PUNCT_OPEN_BRACKET]    = { 0, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
-    
-    // Not valid set of operator types.
-    [0 ... TT_PUNCT_ENUM_OPERATORS_START_MARKER] = { -1, 0, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [TT_PUNCT_ENUM_MARKER_NOT_IMPLEMENTED_OPERATORS ... TT_PUNCT_ENUM_LAST_VALUE ]  = { -1, 0, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-#endif
 };
 
 
