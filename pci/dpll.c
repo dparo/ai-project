@@ -153,10 +153,10 @@ dpll_next_unit_clause( struct interpreter *intpt,
 // return that it is a unit clause and go and assign a value to it
 
 struct ast_node *
-dpll_next_unit_clause_symbol( struct interpreter *intpt,
-                              struct ast *clauses_ast,
-                              struct ast_node **node,
-                              bool *is_negated )
+dpll_next_unit_clause_symbol ( struct interpreter *intpt,
+                               struct ast *clauses_ast,
+                               struct ast_node **node,
+                               bool *is_negated )
 {
     assert(node);
     struct ast_node *result = NULL;
@@ -303,15 +303,39 @@ dpll_preprocess( struct interpreter *intpt,
             size_t num_operands = operator_num_operands(node);
             // Now do we want to propagate the constant assignment by executing ?
             size_t operand = 1;
+            struct ast_node *candidate_clause_node = NULL;
+            size_t childs_verify = 0;
             for ( operand = 1; operand <= num_operands; operand++ ) {
                 size_t operand_index = ast_get_operand_index( clauses_ast, node - clauses_ast->nodes, operand);
                 struct ast_node *n = & clauses_ast->nodes[operand_index];
-                // ....
-                
+                bool is_child_unit_clause = false;
+
+                if (n->type == AST_NODE_TYPE_OPERATOR ) {
+                    is_child_unit_clause = (n->flags & AST_NODE_FLAGS_UNIT_CLAUSE) != 0;
+                    if ( is_child_unit_clause ) {
+                        childs_verify ++;
+                    }
+                } else if (n->type == AST_NODE_TYPE_CONSTANT ) {
+                    childs_verify ++;
+                } else if ( n->type == AST_NODE_TYPE_IDENTIFIER ) {
+                    struct symbol_info *syminfo =
+                        symtable_get_syminfo( & intpt->symtable,
+                                              n->text, n->text_len);
+                    if ( syminfo->has_value_assigned ) {
+                        childs_verify++;
+                    } else {
+                        candidate_clause_node = n;
+                    }
+
+                }
+            }
+
+            if ( childs_verify == num_operands) {
+                node->flags |= AST_NODE_FLAGS_UNIT_CLAUSE;
+            } else if (childs_verify == num_operands - 1) {
             }
         }
     }
-
 }
 
 // input in the ast there should be a formula
