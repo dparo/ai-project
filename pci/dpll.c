@@ -312,8 +312,8 @@ dpll_is_pure_literal( struct interpreter *intpt,
 // Note a unit clause means that a subtree is a function dependent on one input only !
 // Note a constant is a subtree that does not depend on any input thus its value is determined
 
-// Question: (a | a) & b      is (a | a) a unit clause ???
-
+// NOTE: This formula (a | a) the `OR` operator will have a num_arguments = 2
+// Even thought techically the dependence it's only on 1 argument
 void
 dpll_preprocess ( struct interpreter *intpt,
                   struct ast         *clauses_ast)
@@ -339,6 +339,8 @@ dpll_preprocess ( struct interpreter *intpt,
                 num_arguments += clauses_ast->nodes[oi].num_arguments;
             }
             node->num_arguments = num_arguments;
+        } else {
+            invalid_code_path();
         }
     }
 }
