@@ -312,51 +312,37 @@ dpll_is_pure_literal( struct interpreter *intpt,
 // Note a unit clause means that a subtree is a function dependent on one input only !
 // Note a constant is a subtree that does not depend on any input thus its value is determined
 
+// Question: (a | a) & b      is (a | a) a unit clause ???
+
 void
-dpll_preprocess( struct interpreter *intpt,
-                 struct ast         *clauses_ast)
+dpll_preprocess ( struct interpreter *intpt,
+                  struct ast         *clauses_ast)
 {
     size_t it = 0;
     struct ast_node *node = NULL;
     ast_for ( it, *clauses_ast, node ) {
-        if (node->type == AST_NODE_TYPE_OPERATOR) {
+        struct symbol_info *syminfo = symtable_get_syminfo(& intpt->symtable,
+                                                           node->text, node->text_len);
+        bool v = syminfo->value, hv = syminfo->has_value_assigned;
+        // Important in this if / else if / else match the identifier first.
+        if (node->type == AST_NODE_TYPE_IDENTIFIER) {
+            if (!hv ) {
+                node->num_arguments = 1;
+            } else {
+                node->num_arguments = 0;
+            }
+        } else if (node->type == AST_NODE_TYPE_OPERATOR) {
+            size_t num_arguments = 0;
             size_t num_operands = operator_num_operands(node);
-            // Now do we want to propagate the constant assignment by executing ?
-            size_t operand = 1;
-            struct ast_node *candidate_clause_node = NULL;
-            size_t childs_verify = 0;
-            for ( operand = 1; operand <= num_operands; operand++ ) {
-                size_t operand_index = ast_get_operand_index( clauses_ast, node - clauses_ast->nodes, operand);
-                struct ast_node *n = & clauses_ast->nodes[operand_index];
-                bool is_child_unit_clause = false;
-
-                if (n->type == AST_NODE_TYPE_OPERATOR ) {
-                    is_child_unit_clause = (n->flags & AST_NODE_FLAGS_UNIT_CLAUSE) != 0;
-                    if ( is_child_unit_clause ) {
-                        childs_verify ++;
-                    }
-                } else if (n->type == AST_NODE_TYPE_CONSTANT ) {
-                    childs_verify ++;
-                } else if ( n->type == AST_NODE_TYPE_IDENTIFIER ) {
-                    struct symbol_info *syminfo =
-                        symtable_get_syminfo( & intpt->symtable,
-                                              n->text, n->text_len);
-                    if ( syminfo->has_value_assigned ) {
-                        childs_verify++;
-                    } else {
-                        candidate_clause_node = n;
-                    }
-
-                }
+            for (size_t operand = 1; operand <= num_operands; operand++) {
+                size_t oi = ast_get_operand_index(clauses_ast, node - clauses_ast->nodes, operand);
+                num_arguments += clauses_ast->nodes[oi].num_arguments;
             }
-
-            if ( childs_verify == num_operands) {
-                node->flags |= AST_NODE_FLAGS_UNIT_CLAUSE;
-            } else if (childs_verify == num_operands - 1) {
-            }
+            node->num_arguments = num_arguments;
         }
     }
 }
+
 
 // input in the ast there should be a formula
 // of this kind: c1 & c2 & c3 & c4

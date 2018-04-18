@@ -119,19 +119,17 @@ enum delimiter {
 
 
 
-enum ast_node_flags {
-    AST_NODE_FLAGS_NONE = 0,
-    AST_NODE_FLAGS_UNIT_CLAUSE = (1 << 0),
-};
-
 struct ast_node {
-    enum ast_node_flags flags;
     char *text;
     i32 text_len;
     int num_operands;
     enum ast_node_type type;
     enum operator op;
     enum delimiter del;
+    
+    size_t num_arguments; /* Num of arguments that this node is functionally dependent f(a1, a2, a3 ...)
+                             This is used to determina unit clauses in place when solving with dpll
+                             In other context it is cleared to zero */
 };
 
 
@@ -383,7 +381,7 @@ op_eq_precedence(struct ast_node *n1,
 
 
 
-static inline uint
+static inline size_t
 operator_num_operands(struct ast_node *node)
 {
     if ( ast_node_is_operator(node)) {

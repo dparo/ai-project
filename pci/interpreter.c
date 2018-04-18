@@ -528,7 +528,8 @@ ast_to_prenex_form( struct interpreter *intpt)
     struct ast_node *node;
     
     ast_for_bwd(it, *ast, node) {
-        for(size_t operands = 1; operands <= operator_num_operands(node); operands++) {
+        size_t num_operands = operator_num_operands(node);
+        for(size_t operands = 1; operands <= num_operands; operands++) {
             size_t operand_index = ast_get_operand_index( ast, it, operands);
 
             struct ast_node *child_node = & (ast->nodes[operand_index]);
