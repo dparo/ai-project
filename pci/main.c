@@ -38,6 +38,8 @@
 #include <arpa/inet.h>
 
 
+#define MEMORY_C_IMPL
+#include "memory.c"
 
 #define PARSER_C_IMPL
 #include "parser.c"
