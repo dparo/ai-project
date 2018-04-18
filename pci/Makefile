@@ -8,18 +8,20 @@ OUTPUT_PATH = ./bin/
 OUTPUT = $(OUTPUT_PATH)pci
 
 
-./bin/code-gen: code-gen/code-gen.c
+$(OUTPUT_PATH):
+	mkdir -p $(OUTPUT_PATH)
+
+
+./bin/code-gen: $(OUTPUT_PATH) code-gen/code-gen.c
 	gcc -g3 -D__DEBUG -DCODE_GEN_C_IMPL code-gen/code-gen.c -Iext-deps/stb/ -I./ -lm -o ./bin/code-gen
 	./bin/code-gen
 
-mkdir_output_path:
-	mkdir -p $(OUTPUT_PATH)
 
-debug: mkdir_output_path ./bin/code-gen
+debug: $(OUTPUT_PATH) ./bin/code-gen
 	gcc $(BUILD_DEFS) -D__DEBUG -std=gnu11 -O0 -g3 $(WARNINGS) $(INCLUDES) main.c $(LIBRARIES) -o $(OUTPUT)
 
 
-release: mkdir_output_path ./bin/code-gen
+release: $(OUTPUT_PATH) ./bin/code-gen
 	gcc $(BUILD_DEFS) -std=gnu11 -O3 $(WARNINGS) $(INCLUDES) main.c $(LIBRARIES) -o $(OUTPUT)
 
 default: debug
