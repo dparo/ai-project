@@ -292,6 +292,26 @@ dpll_is_pure_literal( struct interpreter *intpt,
     return result;
 }
 
+// let's supose i have an AST
+// let's mark the operators as explored
+
+// It's the operator that determines if the childs can be unit clauses
+// preprocess stage,
+
+// a   // its obviously a unit clause
+// a & b // a, b are both unit clauses
+// a & ( b | c)  // only a is a unit clause if b and c theu haven't got any assigned value
+// a & ( b | c)  // once c or b is assigned the remaining operand becomes a unit clause
+// so recapping to know if a node is a unit clause depends on the parent,
+//    we need to traverse the ast entirely from the top
+// a node can be a unit clause for the subtree to where it belongs
+// extending the tree with an operator -> a can remain a unit clause or not
+//   if the subtree gets extended with an AND the childs remains unit clauses
+//   otherwise if the ast gets extended with an OR statement or any other statement
+
+// Note a unit clause means that a subtree is a function dependent on one input only !
+// Note a constant is a subtree that does not depend on any input thus its value is determined
+
 void
 dpll_preprocess( struct interpreter *intpt,
                  struct ast         *clauses_ast)
