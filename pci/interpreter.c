@@ -838,8 +838,6 @@ eval_ast(struct interpreter *intpt )
 #else
         // bruteforce_solve(intpt);
 #endif
-
-
         result = true;
     } else {
         result = false;
@@ -868,8 +866,8 @@ test_dpll_preprocess_print(struct interpreter *intpt)
     ast_symtable_for(s_it, &(intpt->symtable), symname, syminfo) {
         printf("{text: \"%s\", index: %d, has_value_assigned: %d, value: %d}\n", symname, s_it, syminfo->has_value_assigned, syminfo->value);
     }
-    printf("######\n");
     
+    printf("############\n");
 }
 
 void
@@ -878,6 +876,19 @@ test_dpll(struct interpreter *intpt)
     if (preprocess_command (intpt)) {
         dpll_preprocess(intpt, & intpt->ast);
         test_dpll_preprocess_print(intpt);
+        struct symbol_info *syminfo = symtable_get_syminfo(& (intpt->symtable), strdup("a"), 1);
+        if ( syminfo ) {
+            printf("Assigning value to the variable\n\n");
+            syminfo->has_value_assigned = true;
+            syminfo->value = 1;
+            dpll_preprocess(intpt, & intpt->ast);
+            test_dpll_preprocess_print(intpt);
+
+        } else {
+            fprintf(stderr, "TEST_DPLL: Failed to find the requested variable");
+        }
+               
+        
     } else {
         fprintf(stderr, "Failed to preprocess command");
     }
