@@ -328,7 +328,7 @@ dpll_preprocess ( struct interpreter *intpt,
         if (node->type == AST_NODE_TYPE_CONSTANT ) {
             node->num_arguments = 0;     // No functional dependence
         } else if (node->type == AST_NODE_TYPE_IDENTIFIER) {
-            if (!hv ) {
+            if ( !hv ) {
                 node->num_arguments = 1; // Functionally depends on himself
             } else {
                 node->num_arguments = 0; // No functional dependence
@@ -347,6 +347,45 @@ dpll_preprocess ( struct interpreter *intpt,
     }
 }
 
+struct ast_node *
+dpll_next_unit_clause2 ( struct interpreter *intpt,
+                         struct ast *clauses_ast,
+                         struct ast_node **node,
+                         bool *is_negated )
+{
+    assert(node);
+    struct ast_node *result = NULL;
+    struct ast_node *start = NULL;
+    
+    if (clauses_ast->num_nodes == 0) {
+        *node = NULL;
+        return NULL;
+    }
+    
+    if ( *node ) {
+        // Find next from this one
+        start = (*node) - 1;
+    } else {
+        // Start from the head
+        start = & clauses_ast->nodes[clauses_ast->num_nodes - 1];
+    }
+    
+    assert(start);
+    if ( !((start >= clauses_ast->nodes)
+           && (start < & clauses_ast->nodes[clauses_ast->num_nodes]))) {
+        // Not in bounds
+        *node = NULL;
+        return NULL;
+    } else {
+        struct ast_node *n = start;
+        for ( n = start; n >= clauses_ast->nodes; n-- ) {
+        }
+    }
+
+    *node = result;
+    return result;
+    
+}
 
 // input in the ast there should be a formula
 // of this kind: c1 & c2 & c3 & c4
