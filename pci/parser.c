@@ -38,9 +38,16 @@ enum Token_Type {
     TT_PUNCT_BITWISE_NOT,
     TT_PUNCT_LOGICAL_AND,
     TT_PUNCT_BITWISE_AND,
+
     TT_PUNCT_LOGICAL_OR,
     TT_PUNCT_BITWISE_OR,
     TT_PUNCT_BITWISE_XOR,
+
+    TT_PUNCT_LOGICAL_NAND,
+    TT_PUNCT_BITWISE_NAND,
+    TT_PUNCT_LOGICAL_NOR,
+    TT_PUNCT_BITWISE_NOR,
+
 
 
     TT_PUNCT_BITWISE_AND_EQUAL,
@@ -811,6 +818,12 @@ parse_punctuator ( Tokenizer *tknzr,
           if ( c2 == '=' ) {
                token->type = TT_PUNCT_NOT_EQUAL;
                token->text_len = 2;
+          } else if (c2 == '&') {
+              token->type = TT_PUNCT_LOGICAL_NAND;
+              token->text_len = 2;
+          } else if ( c2 == '|') {
+              token->type = TT_PUNCT_LOGICAL_NOR;
+              token->text_len = 2;
           }
           else {
                token->type = TT_PUNCT_LOGICAL_NOT;
@@ -862,8 +875,16 @@ parse_punctuator ( Tokenizer *tknzr,
           }
      }
      else if ( c1 == '~' ) {
-          token->type = TT_PUNCT_BITWISE_NOT;
-          token->text_len = 1;
+         if ( c2 == '&' ) {
+             token->type = TT_PUNCT_BITWISE_NAND;
+             token->text_len = 2;
+         } else if (c2 == '|') {
+             token->type = TT_PUNCT_BITWISE_NOR;
+             token->text_len = 2;
+         } else {
+             token->type = TT_PUNCT_BITWISE_NOT;
+             token->text_len = 1;
+         }
      }
      else if ( c1 == '&' ) {
           if ( c2 == '=' ) {

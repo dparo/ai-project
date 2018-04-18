@@ -12,6 +12,8 @@ enum operator {
     OPERATOR_NONE = 0,
     OPERATOR_NEGATE,
     OPERATOR_AND,
+    OPERATOR_NAND,
+    OPERATOR_NOR,
     OPERATOR_OR,
     OPERATOR_XOR,
     OPERATOR_IMPLY,
@@ -62,6 +64,8 @@ static const struct operator_infos {
     [OPERATOR_NONE] =              { INT_MIN, 0, 0, POSTFIX_OP},
     [OPERATOR_NEGATE] =            { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_AND] =               { 11, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_NAND] =              { 11, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_NOR] =              { 11, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_OR] =                { 12, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_XOR] =               { 9, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_IMPLY] =             { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
@@ -479,6 +483,8 @@ ast_node_from_token( struct ast_node *node,
         switch( curr_t->type ) {
         case TT_PUNCT_LOGICAL_NOT: case TT_PUNCT_BITWISE_NOT: { node->op = OPERATOR_NEGATE; } break;
         case TT_PUNCT_LOGICAL_AND: case TT_PUNCT_BITWISE_AND: { node->op = OPERATOR_AND; } break;
+        case TT_PUNCT_LOGICAL_NAND: case TT_PUNCT_BITWISE_NAND: { node->op = OPERATOR_NAND; } break;
+        case TT_PUNCT_LOGICAL_NOR: case TT_PUNCT_BITWISE_NOR: { node->op = OPERATOR_NOR; } break;
         case TT_PUNCT_LOGICAL_OR: case TT_PUNCT_BITWISE_OR: { node->op = OPERATOR_OR; } break;
         case TT_PUNCT_BITWISE_XOR: { node->op = OPERATOR_XOR; } break;
         case TT_PUNCT_ARROW: { node->op = OPERATOR_IMPLY; } break;
