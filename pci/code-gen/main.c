@@ -1,11 +1,10 @@
-#ifndef CODE_GEN_C_INCLUDE
-#define CODE_GEN_C_INCLUDE
-
+#ifndef MAIN_C_INCLUDE
+#define MAIN_C_INCLUDE
 
 //#######################################################
-#endif /* CODE_GEN_C_INCLUDE */
-#if !defined CODE_GEN_C_IMPLEMENTED && defined CODE_GEN_C_IMPL
-#define CODE_GEN_C_IMPLEMENTED
+#endif /* MAIN_C_INCLUDE */
+#if !defined MAIN_C_IMPLEMENTED && defined MAIN_C_IMPL
+#define MAIN_C_IMPLEMENTED
 //#######################################################
 
 
@@ -31,4 +30,4 @@ main (int argc, char ** argv)
 
 
 
-#endif /* CODE_GEN_C_IMPL */
+#endif /* MAIN_C_IMPL */
