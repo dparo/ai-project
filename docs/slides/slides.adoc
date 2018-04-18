@@ -40,3 +40,20 @@ http://asciidoc.org[AsciiDoc]
 == Prova prova
 - Some text
 
+== DPLL Solver
+- Dato un AST che viene richiesto dall'utente segue una fase di preprocessazione
+  in cui ogni singola clausola viene convertita come serie di NAND.
+- Il solverl DPLL risolve un AST composto interamente e solamente da operatori NAND
+  da letterali e da costanti
+- Boolean toggling di una variabile per capire se per un dato
+  operatore NAND per fare il satisfy dell'intera formula serve a dire se `a NAND b`
+  a, b devono condividere lo stesso valore oppure devono essere diversi
+
+- NOTA BENE: a NAND a = NOT a, se iterando troviamo che per satisficare l'intera
+  formula serve che a NAND a abbia childs con valori opposti, la formula non
+  e' verificabile.
+
+- Parlare di come si puo' verificare la dipendenza di determinati letterali o meno
+  all'interno della formula se dopo l'esecuzione si trova che a un particolare
+  letterale presente all'interno dell AST non e' stato necessario assegnare alcun valore
+  specifico.
