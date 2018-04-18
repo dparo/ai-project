@@ -324,12 +324,14 @@ dpll_preprocess ( struct interpreter *intpt,
         struct symbol_info *syminfo = symtable_get_syminfo(& intpt->symtable,
                                                            node->text, node->text_len);
         bool v = syminfo->value, hv = syminfo->has_value_assigned;
-        // Important in this if / else if / else match the identifier first.
-        if (node->type == AST_NODE_TYPE_IDENTIFIER) {
+        // Important in this { if / else if / else } match the constants & identifiers first.
+        if (node->type == AST_NODE_TYPE_CONSTANT ) {
+            node->num_arguments = 0;     // No functional dependence
+        } else if (node->type == AST_NODE_TYPE_IDENTIFIER) {
             if (!hv ) {
-                node->num_arguments = 1;
+                node->num_arguments = 1; // Functionally depends on himself
             } else {
-                node->num_arguments = 0;
+                node->num_arguments = 0; // No functional dependence
             }
         } else if (node->type == AST_NODE_TYPE_OPERATOR) {
             size_t num_arguments = 0;
