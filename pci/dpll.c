@@ -321,26 +321,26 @@ dpll_preprocess ( struct interpreter *intpt,
     size_t it = 0;
     struct ast_node *node = NULL;
     ast_for ( it, *clauses_ast, node ) {
-        struct symbol_info *syminfo = symtable_get_syminfo(& intpt->symtable,
-                                                           node->text, node->text_len);
-        bool v = syminfo->value, hv = syminfo->has_value_assigned;
         // Important in this { if / else if / else } match the constants & identifiers first.
         if (node->type == AST_NODE_TYPE_CONSTANT ) {
-            node->num_arguments = 0;     // No functional dependence
+            node->num_args = 0;     // No functional dependence
         } else if (node->type == AST_NODE_TYPE_IDENTIFIER) {
+            struct symbol_info *syminfo = symtable_get_syminfo(& intpt->symtable,
+                                                               node->text, node->text_len);
+            bool v = syminfo->value, hv = syminfo->has_value_assigned;
             if ( !hv ) {
-                node->num_arguments = 1; // Functionally depends on himself
+                node->num_args = 1; // Functionally depends on himself
             } else {
-                node->num_arguments = 0; // No functional dependence
+                node->num_args = 0; // No functional dependence
             }
         } else if (node->type == AST_NODE_TYPE_OPERATOR) {
-            size_t num_arguments = 0;
+            size_t num_args = 0;
             size_t num_operands = operator_num_operands(node);
             for (size_t operand = 1; operand <= num_operands; operand++) {
                 size_t oi = ast_get_operand_index(clauses_ast, node - clauses_ast->nodes, operand);
-                num_arguments += clauses_ast->nodes[oi].num_arguments;
+                num_args += clauses_ast->nodes[oi].num_args;
             }
-            node->num_arguments = num_arguments;
+            node->num_args = num_args;
         } else {
             invalid_code_path();
         }

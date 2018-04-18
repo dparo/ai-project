@@ -127,9 +127,9 @@ struct ast_node {
     enum operator op;
     enum delimiter del;
     
-    size_t num_arguments; /* Num of arguments that this node is functionally dependent f(a1, a2, a3 ...)
-                             This is used to determina unit clauses in place when solving with dpll
-                             In other context it is cleared to zero */
+    size_t num_args; /* Num of arguments that this node is functionally dependent f(a1, a2, a3 ...)
+                        This is used to determina unit clauses in place when solving with dpll
+                        In other context it is cleared to zero */
 };
 
 

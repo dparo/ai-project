@@ -836,13 +836,6 @@ eval_ast(struct interpreter *intpt )
 #if 0
         intpt_print_header(intpt);
 #else
-        struct ast_node *node = NULL;
-        bool is_negated = false;
-        while ( dpll_next_unit_clause(intpt, ast, &node, & is_negated) ) {
-            ast_node_print(stdout, node);
-            fprintf(stdout, "{negated: %d}\n", is_negated);
-            int prova = 1;
-        }
         // bruteforce_solve(intpt);
 #endif
 
@@ -855,6 +848,41 @@ eval_ast(struct interpreter *intpt )
 }
 
 
+void
+test_dpll_preprocess_print(struct interpreter *intpt)
+{
+    struct ast *ast = & intpt->ast;
+    struct ast_node *node;
+    size_t it;
+    // Debug expression printing
+    printf("\n");
+    ast_for(it, *ast, node) {
+        printf("{text: \"%.*s\", index: %zu, num_args: %zu}\n", node->text_len, node->text, it, node->num_args);
+    }
+    printf("\n");
+
+    char *symname;
+    struct symbol_info *syminfo;
+    int s_it = 0;
+    printf("\nSyminfo#####\n");
+    ast_symtable_for(s_it, &(intpt->symtable), symname, syminfo) {
+        printf("{text: \"%s\", index: %d, has_value_assigned: %d, value: %d}\n", symname, s_it, syminfo->has_value_assigned, syminfo->value);
+    }
+    printf("######\n");
+    
+}
+
+void
+test_dpll(struct interpreter *intpt)
+{
+    if (preprocess_command (intpt)) {
+        dpll_preprocess(intpt, & intpt->ast);
+        test_dpll_preprocess_print(intpt);
+    } else {
+        fprintf(stderr, "Failed to preprocess command");
+    }
+}
+
 
 
 void
@@ -866,8 +894,9 @@ eval_commandline ( struct interpreter *intpt,
     
     if ( intpt_begin_frame(intpt)) {
         if ( ast_build_from_command( intpt, commandline, commandline_len ) ) {
-# if 0
-            ast_representation_dbglog(intpt);
+            test_dpll(intpt);
+# if 1
+            //ast_representation_dbglog(intpt);
 # else
             if ( eval_ast( intpt ) ) {
                 
