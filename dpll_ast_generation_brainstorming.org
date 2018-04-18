@@ -31,3 +31,22 @@ a nand 0 = 1
 
 a nand a = ~a
 
+
+a nand x == 1 ???
+    // a, b must have DIFFERENT value
+
+a nand x == 0 ???
+    // a, b must have SAME value
+
+
+
+// So now a unit clause simply becomes the nand operator above, and not the literal per say
+
+// while we go down over the ast for every nand(/not?) that we find we toggle a variable
+// that tells us if to make the ENTIRE formula true, that given NAND must have for both
+// childs literal either the same value or different values
+
+
+// So that means that if we arrive to the leaf `a nand a` == `~a` having the condition
+// to satisfy the entire formula set to must have different value, we have an inconsistency
+// and the entire formula cannot be satisfied.
