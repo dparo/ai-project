@@ -9,12 +9,23 @@
 //#######################################################
 
 
+#define UTILS_C_IMPL
+#include "utils.c"
+
+
+
 #include <stdlib.h>
 #include <stdio.h>
+
+
+#define STB_DEFINE
+#include <stb.h>
+
 
 int
 main (int argc, char ** argv)
 {
+
     return 0;
 }
 

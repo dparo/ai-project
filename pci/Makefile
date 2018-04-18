@@ -9,7 +9,7 @@ OUTPUT = $(OUTPUT_PATH)pci
 
 
 ./bin/code-gen: code-gen/code-gen.c
-	gcc -g3 -D__DEBUG -DCODE_GEN_C_IMPL code-gen/code-gen.c -o ./bin/code-gen
+	gcc -g3 -D__DEBUG -DCODE_GEN_C_IMPL code-gen/code-gen.c -Iext-deps/stb/ -I./ -lm -o ./bin/code-gen
 	./bin/code-gen
 
 mkdir_output_path:
