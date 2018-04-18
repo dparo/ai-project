@@ -57,3 +57,7 @@ http://asciidoc.org[AsciiDoc]
   all'interno della formula se dopo l'esecuzione si trova che a un particolare
   letterale presente all'interno dell AST non e' stato necessario assegnare alcun valore
   specifico.
+
+- Parlare che la sintetizzazione di circuiti come solamente NAND e' un concetto molto
+  noto in elettronica. Parlare che e' possibile dimostrare che le NAND hanno la completa
+  potenza espressiva da sole per formulare qualsiasi formula logica.
