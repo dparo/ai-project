@@ -80,6 +80,13 @@ struct meta_generate_infos {
     char *output_file;
 };
 
+struct meta_generate_infos mgi[] =
+{
+    {"code-gen/templates/stack.template.c", "__generated__/ast.h"},
+    {0}
+};
+
+
 int
 main (int argc, char ** argv)
 {
@@ -87,11 +94,6 @@ main (int argc, char ** argv)
     Tokenizer tknzr;
     Token token = Empty_Token;
 
-    struct meta_generate_infos mgi[] =
-        {
-            {"code-gen/templates/stack.template.c", "__generated__/ast.h"},
-            {0}
-        };
     tokenizer_init_with_memmapped_file(&tknzr, "code-gen/templates/stack.template.c");
     
     while( get_next_token(& tknzr, & token)) {

@@ -6,7 +6,7 @@ struct $(S) {
 
 
 struct $(S)
-$(S)_init_sized(size_t num_elems)
+$(S)_create_sized(size_t num_elems)
 {
     assert(num_elems);
     struct $(S) result;
@@ -19,14 +19,14 @@ $(S)_init_sized(size_t num_elems)
 
 
 struct $(S)
-$(S)_init(void)
+$(S)_create(void)
 {
     $(S)_init_sized(sizeof(struct $(S)) * 64);
 }
 
 
 void
-$(S)_deinit(struct $(S) *s)
+$(S)_destroy(struct $(S) *s)
 {
     if ( s->base ) {
         free(s->base);
