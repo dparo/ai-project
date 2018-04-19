@@ -24,6 +24,18 @@ $(S)_init(void)
     $(S)_init_sized(sizeof(struct $(S)) * 64);
 }
 
+
+void
+$(S)_deinit(struct $(S) *s)
+{
+    if ( s->base ) {
+        free(s->base);
+    }
+    s->num_elems = 0;
+    s->max_elems = 0;
+}
+
+
 static inline void
 $(S)_grow_to( struct $(S) *s,
               size_t new_max_elems) /* Size in BYTES !!! */

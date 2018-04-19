@@ -513,7 +513,7 @@ parse_whitespaces ( Tokenizer *tknzr,
 {
     assert(is_whitespace(tknzr));
     bool done = false;
-    size_t counter;
+    size_t counter = 0;
     token->type = TT_WHITESPACES;
     token->text = tknzr->at;
     

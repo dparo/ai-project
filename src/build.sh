@@ -11,7 +11,7 @@ OUTPUT_PATH="../bin"
 if [ "$1" = "code-gen" ]; then
     set -x
     gcc -g3 -std=gnu11  $BUILD_DEFS -D__DEBUG code-gen/main.c $INCLUDES -I./ -lm -o $OUTPUT_PATH/code-gen
-    ./bin/code-gen
+    ../bin/code-gen
 elif [ "$1" = "debug" ]; then
     set -x
     gcc $BUILD_DEFS -D_GNU_SOURCE -D__DEBUG -std=gnu11 -O0 -g3 $WARNINGS $INCLUDES sat/main.c $LIBRARIES -o $OUTPUT_PATH/pci
