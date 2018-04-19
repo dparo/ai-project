@@ -8,9 +8,9 @@
 #define MAIN_C_IMPLEMENTED
 //#######################################################
 
-
 #define     UTILS_C_IMPL
 #include   "utils.c"
+
 #define     PLATFORM_C_IMPL
 #include   "platform.c"
 

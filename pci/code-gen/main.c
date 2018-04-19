@@ -11,7 +11,8 @@
 #define UTILS_C_IMPL
 #include "utils.c"
 
-
+#define PLATFORM_C_IMPL
+#include "platform.c"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -27,6 +28,11 @@
 
 #define MEMORY_C_IMPL
 #include "memory.c"
+
+
+#define TOKENIZER_C_IMPL
+#include "tokenizer.c"
+
 
 static void
 fatal(char *fmt, ...)
