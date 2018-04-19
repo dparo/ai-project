@@ -197,7 +197,7 @@ typedef struct Tokenizer {
      enum Tokenization_Error err;
      char err_desc[TOKENIZER_ERR_DESC_LEN];
 
-     char *at_;
+     char *at;
 } Tokenizer;
 
 
@@ -256,11 +256,29 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap);
 int strcmp(const char *s1, const char *s2);
 
 
+static inline char
+tokenizer_deref_at( Tokenizer *tknzr, int rel )
+{
+    if ( (tknzr->at + rel) >= tknzr->base
+         && (tknzr->at + rel) < (tknzr->base + tknzr->base_len) ) {
+        return *(tknzr->at + rel);
+    } else {
+        return 0;
+    }
+}
+
+static inline char
+tokenizer_deref(Tokenizer *tknzr)
+{
+    return tokenizer_deref_at(tknzr, 0);
+}
+
 static bool
 tokenizer_is_end ( Tokenizer *tknzr )
 {
     bool result = false;
-    if ( *tknzr->at == 0 ) {
+    char c = tokenizer_deref(tknzr);
+    if ( c == 0 || c ==  0x04) {
         result = true;
     }
     return result;
@@ -273,7 +291,6 @@ tokenizer_adv_by ( Tokenizer *tknzr, uint32_t step )
 {
      (tknzr->at) += step;
      tknzr->column += step;
-     assert ( tknzr->at < tknzr->base + tknzr->base_len );
 }
 
 
@@ -301,9 +318,9 @@ static inline bool
 is_newline_fwd ( Tokenizer *tknzr )
 {
      bool result = false;
-     char prev = *(tknzr->at - 1);
-     char c1 = *tknzr->at;
-     char c2 = *(tknzr->at + 1);
+     char prev = tokenizer_deref_at(tknzr, -1);
+     char c1 = tokenizer_deref(tknzr);
+     char c2 = tokenizer_deref_at(tknzr, 1);
      if ( c1 == '\n' ) {
           // Unix style newline
           result = true;
@@ -330,34 +347,10 @@ is_newline_fwd ( Tokenizer *tknzr )
      return result;
 }
 
-// is newline when parsing backword: eg --(tok->at)
-static inline bool
-is_newline_bwd(Tokenizer *tknzr)
-{
-     bool result = false;
-     char c = *(tknzr->at);
-     char prev1 = *(tknzr->at - 1);
-     char prev2 = *(tknzr->at - 2);
-
-     if ( c == '\n') {
-          result = true;
-          --(tknzr->line_num);
-          if ( prev1 == '\r') {
-               // microsoft encoding CR + LF
-               --(tknzr->at);
-          }
-     }
-     else if ( c == '\r' ) {
-          result = true;
-          --(tknzr->line_num);
-     }
-     return result;
-}
-
 static inline bool
 is_whitespace ( Tokenizer *tknzr )
 {
-     char c = *tknzr->at;
+     char c = tokenizer_deref(tknzr);
      return ( is_newline_fwd(tknzr)
               || c == '\t'
               || c == '\n'
@@ -372,8 +365,8 @@ is_whitespace ( Tokenizer *tknzr )
 static inline bool
 is_digit ( Tokenizer *tknzr )
 {
-    char c0 = *(tknzr->at);
-    char c1 = *(tknzr->at + 1);
+    char c0 = tokenizer_deref_at(tknzr, 0);
+    char c1 = tokenizer_deref_at(tknzr, 1);
     bool result = false;
     if ( (c0 >= '0' && c0 <= '9')
          || ( c0 == '.' && (c1 >= '0' && c1 <= '9'))) {
@@ -405,9 +398,9 @@ preceded_by ( Tokenizer *tknzr )
      // NOTE: This always work because we allocate
      // a zeroed out page at the start of file mapping
      char result = -1;
-     char c  = *(tknzr->at - 0);
-     char c1 = *(tknzr->at - 1);
-     char c2 = *(tknzr->at - 2);
+     char c  = tokenizer_deref_at(tknzr, 0);
+     char c1 = tokenizer_deref_at(tknzr, -1);
+     char c2 = tokenizer_deref_at(tknzr, -2);
      // Handles CR+LF microsoft
      // Considers CR+LF as a single object made by LF
      if ( c == '\n' ) {
@@ -448,9 +441,7 @@ eat_comment ( Tokenizer *tknzr )
 
      // Maybe change the cache to be smarter and follow the comments
      // in a backward manner?
-     if ( *tknzr->at == '/' && *(tknzr->at + 1) == '/' ) {
-          *tknzr->at = ' ';
-          *(tknzr->at + 1) = ' ';
+     if ( tokenizer_deref(tknzr) == '/' && tokenizer_deref_at(tknzr, 1) == '/' ) {
           while ( ! tokenizer_is_end ( tknzr )) {
                if ( is_newline_fwd(tknzr)
                     && !is_preceded_by_char ( tknzr, '\\')) {
@@ -462,21 +453,14 @@ eat_comment ( Tokenizer *tknzr )
                }
           }
      }
-     else if ( *tknzr->at == '/' && *(tknzr->at + 1) == '*' ) {
-          *tknzr->at = ' ';
-          *(tknzr->at + 1) = ' ';
+     else if ( tokenizer_deref(tknzr) == '/' && tokenizer_deref_at(tknzr, 1) == '*' ) {
           while ( ! tokenizer_is_end ( tknzr )) {
-               if ( *(tknzr->at) == '*' && (*(tknzr->at + 1) == '/')) {
-                    *tknzr->at = ' ';
-                    *(tknzr->at + 1) = ' ';
+               if ( tokenizer_deref(tknzr) == '*' && (tokenizer_deref_at(tknzr, 1) == '/')) {
                     tokenizer_adv ( tknzr );
                     tokenizer_adv ( tknzr );
                     break;
                }
                else {
-                    if (!is_newline_fwd(tknzr)) {
-                         *(tknzr->at) = ' ';
-                    }
                     tokenizer_adv ( tknzr );
                }
           }
@@ -499,13 +483,18 @@ is_punctuator (char c)
               || (c >= 0x7B) );
 }
 
+static inline bool
+is_meta(Tokenizer *tknzr)
+{
+    
+}
 
 
 static bool
 is_start_of_comment (Tokenizer *tknzr)
 {
-     char c0 = *(tknzr->at);
-     char c1 = *(tknzr->at + 1);
+     char c0 = tokenizer_deref(tknzr);
+     char c1 = tokenizer_deref_at(tknzr, 1);
      return ( (c0 == '/' && c1 == '/')
               || (c0 == '/' && c1 == '*' ));
 }
@@ -558,14 +547,14 @@ parse_identifier_or_keyword ( Tokenizer *tknzr,
      bool done = false;
      int counter = 0;
      for (; !tokenizer_is_end(tknzr); ++counter ) {
-          if (is_punctuator(*tknzr->at)) {
+          if (is_punctuator(tokenizer_deref(tknzr))) {
                break;
           }
           else if (is_whitespace(tknzr)) {
                tokenizer_adv(tknzr);
                break;
           }
-          if ( is_punctuator(*tknzr->at)
+          if ( is_punctuator(tokenizer_deref(tknzr))
                || is_whitespace(tknzr)) {
                break;
           }
@@ -588,9 +577,9 @@ static inline bool
 is_start_of_char_const_or_string_literal ( Tokenizer *tknzr )
 {
      bool result = false;
-     char c1 = *(tknzr->at + 0);
-     char c2 = *(tknzr->at + 1);
-     char c3 = *(tknzr->at + 2);
+     char c1 = tokenizer_deref_at(tknzr, 0);
+     char c2 = tokenizer_deref_at(tknzr, 1);
+     char c3 = tokenizer_deref_at(tknzr, 2);
 
      if ( c1 == '\'' || c1 == '\"') {
           result = true;
@@ -611,10 +600,10 @@ static uint32_t
 tokenizer_adv_over_start_of_string ( Tokenizer *tknzr, char* punct )
 {
      uint32_t result = 0;
-     char c1 = *(tknzr->at + 0);
-     char c2 = *(tknzr->at + 1);
-     char c3 = *(tknzr->at + 2);
-     char c4 = *(tknzr->at + 3);
+     char c1 = tokenizer_deref_at(tknzr, 0);
+     char c2 = tokenizer_deref_at(tknzr, 1);
+     char c3 = tokenizer_deref_at(tknzr, 2);
+     char c4 = tokenizer_deref_at(tknzr, 3);
      if ( c1 == '\'' || c1 == '\"') {
           result = 1;
           tokenizer_adv_by ( tknzr, result );
@@ -658,7 +647,7 @@ parse_char_const_or_string_literal ( Tokenizer *tknzr,
      int counter = 0;
      bool is_prev_backslash = false;
      for (; !tokenizer_is_end(tknzr); ++counter ) {
-          if ( *tknzr->at == '\\' ) {
+          if ( tokenizer_deref(tknzr) == '\\' ) {
                if (is_prev_backslash ) {
                     is_prev_backslash = false;
                }
@@ -679,7 +668,7 @@ parse_char_const_or_string_literal ( Tokenizer *tknzr,
                }
                is_prev_backslash = false;
           }
-          else if ( *(tknzr->at) == str_end_punct
+          else if ( tokenizer_deref(tknzr) == str_end_punct
                     && is_prev_backslash == false) {
                if (is_prev_backslash == false ) {
                     break;
@@ -707,7 +696,7 @@ parse_preprocessor_directive( Tokenizer *tknzr,
 {
      int counter = 0;
      // Preconditions for calling the function
-     assert ( *tknzr->at == '#' );
+     assert ( tokenizer_deref(tknzr) == '#' );
      token->type = TT_PP_DIRECTIVE;
 
      for (counter = 0; !tokenizer_is_end (tknzr); ++counter ) {
@@ -736,13 +725,13 @@ parse_digit ( Tokenizer *tknzr,
      token->type = TT_CONSTANT;
      int counter = 0;
      for (; !tokenizer_is_end (tknzr); ++counter ) {
-          if ( ((*tknzr->at) == '.') && (decimal_counter == 0)) {
+          if ( ((tokenizer_deref(tknzr)) == '.') && (decimal_counter == 0)) {
                decimal_counter = 1;
                tokenizer_adv(tknzr);
           }
-          else if ( is_punctuator(*tknzr->at)
+          else if ( is_punctuator(tokenizer_deref(tknzr))
                     || is_whitespace(tknzr)) {
-               char c = *tknzr->at;
+               char c = tokenizer_deref(tknzr);
                if ( c == '+' || c == '-') {
                     char prev_c = preceded_by(tknzr);
                     if ( (exponent_counter == 0)
@@ -771,14 +760,14 @@ parse_punctuator ( Tokenizer *tknzr,
                    Token *token )
 {
      // TODO: Add support for   <:   :>   <%   %>   %:   %:%:
-     assert ( is_punctuator(*tknzr->at) );
+     assert ( is_punctuator(tokenizer_deref(tknzr)) );
      token->type = TT_PUNCT_YET_TO_COMPUTE;
      token->text_len = 1;
      int counter = 0;
      // NOTE: this is safe because the content of the file is always zero terminated with 10 bytes
-     char c1 = *(tknzr->at + 0);
-     char c2 = *(tknzr->at + 1);
-     char c3 = *(tknzr->at + 2);
+     char c1 = tokenizer_deref_at(tknzr, 0);
+     char c2 = tokenizer_deref_at(tknzr, 1);
+     char c3 = tokenizer_deref_at(tknzr, 2);
 
      if ( c1 == '(') {
           token->type = TT_PUNCT_OPEN_PAREN;
@@ -838,12 +827,6 @@ parse_punctuator ( Tokenizer *tknzr,
           token->type = TT_PUNCT_BACKWARD_APOSTROPHE;
           token->text_len = 1;
      }
-#if !TOKENIZER_DOLLAR_SIGN_VALID_IDENTIFIER
-     else if (c1 == '$') {
-          token->type = TT_PUNCT_DOLLAR_SIGN;
-          token->text_len = 1;
-     }
-#endif
      else if (c1 == '@') {
           token->type = TT_PUNCT_AT_SIGN;
           token->text_len = 1;
@@ -1054,12 +1037,12 @@ get_next_token ( Tokenizer *tknzr,
      else if ( is_start_of_char_const_or_string_literal(tknzr)) {
          parse_char_const_or_string_literal (tknzr, token );
      }
-     else if (is_meta(*tknzr->at)) {
+     else if (is_meta(tknzr)) {
 
-     } else if ( is_punctuator (*tknzr->at )) {
+     } else if ( is_punctuator (tokenizer_deref(tknzr) )) {
          parse_punctuator(tknzr, token);
      }
-     else if ( is_alpha (*tknzr->at) || *tknzr->at == '_' ) {
+     else if ( is_alpha (tokenizer_deref(tknzr)) || tokenizer_deref(tknzr) == '_' ) {
          parse_identifier_or_keyword ( tknzr, token );
      }
      eat_whitespaces(tknzr);
