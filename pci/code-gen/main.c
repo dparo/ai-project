@@ -26,13 +26,6 @@
 #include <stdio.h>
 
 
-#define MEMORY_C_IMPL
-#include "memory.c"
-
-
-#define TOKENIZER_C_IMPL
-#include "tokenizer.c"
-
 
 static void
 fatal(char *fmt, ...)
@@ -43,6 +36,15 @@ fatal(char *fmt, ...)
     va_end(ap);
     exit(-1);
 }
+
+
+#define MEMORY_C_IMPL
+#include "memory.c"
+
+
+#define TOKENIZER_C_IMPL
+#include "tokenizer.c"
+
 
 char *
 load_file_null_terminate(char *path)
@@ -65,9 +67,37 @@ load_file_null_terminate(char *path)
     return buffer;
 }
 
+
+void
+log_token(Token *token)
+{
+    printf("%.*s", token->text_len, token->text);
+}
+
 int
 main (int argc, char ** argv)
 {
+    platform_init();
+    Tokenizer tknzr;
+    Token token = Empty_Token;
+    tokenizer_init_with_memmapped_file(&tknzr, "code-gen/templates/stack.template.c");
+    
+    while( get_next_token(& tknzr, & token)) {
+        if ( tknzr.err ) {
+            fatal("Tokenizer parsing error: %s\n", tknzr.err_desc);
+        }
+        if ( token.type == TT_META ) {
+            if (strncmp("S", token.text, token.text_len) == 0 ) {
+                printf("ast");
+            } else if (strncmp("T", token.text, token.text_len) == 0 ) {
+                printf("ast_node");
+            } else {
+                log_token( &token);
+            }
+        } else {
+            log_token(& token);
+        }
+    }
     return 0;
 }
 

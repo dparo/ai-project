@@ -13,10 +13,12 @@
 
 enum Token_Type {
      TT_NONE = 0,
-     TT_IDENTIFIER = 1,
-     TT_PUNCT_YET_TO_COMPUTE = 2,
+     TT_COMMENT = 1,
+     TT_WHITESPACES = 2,
+     TT_IDENTIFIER = 3,
+     TT_PUNCT_YET_TO_COMPUTE = 4,
 
-     TT_PUNCT_META = 3,
+     TT_META = 5,
      
      TT_STRING_LITERAL,
      TT_CONSTANT,
@@ -187,8 +189,6 @@ typedef struct Tokenizer {
      char file[TOKENIZER_FILENAME_LEN];
 
      i32 line_num;
-     i32 column;
-
 
      char *base; // Must point to content of file + at least 4 bytes of 0 termination
                  // and preceded by at least 4 bytes of 0x00
@@ -259,8 +259,8 @@ int strcmp(const char *s1, const char *s2);
 static inline char
 tokenizer_deref_at( Tokenizer *tknzr, int rel )
 {
-    if ( (tknzr->at + rel) >= tknzr->base
-         && (tknzr->at + rel) < (tknzr->base + tknzr->base_len) ) {
+    if ( ((uint8_t *)tknzr->at + rel) >= tknzr->base
+         && (tknzr->at + rel) < ((uint8_t *)tknzr->base + tknzr->base_len) ) {
         return *(tknzr->at + rel);
     } else {
         return 0;
@@ -278,7 +278,7 @@ tokenizer_is_end ( Tokenizer *tknzr )
 {
     bool result = false;
     char c = tokenizer_deref(tknzr);
-    if ( c == 0 || c ==  0x04) {
+    if ( c == '\0' || c ==  0x04) {
         result = true;
     }
     return result;
@@ -290,7 +290,6 @@ static inline void
 tokenizer_adv_by ( Tokenizer *tknzr, uint32_t step )
 {
      (tknzr->at) += step;
-     tknzr->column += step;
 }
 
 
@@ -315,34 +314,18 @@ tokenizer_err_fmt(Tokenizer *tknzr, Tokenization_Error errtype, char* fmt, ...)
 
 // is newline when parsing forward: eg ++(tok->at)
 static inline bool
-is_newline_fwd ( Tokenizer *tknzr )
+is_newline ( Tokenizer *tknzr )
 {
      bool result = false;
      char prev = tokenizer_deref_at(tknzr, -1);
      char c1 = tokenizer_deref(tknzr);
      char c2 = tokenizer_deref_at(tknzr, 1);
-     if ( c1 == '\n' ) {
+     if ( c1 == '\n' || c1 == '\r') {
           // Unix style newline
           result = true;
           ++(tknzr->line_num);
-          tknzr->column = -1;
-     }
-     else if (c1 == '\r' && c2 == '\n') {
-          // Windows and MacOS newline
-          // Advance the tokenizer by 1 in this case.
-          // To pretend the newline made of a higher abstraction
-          // thing composed by a single 1 byte
-          result = true;
-          tokenizer_adv(tknzr);
-          ++(tknzr->line_num);
-          tknzr->column = 0;
-     }
-     else if ((prev == '\r') && (c1 == '\n')) {
-          assert_msg(0, "Needs testing to see if the line counting mechanism"
-                     "works with this type of newline encoding");
-          result = true;
-          ++(tknzr->line_num);
-          tknzr->column = 0;
+     } else {
+         result = false;
      }
      return result;
 }
@@ -350,14 +333,15 @@ is_newline_fwd ( Tokenizer *tknzr )
 static inline bool
 is_whitespace ( Tokenizer *tknzr )
 {
-     char c = tokenizer_deref(tknzr);
-     return ( is_newline_fwd(tknzr)
-              || c == '\t'
-              || c == '\n'
-              || c == '\v'
-              || c == '\f'
-              || c == '\r'
-              || c == ' ' );
+    char c = tokenizer_deref(tknzr);
+    bool result = is_newline(tknzr)
+        || c == '\t'
+        || c == '\n'
+        || c == '\v'
+        || c == '\f'
+        || c == '\r'
+        || c == ' ';
+    return (result);
 }
 
 
@@ -432,39 +416,37 @@ is_preceded_by_char ( Tokenizer *tknzr, char c )
 // the exact start of the comment to eat the comment
 // no whitespaces before the start of the comment
 // otherwise the function will do nothing
-static void
+static size_t
 eat_comment ( Tokenizer *tknzr )
 {
-     // NOTE clears the comment to whitespaces to allow
-     // Easier fetching back of the cache so we don't
-     // accidently end up in the middle of a comment
-
-     // Maybe change the cache to be smarter and follow the comments
-     // in a backward manner?
-     if ( tokenizer_deref(tknzr) == '/' && tokenizer_deref_at(tknzr, 1) == '/' ) {
-          while ( ! tokenizer_is_end ( tknzr )) {
-               if ( is_newline_fwd(tknzr)
-                    && !is_preceded_by_char ( tknzr, '\\')) {
-                    tokenizer_adv ( tknzr );
-                    break;
-               }
-               else {
-                    tokenizer_adv ( tknzr );
-               }
-          }
+    size_t len = 0;
+    if ( tokenizer_deref(tknzr) == '/' && tokenizer_deref_at(tknzr, 1) == '/' ) {
+        while ( ! tokenizer_is_end ( tknzr )) {
+            if ( is_newline(tknzr)
+                 && !is_preceded_by_char ( tknzr, '\\')) {
+                tokenizer_adv ( tknzr );
+                break;
+            }
+            else {
+                tokenizer_adv ( tknzr );
+            }
+            len++;
+        }
      }
-     else if ( tokenizer_deref(tknzr) == '/' && tokenizer_deref_at(tknzr, 1) == '*' ) {
-          while ( ! tokenizer_is_end ( tknzr )) {
-               if ( tokenizer_deref(tknzr) == '*' && (tokenizer_deref_at(tknzr, 1) == '/')) {
-                    tokenizer_adv ( tknzr );
-                    tokenizer_adv ( tknzr );
-                    break;
-               }
-               else {
-                    tokenizer_adv ( tknzr );
-               }
-          }
+    else if ( tokenizer_deref(tknzr) == '/' && tokenizer_deref_at(tknzr, 1) == '*' ) {
+        while ( ! tokenizer_is_end ( tknzr )) {
+            if ( tokenizer_deref(tknzr) == '*' && (tokenizer_deref_at(tknzr, 1) == '/')) {
+                tokenizer_adv ( tknzr );
+                tokenizer_adv ( tknzr );
+                break;
+            }
+            else {
+                tokenizer_adv ( tknzr );
+            }
+            len++;
+        }
      }
+    return len;
  }
 
 
@@ -486,7 +468,12 @@ is_punctuator (char c)
 static inline bool
 is_meta(Tokenizer *tknzr)
 {
-    
+    char c = tokenizer_deref(tknzr);
+    if ( c == '$') {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
@@ -500,8 +487,9 @@ is_start_of_comment (Tokenizer *tknzr)
 }
 
 
+
 static void
-eat_whitespaces ( Tokenizer *tknzr )
+eat_whitespaces ( Tokenizer *tknzr)
 {
      bool done = false;
      while ( !done && !tokenizer_is_end(tknzr) ) {
@@ -516,7 +504,38 @@ eat_whitespaces ( Tokenizer *tknzr )
           }
      }
      eat_comment(tknzr);
+}
 
+
+static void
+parse_whitespaces ( Tokenizer *tknzr,
+                    Token *token )
+{
+    assert(is_whitespace(tknzr));
+    bool done = false;
+    size_t counter;
+    token->type = TT_WHITESPACES;
+    token->text = tknzr->at;
+    
+    while ( is_whitespace(tknzr) && !tokenizer_is_end(tknzr)) {
+        tokenizer_adv(tknzr);
+        counter++;
+    }
+    token->text_len = counter;
+}
+
+
+static void
+parse_comment ( Tokenizer *tknzr,
+                Token *token )
+{
+    assert( is_start_of_comment(tknzr));
+    bool done = false;
+    size_t counter;
+    token->type = TT_COMMENT;
+    token->text = tknzr->at;
+
+    token->text_len = eat_comment(tknzr);
 }
 
 
@@ -551,11 +570,6 @@ parse_identifier_or_keyword ( Tokenizer *tknzr,
                break;
           }
           else if (is_whitespace(tknzr)) {
-               tokenizer_adv(tknzr);
-               break;
-          }
-          if ( is_punctuator(tokenizer_deref(tknzr))
-               || is_whitespace(tknzr)) {
                break;
           }
           else {
@@ -656,7 +670,7 @@ parse_char_const_or_string_literal ( Tokenizer *tknzr,
                }
                tokenizer_adv(tknzr);
           }
-          else if ( is_newline_fwd(tknzr)) {
+          else if ( is_newline(tknzr)) {
                if (!is_preceded_by_char ( tknzr, '\\')) {
                     tokenizer_err_fmt (tknzr, TOK_ERR_INVALID_STRING,
                                        "%s: Invalid use of new line while parsing string at line: %d ", tknzr->file, tknzr->line_num);
@@ -703,7 +717,7 @@ parse_preprocessor_directive( Tokenizer *tknzr,
           if (is_start_of_comment(tknzr)) {
                eat_comment(tknzr);
           }
-          if ( is_newline_fwd(tknzr) ) {
+          if ( is_newline(tknzr) ) {
                if ( !is_preceded_by_char(tknzr, '\\')) {
                     tokenizer_adv(tknzr);
                     break;
@@ -756,17 +770,64 @@ parse_digit ( Tokenizer *tknzr,
 
 
 static void
+parse_meta ( Tokenizer *tknzr,
+             Token *token )
+{
+    bool done = false;
+    int counter = 0;
+
+    int num_parens = 0;
+    char c = tokenizer_deref(tknzr);
+    assert(c == '$');
+    c = tokenizer_deref_at(tknzr, +1);
+    if ( c == '(')  {
+        tokenizer_adv_by(tknzr, 2);
+        token->text = tknzr->at;
+        num_parens = 1;
+    } else {
+        tokenizer_adv_by(tknzr, 1);
+        token->text = tknzr->at;
+        num_parens = 0;
+    }
+    
+    
+    for (; !tokenizer_is_end(tknzr); ++counter ) {
+        char c = tokenizer_deref(tknzr);
+        if (is_punctuator(c)) {
+            if ( c == '(') {
+                num_parens ++;
+            } else if ( c == ')') {
+                if (num_parens == 0 ) {
+                    tokenizer_adv(tknzr);
+                    counter--;
+                    break;
+                } else
+                    num_parens--;
+            } else {
+                break;
+            }
+        } else if (is_whitespace(tknzr)) {
+            break;
+        } else {
+            tokenizer_adv( tknzr );
+        }
+    }
+    token->type = TT_META;
+    token->text_len = counter;
+}
+
+static void
 parse_punctuator ( Tokenizer *tknzr,
                    Token *token )
 {
-     // TODO: Add support for   <:   :>   <%   %>   %:   %:%:
-     assert ( is_punctuator(tokenizer_deref(tknzr)) );
-     token->type = TT_PUNCT_YET_TO_COMPUTE;
-     token->text_len = 1;
-     int counter = 0;
-     // NOTE: this is safe because the content of the file is always zero terminated with 10 bytes
-     char c1 = tokenizer_deref_at(tknzr, 0);
-     char c2 = tokenizer_deref_at(tknzr, 1);
+    // TODO: Add support for   <:   :>   <%   %>   %:   %:%:
+    assert ( is_punctuator(tokenizer_deref(tknzr)) );
+    token->type = TT_PUNCT_YET_TO_COMPUTE;
+    token->text_len = 1;
+    int counter = 0;
+    // NOTE: this is safe because the content of the file is always zero terminated with 10 bytes
+    char c1 = tokenizer_deref_at(tknzr, 0);
+    char c2 = tokenizer_deref_at(tknzr, 1);
      char c3 = tokenizer_deref_at(tknzr, 2);
 
      if ( c1 == '(') {
@@ -997,7 +1058,6 @@ parse_punctuator ( Tokenizer *tknzr,
           }
      }
      assert (token->type != TT_PUNCT_YET_TO_COMPUTE);
-     (tknzr->column) += token->text_len;
      (tknzr->at) += token->text_len;
 }
 
@@ -1024,11 +1084,14 @@ get_next_token ( Tokenizer *tknzr,
      }
      tokenizer_clear_error (tknzr);
      // TODO: Handle splitting the tokens for preprocessing directive instead of giving the entire line
-     eat_whitespaces(tknzr);
      token->text = tknzr->at;
      token->line_num = tknzr->line_num;
-     token->column = tknzr->column;
-     if ( (* tknzr->at) == '#' ) {
+
+     if ( is_whitespace(tknzr)) {
+         parse_whitespaces(tknzr, token);
+     } else if (is_start_of_comment(tknzr)) {
+         parse_comment(tknzr, token);
+     } else if ( (* tknzr->at) == '#' ) {
          parse_preprocessor_directive(tknzr, token);
      }
      else if ( is_digit( tknzr ) ) {
@@ -1038,14 +1101,13 @@ get_next_token ( Tokenizer *tknzr,
          parse_char_const_or_string_literal (tknzr, token );
      }
      else if (is_meta(tknzr)) {
-
+         parse_meta(tknzr, token);
      } else if ( is_punctuator (tokenizer_deref(tknzr) )) {
          parse_punctuator(tknzr, token);
      }
      else if ( is_alpha (tokenizer_deref(tknzr)) || tokenizer_deref(tknzr) == '_' ) {
          parse_identifier_or_keyword ( tknzr, token );
      }
-     eat_whitespaces(tknzr);
      return true;
 }
 
@@ -1076,7 +1138,7 @@ tokenizer_init_with_memmapped_file (Tokenizer *tknzr, char* filename )
           const i32 ZEROED_CHUNK_SIZE = 8;
           i64 file_len = 0;
           void *buffer = alloc_memmapped_file(filename, 0x000, PAGE_PROT_READ | PAGE_PROT_WRITE,
-                                              PAGE_ANONYMOUS | PAGE_PRIVATE, true, ZEROED_CHUNK_SIZE,
+                                              PAGE_ANONYMOUS | PAGE_PRIVATE, false, 0,
                                               &file_len);
           assert(buffer);
           assert(file_len);
@@ -1086,7 +1148,6 @@ tokenizer_init_with_memmapped_file (Tokenizer *tknzr, char* filename )
 
      strncpy (tknzr->file, filename, TOKENIZER_FILENAME_LEN);
      tknzr->line_num = 1;
-     tknzr->column = 0;
      tknzr->at = tknzr->base;
 
      tknzr->err = 0;

@@ -141,11 +141,3 @@ $(S)_prev($(T) *prev)
     assert(prev);
     return ($(T)) ((uint8_t*) prev + sizeof(prev));
 }
-
-
-for ( ast_node *node = ast_end(ast);
-      node != ast_begin();
-      node = ast_prev(node))
-{
-     
-}
