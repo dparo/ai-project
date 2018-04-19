@@ -259,8 +259,8 @@ int strcmp(const char *s1, const char *s2);
 static inline char
 tokenizer_deref_at( Tokenizer *tknzr, int rel )
 {
-    if ( ((uint8_t *)tknzr->at + rel) >= tknzr->base
-         && (tknzr->at + rel) < ((uint8_t *)tknzr->base + tknzr->base_len) ) {
+    if ( (((uint8_t *)tknzr->at + rel) >= (uint8_t*)tknzr->base)
+         && ((uint8_t *)tknzr->at + rel) < ((uint8_t *)tknzr->base + tknzr->base_len) ) {
         return *(tknzr->at + rel);
     } else {
         return 0;

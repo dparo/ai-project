@@ -1,5 +1,5 @@
 struct $(S) {
-    $(T) *base;
+    $(T) *base[];
     size_t num_elems;
     size_t max_elems;
 };
