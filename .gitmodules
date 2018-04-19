@@ -1,5 +1,5 @@
-[submodule "ext-deps/stb"]
-	path = ext-deps/stb
+[submodule "src/ext-deps/stb"]
+	path = src/ext-deps/stb
 	url = https://github.com/nothings/stb
 [submodule "docs/slides/reveal.js"]
 	path = docs/slides/reveal.js
