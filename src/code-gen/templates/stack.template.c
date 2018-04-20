@@ -22,7 +22,7 @@ $(S)_create_sized(size_t num_elems)
 struct $(S)
 $(S)_create(void)
 {
-    return $(S)_create_sized(sizeof(struct $(S)) * 64);
+    return $(S)_create_sized(sizeof($(T)) * 64);
 }
 
 
@@ -57,14 +57,14 @@ $(S)_grow(struct $(S) *s)
     $(S)_grow_to(s, new_max_elems);
 }
 
-static inline size_t
+inline size_t
 $(S)_num_elems(struct $(S) *s)
 {
     assert(s);
     return s->num_elems;
 }
 
-static inline bool
+inline bool
 $(S)_is_empty(struct $(S) *s)
 {
     assert(s);
@@ -72,16 +72,16 @@ $(S)_is_empty(struct $(S) *s)
 }
 
 
-$(T) *
+inline $(T) *
 $(S)_peek_addr (struct $(S) *s)
 {
     assert(s);
-    return & (s->base[(s->num_elems)]);
+    return & (s->base[(s->num_elems) - 1]);
 }
 
 
 // UNSAFE !!!!!
-$(T) *
+inline $(T) *
 $(S)_pop_addr (struct $(S) *s)
 {
     assert(s);
@@ -90,12 +90,20 @@ $(S)_pop_addr (struct $(S) *s)
     return result;
 }
 
-$(T)
+inline $(T)
 $(S)_pop (struct $(S) *s)
 {
     assert(s);
     return s->base[--(s->num_elems)];
 }
+
+inline $(T)
+$(S)_pop_discard (struct $(S) *s)
+{
+    assert(s);
+    --(s->num_elems);
+}
+
 
 static inline bool
 $(S)_enough_size_to_hold_n(struct $(S) *s,
@@ -119,7 +127,7 @@ $(S)_push( struct $(S) *s,
     s->num_elems ++;
 }
 
-static inline $(T) *
+inline $(T) *
 $(S)_begin(struct $(S) *s)
 {
     assert(s);
@@ -127,7 +135,7 @@ $(S)_begin(struct $(S) *s)
 }
 
 
-$(T) *
+inline $(T) *
 $(S)_end(struct $(S) *s)
 {
     assert(s);
@@ -137,7 +145,7 @@ $(S)_end(struct $(S) *s)
 
 
 
-static inline $(T) *
+inline $(T) *
 $(S)_next($(T) *prev)
 {
     assert(prev);
@@ -146,7 +154,7 @@ $(S)_next($(T) *prev)
 
 
 
-static inline $(T) *
+inline $(T) *
 $(S)_prev($(T) *prev)
 {
     assert(prev);

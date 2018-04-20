@@ -22,7 +22,7 @@ test2_create_sized(size_t num_elems)
 struct test2
 test2_create(void)
 {
-    return test2_create_sized(sizeof(struct test2) * 64);
+    return test2_create_sized(sizeof(struct tms*) * 64);
 }
 
 
@@ -57,14 +57,14 @@ test2_grow(struct test2 *s)
     test2_grow_to(s, new_max_elems);
 }
 
-static inline size_t
+inline size_t
 test2_num_elems(struct test2 *s)
 {
     assert(s);
     return s->num_elems;
 }
 
-static inline bool
+inline bool
 test2_is_empty(struct test2 *s)
 {
     assert(s);
@@ -72,16 +72,16 @@ test2_is_empty(struct test2 *s)
 }
 
 
-struct tms* *
+inline struct tms* *
 test2_peek_addr (struct test2 *s)
 {
     assert(s);
-    return & (s->base[(s->num_elems)]);
+    return & (s->base[(s->num_elems) - 1]);
 }
 
 
 // UNSAFE !!!!!
-struct tms* *
+inline struct tms* *
 test2_pop_addr (struct test2 *s)
 {
     assert(s);
@@ -90,12 +90,20 @@ test2_pop_addr (struct test2 *s)
     return result;
 }
 
-struct tms*
+inline struct tms*
 test2_pop (struct test2 *s)
 {
     assert(s);
     return s->base[--(s->num_elems)];
 }
+
+inline struct tms*
+test2_pop_discard (struct test2 *s)
+{
+    assert(s);
+    --(s->num_elems);
+}
+
 
 static inline bool
 test2_enough_size_to_hold_n(struct test2 *s,
@@ -119,7 +127,7 @@ test2_push( struct test2 *s,
     s->num_elems ++;
 }
 
-static inline struct tms* *
+inline struct tms* *
 test2_begin(struct test2 *s)
 {
     assert(s);
@@ -127,7 +135,7 @@ test2_begin(struct test2 *s)
 }
 
 
-struct tms* *
+inline struct tms* *
 test2_end(struct test2 *s)
 {
     assert(s);
@@ -137,7 +145,7 @@ test2_end(struct test2 *s)
 
 
 
-static inline struct tms* *
+inline struct tms* *
 test2_next(struct tms* *prev)
 {
     assert(prev);
@@ -146,7 +154,7 @@ test2_next(struct tms* *prev)
 
 
 
-static inline struct tms* *
+inline struct tms* *
 test2_prev(struct tms* *prev)
 {
     assert(prev);
