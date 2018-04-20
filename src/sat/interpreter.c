@@ -895,12 +895,12 @@ test_dpll_preprocess_print(struct interpreter *intpt)
 {
     struct ast *ast = & intpt->ast;
     struct ast_node *node;
-    size_t it;
+    size_t it = 0;
     // Debug expression printing
     printf("\n");
     for (struct ast_node *node = ast_end(ast);
          node != ast_begin(ast);
-         node -- ) {
+         node --, it ++ ) {
         printf("{text: \"%.*s\", index: %zu, num_args: %zu}\n", node->text_len, node->text, it, node->num_args);
     }
     printf("\n");

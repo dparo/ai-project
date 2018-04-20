@@ -20,7 +20,9 @@ dpll_conver_cnf( struct interpreter *intpt,
 {
     // biconditional elimination
     // implication elimination
-    
+
+
+    return NULL;
 }
 
 
