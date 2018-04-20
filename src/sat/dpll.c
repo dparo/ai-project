@@ -38,9 +38,9 @@ dpll_is_empty_clause( struct interpreter *intpt,
 {
     bool result = true;
 
-    for (struct ast_node *node = ast_begin(clauses_ast);
-         node != ast_end(clauses_ast);
-         node ++ ) {
+    for ( struct ast_node *node = ast_begin(clauses_ast);
+          node != ast_end(clauses_ast);
+          node ++ ) {
         if ( node->type == AST_NODE_TYPE_IDENTIFIER
              || node->type == AST_NODE_TYPE_CONSTANT) {
             result = false;

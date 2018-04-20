@@ -779,14 +779,17 @@ parse_meta ( Tokenizer *tknzr,
     int counter = 0;
 
     int num_parens = 0;
+    bool followed_by_paren = false;
     char c = tokenizer_deref(tknzr);
     assert(c == '$');
     c = tokenizer_deref_at(tknzr, +1);
     if ( c == '(')  {
+        followed_by_paren = true;
         tokenizer_adv_by(tknzr, 2);
         token->text = tknzr->at;
         num_parens = 1;
     } else {
+        followed_by_paren = false;
         tokenizer_adv_by(tknzr, 1);
         token->text = tknzr->at;
         num_parens = 0;
@@ -796,17 +799,21 @@ parse_meta ( Tokenizer *tknzr,
     for (; !tokenizer_is_end(tknzr); ++counter ) {
         char c = tokenizer_deref(tknzr);
         if (is_punctuator(c)) {
-            if ( c == '(') {
-                num_parens ++;
-            } else if ( c == ')') {
-                if (num_parens == 0 ) {
-                    tokenizer_adv(tknzr);
-                    counter--;
-                    break;
-                } else
-                    num_parens--;
-            } else {
+            if ( !followed_by_paren ){
                 break;
+            } else {
+                if ( c == '(') {
+                    num_parens ++;
+                } else if ( c == ')') {
+                    if (num_parens == 0 ) {
+                        tokenizer_adv(tknzr);
+                        counter--;
+                        break;
+                    } else
+                        num_parens--;
+                } else {
+                    break;
+                }
             }
         } else if (is_whitespace(tknzr)) {
             break;

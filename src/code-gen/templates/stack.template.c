@@ -26,6 +26,21 @@ $(S)_create(void)
 }
 
 
+struct $(S)
+$(S)_dup(struct $(S) *s)
+{
+    struct $S result;
+    const size_t size = s->$max_elems * sizeof($T);
+    result.$base = xmalloc(size);
+    assert(result.$base);
+
+    result.$num_elems = s->$num_elems;
+    result.$max_elems = s->$max_elems;
+
+    memcpy(result.$base, s->$base, s->$num_elems * sizeof($T));
+    return result;
+}
+
 void
 $(S)_free(struct $(S) *s)
 {

@@ -26,6 +26,21 @@ ast_node_stack_create(void)
 }
 
 
+struct ast_node_stack
+ast_node_stack_dup(struct ast_node_stack *s)
+{
+    struct ast_node_stack result;
+    const size_t size = s->max_nodes * sizeof(struct ast_node);
+    result.nodes = xmalloc(size);
+    assert(result.nodes);
+
+    result.num_nodes = s->num_nodes;
+    result.max_nodes = s->max_nodes;
+
+    memcpy(result.nodes, s->nodes, s->num_nodes * sizeof(struct ast_node));
+    return result;
+}
+
 void
 ast_node_stack_free(struct ast_node_stack *s)
 {
