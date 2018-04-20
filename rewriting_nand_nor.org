@@ -4,16 +4,20 @@
 
 Queste formule vanno verificate
 
-| OP                        | Nor First (Top root)                | Nand first                         |
-|---------------------------+-------------------------------------+------------------------------------+
-| ~a                        | (nor a a)                           | (nand a a)                         |
-| a & b                     | ~(nand a b)                         | ~(nor ~a ~b)                       |
-| a or b                    | ~(nand ~a ~b)                       | ~(nor a b)                         |
-| a xor b                   | ~(nand (~(nand ~a ~b)) (nor ~a ~b)) | ~(nor (~(nor a b)) (nand a b))     |
-| a -> b  == (~a or b )     | ~(nand a ~b)                        | ~(nor ~a b)                        |
-| a <-> b (Negato della xor | (nor (~(nor a b)) (nand a b))       | (nand (~(nand ~a ~b)) (nor ~a ~b)) |
+| OP                         | Nor First (Top root)                | Nand first                         | Verified |
+|----------------------------+-------------------------------------+------------------------------------+----------|
+| ~a                         | (nor a a)                           | (nand a a)                         | Yes      |
+| a & b                      | ~(nand a b)                         | ~(nor ~a ~b)                       | Yes      |
+| a or b                     | ~(nand ~a ~b)                       | ~(nor a b)                         |          |
+| a xor b                    | ~(nand (~(nand ~a ~b)) (nor ~a ~b)) | ~(nor (~(nor a b)) (nand a b))     |          |
+| a -> b  == (~a or b )      | ~(nand a ~b)                        | ~(nor ~a b)                        |          |
+| a <-> b (Negato della xor) | (nor (~(nor a b)) (nand a b))       | (nand (~(nand ~a ~b)) (nor ~a ~b)) |          |
 
 a ^ b = ~(a & b) & (a | b)
+
+
+~(F | G) == (~F & ~G)                    // legge di De Morgan
+
 
 // De morgan laws
 ~(F | G) == (~F & ~G)                    // legge di De Morgan

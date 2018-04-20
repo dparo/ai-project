@@ -19,7 +19,7 @@ enum operator {
     OPERATOR_IMPLY,
     OPERATOR_DOUBLE_IMPLY,
  
-    OPERATOR_EQUAL,
+    OPERATOR_EQUAL_EQUAL,
     OPERATOR_NOT_EQUAL,
     OPERATOR_GREATER,
     OPERATOR_GREATER_EQUAL,
@@ -27,7 +27,7 @@ enum operator {
     OPERATOR_LESS_EQUAL,
 
     OPERATOR_ASSIGN,
-    OPERATOR_CONCAT_AND_ASSIGN,
+    OPERATOR_CONCAT_ASSIGN,
     OPERATOR_CONCAT,
 
     OPERATOR_DEREF,
@@ -70,14 +70,14 @@ static const struct operator_infos {
     [OPERATOR_XOR] =               { 9, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_IMPLY] =             { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_DOUBLE_IMPLY] =      { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [OPERATOR_EQUAL] =             { 7, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_EQUAL_EQUAL] =             { 7, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_NOT_EQUAL] =         { 7, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_GREATER] =           { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_GREATER_EQUAL] =     { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_LESS] =              { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_LESS_EQUAL] =        { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_ASSIGN] =            { 14, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
-    [OPERATOR_CONCAT_AND_ASSIGN] = { 14, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_CONCAT_ASSIGN] =     { 14, 2, RIGHT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_CONCAT] =            { 2, 2,  LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_DEREF] =             { 0, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_FNCALL] =            { 0, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
@@ -491,8 +491,8 @@ ast_node_from_token( struct ast_node *node,
         case TT_PUNCT_BOTHDIR_ARROW: { node->op = OPERATOR_DOUBLE_IMPLY; } break;
         case TT_PUNCT_EQUAL: { node->op = OPERATOR_ASSIGN; } break;
         case TT_PUNCT_PLUS: { node->op = OPERATOR_CONCAT; } break;
-        case TT_PUNCT_ADDITION_EQUAL: { node->op = OPERATOR_CONCAT_AND_ASSIGN; } break;
-        case TT_PUNCT_EQUAL_EQUAL: { node->op = OPERATOR_EQUAL; } break;
+        case TT_PUNCT_ADDITION_EQUAL: { node->op = OPERATOR_CONCAT_ASSIGN; } break;
+        case TT_PUNCT_EQUAL_EQUAL: { node->op = OPERATOR_EQUAL_EQUAL; } break;
         case TT_PUNCT_NOT_EQUAL: { node->op = OPERATOR_NOT_EQUAL; } break;
         case TT_PUNCT_GREATER: { node->op = OPERATOR_GREATER; } break;
         case TT_PUNCT_GREATER_OR_EQUAL: { node->op = OPERATOR_GREATER_EQUAL; } break;

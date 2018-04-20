@@ -80,13 +80,38 @@ eval_operator( struct ast_node *node,
         v[i] = vm_stack_pop_value(vms);
     }
 
+    assert(ast_node_is_operator(node));
+    assert_msg(!is_delimiter(node), "We need to support stuff like function calls");
+
+    // The operator equal is not an expression it's a statement
+    // and should be handled in it's own way
+    assert(ast_node_is_operator(node) && node->op != OPERATOR_ASSIGN);
+    assert(ast_node_is_operator(node) && node->op != OPERATOR_CONCAT_ASSIGN);
+    assert(ast_node_is_operator(node) && node->op != OPERATOR_CONCAT);
+
+    assert(ast_node_is_operator(node) && node->op != OPERATOR_DEREF);
+    assert(ast_node_is_operator(node) && node->op != OPERATOR_FNCALL);
+    assert(ast_node_is_operator(node) && node->op != OPERATOR_INDEX);
+    assert(ast_node_is_operator(node) && node->op != OPERATOR_COMPOUND);
+
+    assert(ast_node_is_operator(node) && node->op != OPERATOR_ENUMERATE);
+    assert(ast_node_is_operator(node) && node->op != OPERATOR_EXIST);
+    assert(ast_node_is_operator(node) && node->op != OPERATOR_ON);
+    assert(ast_node_is_operator(node) && node->op != OPERATOR_IN);
+    
+    
     // NOTE v[0] Contains the last operand v[numberofoperands-1] contains the first operand
 
     switch (node->op) {
-            case OPERATOR_IMPLY: {
+    case OPERATOR_IMPLY: {
         // or equivalently
         // result = (!v[1]) || v[0];
         result = (v[1] == true && v[0] == false) ? false : true;
+        vm_stack_push(vms, result);
+    } break;
+
+    case OPERATOR_DOUBLE_IMPLY: {
+        result = !(v[0] ^ v[1]);
         vm_stack_push(vms, result);
     } break;
 
@@ -96,8 +121,19 @@ eval_operator( struct ast_node *node,
         vm_stack_push(vms, result);
     } break;
 
+    case OPERATOR_NAND: {
+        result = !(v[0] && v[1]);
+        vm_stack_push(vms, result);
+    } break;
+        
+        
     case OPERATOR_OR: {
         result = v[0] || v[1];
+        vm_stack_push(vms, result);
+    } break;
+        
+    case OPERATOR_NOR: {
+        result = !(v[0] || v[1]);
         vm_stack_push(vms, result);
     } break;
 
@@ -111,7 +147,7 @@ eval_operator( struct ast_node *node,
         vm_stack_push(vms, result);
     } break;
 
-    case OPERATOR_EQUAL: {
+    case OPERATOR_EQUAL_EQUAL: {
         result = (v[0] == v[1]);
         vm_stack_push(vms, result);
     } break;
@@ -836,7 +872,7 @@ eval_ast(struct interpreter *intpt )
 #if 0
         intpt_print_header(intpt);
 #else
-        // bruteforce_solve(intpt);
+        bruteforce_solve(intpt);
 #endif
         result = true;
     } else {
@@ -906,7 +942,7 @@ eval_commandline ( struct interpreter *intpt,
     if ( intpt_begin_frame(intpt)) {
         if ( ast_build_from_command( intpt, commandline, commandline_len ) ) {
             test_dpll(intpt);
-# if 1
+# if 0
             //ast_representation_dbglog(intpt);
 # else
             if ( eval_ast( intpt ) ) {
