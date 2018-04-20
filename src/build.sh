@@ -10,6 +10,7 @@ OUTPUT_PATH="../bin"
 
 if [ "$1" = "code-gen" ]; then
     set -x
+    rm __generated__/*
     gcc -g3 -std=gnu11  $BUILD_DEFS -D__DEBUG code-gen/main.c $INCLUDES -I./ -lm -o $OUTPUT_PATH/code-gen && ../bin/code-gen
 elif [ "$1" = "debug" ]; then
     set -x

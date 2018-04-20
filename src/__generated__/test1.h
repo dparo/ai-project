@@ -1,16 +1,16 @@
-struct $(S) {
-    $(T) *base;
+struct test1 {
+    struct tms* *base;
     size_t num_elems;
     size_t max_elems;
 };
 
 
-struct $(S)
-$(S)_create_sized(size_t num_elems)
+struct test1
+test1_create_sized(size_t num_elems)
 {
     assert(num_elems);
-    struct $(S) result;
-    size_t buf_size = num_elems * sizeof($(T));
+    struct test1 result;
+    size_t buf_size = num_elems * sizeof(struct tms*);
     result.base = xmalloc(buf_size);
     assert(result.base);
     result.num_elems = 0;
@@ -19,15 +19,15 @@ $(S)_create_sized(size_t num_elems)
 }
 
 
-struct $(S)
-$(S)_create(void)
+struct test1
+test1_create(void)
 {
-    return $(S)_create_sized(sizeof(struct $(S)) * 64);
+    return test1_create_sized(sizeof(struct test1) * 64);
 }
 
 
 void
-$(S)_destroy(struct $(S) *s)
+test1_destroy(struct test1 *s)
 {
     if ( s->base ) {
         free(s->base);
@@ -38,11 +38,11 @@ $(S)_destroy(struct $(S) *s)
 
 
 static inline void
-$(S)_grow_to( struct $(S) *s,
+test1_grow_to( struct test1 *s,
               size_t new_max_elems) /* Size in BYTES !!! */
 {
     assert(s);
-    size_t new_size = new_max_elems * sizeof($(T)) * 2;
+    size_t new_size = new_max_elems * sizeof(struct tms*) * 2;
     void *temp = xrealloc(s->base, new_size);
     assert(temp);
     s->base = temp;
@@ -50,30 +50,30 @@ $(S)_grow_to( struct $(S) *s,
 }
 
 static inline void
-$(S)_grow(struct $(S) *s)
+test1_grow(struct test1 *s)
 {
     assert(s);
     const size_t new_max_elems = s->max_elems * 2;
-    $(S)_grow_to(s, new_max_elems);
+    test1_grow_to(s, new_max_elems);
 }
 
 static inline size_t
-$(S)_num_elems(struct $(S) *s)
+test1_num_elems(struct test1 *s)
 {
     assert(s);
     return s->num_elems;
 }
 
 static inline bool
-$(S)_is_empty(struct $(S) *s)
+test1_is_empty(struct test1 *s)
 {
     assert(s);
-    return $(S)_num_elems(s);
+    return test1_num_elems(s);
 }
 
 
-$(T) *
-$(S)_peek_addr (struct $(S) *s)
+struct tms* *
+test1_peek_addr (struct test1 *s)
 {
     assert(s);
     return & (s->base[(s->num_elems)]);
@@ -81,24 +81,24 @@ $(S)_peek_addr (struct $(S) *s)
 
 
 // UNSAFE !!!!!
-$(T) *
-$(S)_pop_addr (struct $(S) *s)
+struct tms* *
+test1_pop_addr (struct test1 *s)
 {
     assert(s);
-    $(T) *result = $(S)_peek_addr(s);
+    struct tms* *result = test1_peek_addr(s);
     (s->num_elems)--;
     return result;
 }
 
-$(T)
-$(S)_pop (struct $(S) *s)
+struct tms*
+test1_pop (struct test1 *s)
 {
     assert(s);
     return s->base[--(s->num_elems)];
 }
 
 static inline bool
-$(S)_enough_size_to_hold_n(struct $(S) *s,
+test1_enough_size_to_hold_n(struct test1 *s,
                            size_t n)
 {
     assert(s);
@@ -107,28 +107,28 @@ $(S)_enough_size_to_hold_n(struct $(S) *s,
                  
 
 void
-$(S)_push( struct $(S) *s,
-           $(T) *elem )
+test1_push( struct test1 *s,
+           struct tms* *elem )
 {
     assert(elem);
     assert(s);
-    if ( ! $(S)_enough_size_to_hold_n(s, 1)) {
-        $(S)_grow(s);
+    if ( ! test1_enough_size_to_hold_n(s, 1)) {
+        test1_grow(s);
     }
     s->base[s->num_elems] = *elem;
     s->num_elems ++;
 }
 
-static inline $(T) *
-$(S)_begin(struct $(S) *s)
+static inline struct tms* *
+test1_begin(struct test1 *s)
 {
     assert(s);
     return s->base;
 }
 
 
-$(T) *
-$(S)_end(struct $(S) *s)
+struct tms* *
+test1_end(struct test1 *s)
 {
     assert(s);
     return & (s->base[s->num_elems]);
@@ -137,18 +137,18 @@ $(S)_end(struct $(S) *s)
 
 
 
-static inline $(T) *
-$(S)_next($(T) *prev)
+static inline struct tms* *
+test1_next(struct tms* *prev)
 {
     assert(prev);
-    return ($(T)*) ((uint8_t*) prev - sizeof(prev));
+    return (struct tms**) ((uint8_t*) prev - sizeof(prev));
 }
 
 
 
-static inline $(T) *
-$(S)_prev($(T) *prev)
+static inline struct tms* *
+test1_prev(struct tms* *prev)
 {
     assert(prev);
-    return ($(T)*) ((uint8_t*) prev + sizeof(prev));
+    return (struct tms**) ((uint8_t*) prev + sizeof(prev));
 }

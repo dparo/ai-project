@@ -54,6 +54,9 @@
 #include "interpreter.c"
 
 
+#include "test1.h"
+#include "test2.h"
+
 #include <readline/readline.h>
 #include <readline/history.h>
 

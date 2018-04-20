@@ -130,17 +130,17 @@ struct meta_generate_infos mgi[] =
 {
     { {.type = META_REPLACEMENT_RULE_STACK,
        .fn_replacement_rule = & stack_template_replace,
-       .stack_name = "ast",
-       .node_type_name = "ast_node" },
-      "code-gen/templates/stack.template.c", "__generated__/ast.h",
+       .stack_name = "test1",
+       .node_type_name = "struct tms*" },
+      "code-gen/templates/stack.template.c", "__generated__/test1.h",
       {0}
     },
 
     { {.type = META_REPLACEMENT_RULE_STACK,
        .fn_replacement_rule = & stack_template_replace,
-       .stack_name = "token_stack",
-       .node_type_name = "Token" },
-      "code-gen/templates/stack.template.c", "__generated__/token_stack.h",
+       .stack_name = "test2",
+       .node_type_name = "struct tms*" },
+      "code-gen/templates/stack.template.c", "__generated__/test2.h",
       {0}
     },
 
@@ -242,13 +242,12 @@ mgi_execute(void)
         }
 
     next_it:
+        if (buffer)
+            free(buffer);
         if (input_file)
             fclose(input_file);
         if (output_file)
             fclose(output_file);
-        if (tknzr.base) {
-            free(tknzr.base);
-        }
     }
 
 }
