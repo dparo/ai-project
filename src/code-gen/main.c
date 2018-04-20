@@ -87,7 +87,10 @@ struct meta_replacement_rule {
         // Stack replacement rule
         struct {
             char *stack_name;
-            char *node_type_name;
+            char *stack_node_type_name;
+            char *stack_base_pointer_name;
+            char *stack_num_elems_name;
+            char *stack_max_elems_name;
         };
     };
 };
@@ -105,20 +108,62 @@ struct meta_generate_infos {
     struct meta_generate_infos_internal mgii; // Reserved CLEAR TO ZERO
 };
 
+bool
+match_token(Token *token,
+            Token_Type type,
+            char *string )
+{
+    if ( token->type != type ) return false;
+    return strncmp(string, token->text, token->text_len) == 0;
+}
+
+
+bool
+match_meta_token(Token *t,
+                 char *string )
+{
+    return match_token(t, TT_META, string);
+}
+
+void
+print_replaced_param(FILE *f,
+                     Token *token,
+                     char *replacer,
+                     char *string_if_missing)
+{
+    char *string;
+    bool print_token = false;
+    if ( replacer ) {
+        string = replacer;
+    } else if (string_if_missing) {
+        string = string_if_missing;
+    } else {
+        string = token->text;
+        print_token = true;
+    }
+
+    if (print_token) {
+        log_token(token, f);
+    } else {
+        fputs(string, f);
+    }
+}
 
 
 void stack_template_replace( FILE *f,
                              Token *token,
                              struct meta_replacement_rule *rule)
 {
-    if ( token->type == TT_META ) {
-        if (strncmp("S", token->text, token->text_len) == 0 ) {
-            fprintf(f, rule->stack_name);
-        } else if (strncmp("T", token->text, token->text_len) == 0 ) {
-            fprintf(f, rule->node_type_name);
-        } else {
-            log_token( token, f);
-        }
+    if (match_meta_token(token, "S")) {
+        print_replaced_param(f, token, rule->stack_name, "`MISSING NAME`");
+    } else if (match_meta_token(token, "T")) {
+        print_replaced_param(f, token, rule->stack_node_type_name, "`MISSING TYPE`");
+    } else if (match_meta_token(token, "base")) {
+        print_replaced_param(f, token, rule->stack_base_pointer_name, "base");
+    } else if (match_meta_token(token, "num_elems")) {
+        print_replaced_param(f, token, rule->stack_num_elems_name, "num_elems");
+    } else if (match_meta_token(token, "max_elems")) {
+        print_replaced_param(f, token, rule->stack_max_elems_name, "max_elems");
     } else {
         log_token(token, f);
     }
@@ -130,17 +175,23 @@ struct meta_generate_infos mgi[] =
 {
     { {.type = META_REPLACEMENT_RULE_STACK,
        .fn_replacement_rule = & stack_template_replace,
-       .stack_name = "test1",
-       .node_type_name = "struct tms*" },
-      "code-gen/templates/stack.template.c", "__generated__/test1.h",
+       .stack_name = "ast",
+       .stack_node_type_name = "struct ast_node",
+       .stack_base_pointer_name = "nodes",
+       .stack_num_elems_name = "num_nodes",
+       .stack_max_elems_name = "max_nodes"},
+      "code-gen/templates/stack.template.c", "__generated__/ast.h",
       {0}
     },
 
     { {.type = META_REPLACEMENT_RULE_STACK,
        .fn_replacement_rule = & stack_template_replace,
-       .stack_name = "test2",
-       .node_type_name = "struct tms*" },
-      "code-gen/templates/stack.template.c", "__generated__/test2.h",
+       .stack_name = "ast_node_stack",
+       .stack_node_type_name = "struct ast_node",
+       .stack_base_pointer_name = "nodes",
+       .stack_num_elems_name = "num_nodes",
+       .stack_max_elems_name = "max_nodes"},
+      "code-gen/templates/stack.template.c", "__generated__/ast_node_stack.h",
       {0}
     },
 

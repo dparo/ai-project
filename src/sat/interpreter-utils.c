@@ -15,30 +15,8 @@
 #pragma GCC diagnostic pop
 
 
-#define BOOL_PACKED_ARRAY_NELEMS(bitscount, typeof_arraymember)  \
-    ((((bitscount) - 1) / (sizeof(typeof_arraymember) * 8)) + 1)
-
-#define BOOL_PACKED_ARRAY_SIZE(bitscount, typeof_arraymember)           \
-    BOOL_PACKED_ARRAY_NELEMS(bitscount, typeof_arraymember) * sizeof(typeof_arraymember)
-
-#define BOOL_PACK_INTO_ARRAY(val, bit_index, array, array_num_members, typeof_arraymember) \
-    do {                                                                \
-        assert(bit_index < (array_num_members) * sizeof(typeof_arraymember) * 8); \
-        size_t ___index___ = ((size_t)bit_index) / ( sizeof(typeof_arraymember) * 8); \
-        (array)[___index___] =                                          \
-            (typeof_arraymember)((array)[___index___]                   \
-                                 & ~((typeof_arraymember)1 << ((size_t)(bit_index) - ___index___ * sizeof(typeof_arraymember) * 8))) \
-            | (typeof_arraymember)(val) << ((size_t)(bit_index) - ___index___ * sizeof(typeof_arraymember) * 8); \
-    } while(0)
-
-#define BOOL_UNPACK_FROM_ARRAY(bit_index, array, array_num_members, typeof_arraymember) \
-    (assert(bit_index < (array_num_members) * sizeof(typeof_arraymember) * 8), \
-     (((array)[((size_t)(((size_t)bit_index) / ( sizeof(typeof_arraymember) * 8)))] \
-       & ((typeof_arraymember) 1 << (((size_t)(bit_index) - ((size_t)(((size_t)bit_index) \
-                                                                      / ( sizeof(typeof_arraymember) * 8))) * sizeof(typeof_arraymember) * 8)))) \
-      >> ((size_t)(bit_index) - ((size_t)(((size_t)bit_index) / ( sizeof(typeof_arraymember) * 8))) * sizeof(typeof_arraymember) * 8))) \
-
-
+#include "ast.h"
+#include "ast_node_stack.h"
 
 struct symbol_info {
     bool has_value_assigned;
@@ -55,14 +33,6 @@ struct symtable {
     size_t num_syms;
     struct symbol_info syms[SYMTABLE_STACK_MAX_SYMBOLS_COUNT];
 };
-
-struct ast_node_stack {
-#define AST_NODE_STACK_MAX_NODES_COUNT 1024
-    size_t num_nodes;
-    struct ast_node nodes[AST_NODE_STACK_MAX_NODES_COUNT];
-};
-
-typedef uint32_t packed_bool;
 
 struct vm_stack {
 #define VM_STACK_MAX_NUMBITS 1024
@@ -99,16 +69,6 @@ struct vm_outputs {
     enum vm_outputs_cache *col_cache;
     packed_bool *outputs;   // 2D array of results
 };
-
-
-
-
-struct ast {
-#define AST_MAX_NODES_COUNT 1024
-    struct ast_node nodes[AST_MAX_NODES_COUNT];
-    size_t num_nodes;
-};
-
 
 
 //#######################################################
@@ -154,57 +114,16 @@ vm_inputs_size(struct vm_inputs *vmi)
 
 
 void
-ast_node_stack_push(struct ast_node_stack *stack,
-                    struct ast_node *node)
-{
-    assert(stack->num_nodes != AST_NODE_STACK_MAX_NODES_COUNT);
-    stack->nodes[(stack->num_nodes) ++] = *node;
-}
-
-
-struct ast_node*
-ast_node_stack_peek_addr(struct ast_node_stack *stack)
-{
-    assert(stack->num_nodes);
-    return &(stack->nodes[stack->num_nodes - 1]);
-}
-
-void
-ast_node_stack_pop(struct ast_node_stack *stack)
-{
-    assert(stack->num_nodes);
-    (stack->num_nodes) --;
-}
-
-struct ast_node
-ast_node_stack_pop_value(struct ast_node_stack *stack)
-{
-    assert(stack->num_nodes);
-    struct ast_node result = stack->nodes[--(stack->num_nodes)];
-    return result;
-}
-
-
-
-// Highly discouraged pointer may point to invalid
-// memory after a new push
-struct ast_node*
-ast_node_stack_pop_value_addr(struct ast_node_stack *stack)
-{
-    assert(stack->num_nodes);
-    struct ast_node *result = &(stack->nodes[--(stack->num_nodes)]);
-    return result;
-}
-
-void
 ast_node_stack_dbglog(struct ast_node_stack *stack)
 {
     assert(stack);
-    printf("{ stack->num_nodes = %zu", stack->num_nodes);
-    for ( size_t i = 0; i < stack->num_nodes; i++ ) {
+    printf("{ stack->num_nodes = %zu", ast_node_stack_num_nodes(stack));
+    for ( struct ast_node *it = ast_node_stack_begin(stack);
+          it != ast_node_stack_end(stack);
+          it ++ ) {
         printf(", [\"");
-        ast_node_print(stdout, & (stack->nodes[i]));
-        printf("\"]{%d}", (stack->nodes)[i].num_operands);
+        ast_node_print(stdout, it);
+        printf("\"]{%d}", it->num_operands);
     }
     printf(" }\n");
 }
@@ -246,46 +165,20 @@ vm_stack_pop_value(struct vm_stack *stack)
 
 
 
-void
-ast_clear( struct ast *ast )
-{
-    assert(ast);
-    ast->num_nodes = 0;
-}
-
-#define ast_for( iterator, ast, node)                  \
-    for (((iterator) = 0), ((node) = (ast).nodes);     \
-         ((iterator) < (ast).num_nodes);               \
-         ((node) = & ((ast).nodes[++(iterator)])))     \
-        if (true)
-
-#define ast_for_bwd( iterator, ast, node)                   \
-    for (( (iterator) = ((ast).num_nodes - 1)),             \
-             ((node) = (ast).nodes + (ast).num_nodes - 1);  \
-         (iterator) >= 0;                                   \
-         ((node) = & ((ast).nodes[--(iterator)])))          \
-        if (true)
-
 #define ast_symtable_for(iterator, symtable, key, value)         \
     stb_sdict_for((symtable)->dict, (iterator), (key), value)    \
-
-void
-ast_push(struct ast *ast,
-         struct ast_node *node)
-{
-    assert(ast->num_nodes != AST_MAX_NODES_COUNT);
-    ast->nodes[(ast->num_nodes) ++] = *node;
-}
 
 void
 ast_dbglog(struct ast* ast)
 {
     assert(ast);
-    printf("{ ast->num_nodes = %zu", ast->num_nodes);
-    for ( size_t i = 0; i < ast->num_nodes; i++ ) {
+    printf("{ ast->num_nodes = %zu", ast_num_nodes(ast));
+    for ( struct ast_node *it = ast_begin(ast);
+          it != ast_end(ast);
+          it ++ ) {
         printf(", [\"");
-        ast_node_print(stdout, & ast->nodes[i]);
-        printf("\"]{%d}", (ast->nodes[i]).num_operands);
+        ast_node_print(stdout, it);
+        printf("\"]{%d}", it->num_operands);
     }
     printf(" }\n");
 }

@@ -358,7 +358,7 @@ ast_get_operand_index( struct ast *ast,
     uint it = 1;
     do {
         assert(it > 0);
-        struct ast_node *node = &(ast->nodes[fixed_index]);                
+        struct ast_node *node = &(ast->nodes[fixed_index]);
         if ( operand_num == (it) &&
              fixed_index != operator_index) {
             break;

@@ -49,13 +49,12 @@
 #define LANGUAGE_C_IMPL
 #include "language.c"
 
+#define MEM_LAYOUT_C_IMPL
+#include "mem-layout.c"
 
 #define INTERPRETER_C_IMPL
 #include "interpreter.c"
 
-
-#include "test1.h"
-#include "test2.h"
 
 #include <readline/readline.h>
 #include <readline/history.h>
