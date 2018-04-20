@@ -27,7 +27,7 @@ $(S)_create(void)
 
 
 void
-$(S)_destroy(struct $(S) *s)
+$(S)_clear(struct $(S) *s)
 {
     if ( s->base ) {
         free(s->base);
