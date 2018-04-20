@@ -27,11 +27,18 @@ $(S)_create(void)
 
 
 void
-$(S)_clear(struct $(S) *s)
+$(S)_free(struct $(S) *s)
 {
     if ( s->$(base) ) {
         free(s->$(base));
     }
+    s->$(base) = 0;
+}
+
+void
+$(S)_clear(struct $(S) *s)
+{
+    $(S)_free(s);
     s->$(num_elems) = 0;
     s->$(max_elems) = 0;
 }
@@ -43,6 +50,9 @@ $(S)_grow_to( struct $(S) *s,
 {
     assert(s);
     size_t new_size = new_$(max_elems) * sizeof($(T)) * 2;
+    if ( new_size == 0 ) {
+        new_size = 64 * sizeof($(T));
+    }
     void *temp = xrealloc(s->$(base), new_size);
     assert(temp);
     s->$(base) = temp;
@@ -58,14 +68,14 @@ $(S)_grow(struct $(S) *s)
 }
 
 
-inline size_t
+static inline size_t
 $(S)_$(num_elems)(struct $(S) *s)
 {
     assert(s);
     return s->$(num_elems);
 }
 
-inline bool
+static inline bool
 $(S)_is_empty(struct $(S) *s)
 {
     assert(s);
@@ -73,7 +83,7 @@ $(S)_is_empty(struct $(S) *s)
 }
 
 
-inline $(T) *
+static inline $(T) *
 $(S)_peek_addr (struct $(S) *s)
 {
     assert(s);
@@ -82,7 +92,7 @@ $(S)_peek_addr (struct $(S) *s)
 
 
 // UNSAFE !!!!!
-inline $(T) *
+static inline $(T) *
 $(S)_pop_addr (struct $(S) *s)
 {
     assert(s);
@@ -91,14 +101,14 @@ $(S)_pop_addr (struct $(S) *s)
     return result;
 }
 
-inline $(T)
+static inline $(T)
 $(S)_pop (struct $(S) *s)
 {
     assert(s);
     return s->$(base)[--(s->$(num_elems))];
 }
 
-inline $(T)
+static inline $(T)
 $(S)_pop_discard (struct $(S) *s)
 {
     assert(s);
@@ -111,7 +121,7 @@ $(S)_enough_size_to_hold_n(struct $(S) *s,
                            size_t n)
 {
     assert(s);
-    return (& s->$(base)[s->$(num_elems) + n]) == & (s->$(base)[s->$(max_elems)]);
+    return (& s->$(base)[s->$(num_elems) + n]) < & (s->$(base)[s->$(max_elems)]);
 }
                  
 
@@ -128,7 +138,7 @@ $(S)_push( struct $(S) *s,
     s->$(num_elems) ++;
 }
 
-inline $(T) *
+static inline $(T) *
 $(S)_begin(struct $(S) *s)
 {
     assert(s);
@@ -136,7 +146,7 @@ $(S)_begin(struct $(S) *s)
 }
 
 
-inline $(T) *
+static inline $(T) *
 $(S)_end(struct $(S) *s)
 {
     assert(s);

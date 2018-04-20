@@ -27,11 +27,18 @@ ast_node_stack_create(void)
 
 
 void
-ast_node_stack_clear(struct ast_node_stack *s)
+ast_node_stack_free(struct ast_node_stack *s)
 {
     if ( s->nodes ) {
         free(s->nodes);
     }
+    s->nodes = 0;
+}
+
+void
+ast_node_stack_clear(struct ast_node_stack *s)
+{
+    ast_node_stack_free(s);
     s->num_nodes = 0;
     s->max_nodes = 0;
 }
@@ -43,6 +50,9 @@ ast_node_stack_grow_to( struct ast_node_stack *s,
 {
     assert(s);
     size_t new_size = new_max_nodes * sizeof(struct ast_node) * 2;
+    if ( new_size == 0 ) {
+        new_size = 64 * sizeof(struct ast_node);
+    }
     void *temp = xrealloc(s->nodes, new_size);
     assert(temp);
     s->nodes = temp;
@@ -58,14 +68,14 @@ ast_node_stack_grow(struct ast_node_stack *s)
 }
 
 
-inline size_t
+static inline size_t
 ast_node_stack_num_nodes(struct ast_node_stack *s)
 {
     assert(s);
     return s->num_nodes;
 }
 
-inline bool
+static inline bool
 ast_node_stack_is_empty(struct ast_node_stack *s)
 {
     assert(s);
@@ -73,7 +83,7 @@ ast_node_stack_is_empty(struct ast_node_stack *s)
 }
 
 
-inline struct ast_node *
+static inline struct ast_node *
 ast_node_stack_peek_addr (struct ast_node_stack *s)
 {
     assert(s);
@@ -82,7 +92,7 @@ ast_node_stack_peek_addr (struct ast_node_stack *s)
 
 
 // UNSAFE !!!!!
-inline struct ast_node *
+static inline struct ast_node *
 ast_node_stack_pop_addr (struct ast_node_stack *s)
 {
     assert(s);
@@ -91,14 +101,14 @@ ast_node_stack_pop_addr (struct ast_node_stack *s)
     return result;
 }
 
-inline struct ast_node
+static inline struct ast_node
 ast_node_stack_pop (struct ast_node_stack *s)
 {
     assert(s);
     return s->nodes[--(s->num_nodes)];
 }
 
-inline struct ast_node
+static inline struct ast_node
 ast_node_stack_pop_discard (struct ast_node_stack *s)
 {
     assert(s);
@@ -111,7 +121,7 @@ ast_node_stack_enough_size_to_hold_n(struct ast_node_stack *s,
                            size_t n)
 {
     assert(s);
-    return (& s->nodes[s->num_nodes + n]) == & (s->nodes[s->max_nodes]);
+    return (& s->nodes[s->num_nodes + n]) < & (s->nodes[s->max_nodes]);
 }
                  
 
@@ -128,7 +138,7 @@ ast_node_stack_push( struct ast_node_stack *s,
     s->num_nodes ++;
 }
 
-inline struct ast_node *
+static inline struct ast_node *
 ast_node_stack_begin(struct ast_node_stack *s)
 {
     assert(s);
@@ -136,7 +146,7 @@ ast_node_stack_begin(struct ast_node_stack *s)
 }
 
 
-inline struct ast_node *
+static inline struct ast_node *
 ast_node_stack_end(struct ast_node_stack *s)
 {
     assert(s);

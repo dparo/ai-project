@@ -27,11 +27,18 @@ ast_create(void)
 
 
 void
-ast_clear(struct ast *s)
+ast_free(struct ast *s)
 {
     if ( s->nodes ) {
         free(s->nodes);
     }
+    s->nodes = 0;
+}
+
+void
+ast_clear(struct ast *s)
+{
+    ast_free(s);
     s->num_nodes = 0;
     s->max_nodes = 0;
 }
@@ -43,6 +50,9 @@ ast_grow_to( struct ast *s,
 {
     assert(s);
     size_t new_size = new_max_nodes * sizeof(struct ast_node) * 2;
+    if ( new_size == 0 ) {
+        new_size = 64 * sizeof(struct ast_node);
+    }
     void *temp = xrealloc(s->nodes, new_size);
     assert(temp);
     s->nodes = temp;
@@ -58,14 +68,14 @@ ast_grow(struct ast *s)
 }
 
 
-inline size_t
+static inline size_t
 ast_num_nodes(struct ast *s)
 {
     assert(s);
     return s->num_nodes;
 }
 
-inline bool
+static inline bool
 ast_is_empty(struct ast *s)
 {
     assert(s);
@@ -73,7 +83,7 @@ ast_is_empty(struct ast *s)
 }
 
 
-inline struct ast_node *
+static inline struct ast_node *
 ast_peek_addr (struct ast *s)
 {
     assert(s);
@@ -82,7 +92,7 @@ ast_peek_addr (struct ast *s)
 
 
 // UNSAFE !!!!!
-inline struct ast_node *
+static inline struct ast_node *
 ast_pop_addr (struct ast *s)
 {
     assert(s);
@@ -91,14 +101,14 @@ ast_pop_addr (struct ast *s)
     return result;
 }
 
-inline struct ast_node
+static inline struct ast_node
 ast_pop (struct ast *s)
 {
     assert(s);
     return s->nodes[--(s->num_nodes)];
 }
 
-inline struct ast_node
+static inline struct ast_node
 ast_pop_discard (struct ast *s)
 {
     assert(s);
@@ -111,7 +121,7 @@ ast_enough_size_to_hold_n(struct ast *s,
                            size_t n)
 {
     assert(s);
-    return (& s->nodes[s->num_nodes + n]) == & (s->nodes[s->max_nodes]);
+    return (& s->nodes[s->num_nodes + n]) < & (s->nodes[s->max_nodes]);
 }
                  
 
@@ -128,7 +138,7 @@ ast_push( struct ast *s,
     s->num_nodes ++;
 }
 
-inline struct ast_node *
+static inline struct ast_node *
 ast_begin(struct ast *s)
 {
     assert(s);
@@ -136,7 +146,7 @@ ast_begin(struct ast *s)
 }
 
 
-inline struct ast_node *
+static inline struct ast_node *
 ast_end(struct ast *s)
 {
     assert(s);

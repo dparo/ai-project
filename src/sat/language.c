@@ -243,6 +243,7 @@ void
 ast_node_invalidate(struct ast_node *node)
 {
     assert(node);
+    *node = (struct ast_node) {0};
     node->type = AST_NODE_TYPE_NONE;
 }
 

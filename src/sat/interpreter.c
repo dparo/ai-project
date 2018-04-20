@@ -23,8 +23,6 @@ struct interpreter {
 
 
 
-
-
 PRINTF_STYLE(2, 3)
 static inline int
 intpt_out_printf ( struct interpreter *intpt,
@@ -41,6 +39,8 @@ intpt_out_printf ( struct interpreter *intpt,
     va_end(ap);
     return result;
 }
+
+
 
 PRINTF_STYLE(2, 3)
 static inline int
@@ -279,10 +279,9 @@ eval_entire_expr( struct interpreter *intpt )
     // But this check will probably implemented by the preprocessor,
     // so this if could become just an assert.
     if ( vms->bits ) {
-        struct ast_node *node;
-        size_t it;
-    
-        ast_for(it, *ast, node) {
+        for (struct ast_node *node = ast_begin(ast);
+             node != ast_end(ast);
+             node ++ ) {
             if ( node->type == AST_NODE_TYPE_IDENTIFIER  || node->type == AST_NODE_TYPE_CONSTANT) {
                 bool value;
                 if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
@@ -315,9 +314,9 @@ void
 symtable_build_from_ast ( struct symtable *symtable,
                           struct ast *ast )
 {
-    struct ast_node *node;
-    size_t it;
-    ast_for(it, *ast, node) {
+    for (struct ast_node *node = ast_begin(ast);
+         node != ast_end(ast);
+         node ++ ) {
         if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
             if (! symtable_is_sym( symtable, node->text, node->text_len )) {
                 symtable_add_identifier(symtable, node->text, node->text_len);
@@ -420,9 +419,10 @@ intpt_print_header( struct interpreter *intpt)
         print_tab(intpt);
     }
 
-    struct ast_node *node;
-    size_t it;
-    ast_for(it, *ast, node) {
+    size_t it = 0;
+    for (struct ast_node *node = ast_begin(ast);
+         node != ast_end(ast);
+         node ++, it++ ) {
         if ( ast_node_is_operator(node) ) {
             ast_print_expr(intpt, it);
             print_tab(intpt);
@@ -481,12 +481,13 @@ void
 ast_representation_dbglog(struct interpreter *intpt)
 {
     struct ast *ast = & intpt->ast;
-    struct ast_node *node;
     size_t it;
 
     intpt_info_printf(intpt, "AST DEBUG LOG: ################################\n");
     // Debug expression printing
-    ast_for(it, *ast, node) {
+    for (struct ast_node *node = ast_begin(ast);
+         node != ast_end(ast);
+         node ++, it++ ) {
         if ( ast_node_is_operator(node) ) {
             ast_print_expr(intpt, it);
             print_tab(intpt);
@@ -559,11 +560,12 @@ ast_to_prenex_form( struct interpreter *intpt)
 {
 
     assert_msg(0, "Needs implementation, for now we always suppose to have prenex formula");
-    int it;
+    size_t it = 0;
     struct ast *ast = & (intpt->ast);
-    struct ast_node *node;
-    
-    ast_for_bwd(it, *ast, node) {
+
+    for (struct ast_node *node = ast_end(ast);
+         node != ast_begin(ast);
+         node --, it++ ) {
         size_t num_operands = operator_num_operands(node);
         for(size_t operands = 1; operands <= num_operands; operands++) {
             size_t operand_index = ast_get_operand_index( ast, it, operands);
@@ -634,7 +636,12 @@ ast_build_from_command ( struct interpreter *intpt,
     // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 
     // operator stack
-    static struct ast_node_stack stack;
+
+    fprintf(stderr, "FIX ME " __FILE__ " need clearing between calls");
+    struct ast_node_stack stack = ast_node_stack_create_sized(1024);
+
+
+    
     stack.num_nodes = 0;
 
 
@@ -774,10 +781,11 @@ ast_build_from_command ( struct interpreter *intpt,
     ast_node_stack_dbglog( & stack );
     ast_dbglog( ast );
     printf("\n");
-
+    ast_node_stack_clear(&stack);
     return true;
     
 parse_failed: {
+        ast_node_stack_clear(&stack);
         intpt_info_printf(intpt, " ### Failed formula parsing\n");
         return false;
     }
@@ -827,9 +835,9 @@ preprocess_command ( struct interpreter *intpt )
     struct ast *ast = & intpt->ast;
     struct symtable *symtable = & intpt->symtable;
 
-    struct ast_node *node;
-    int it;
-    ast_for_bwd(it, *ast, node) {
+    for (struct ast_node *node = ast_end(ast);
+         node != ast_begin(ast);
+         node -- ) {
         if ( node->type == AST_NODE_TYPE_CONSTANT ) {
             bool valid = valid_constant(node);
             if ( ! valid ) {
@@ -890,7 +898,9 @@ test_dpll_preprocess_print(struct interpreter *intpt)
     size_t it;
     // Debug expression printing
     printf("\n");
-    ast_for(it, *ast, node) {
+    for (struct ast_node *node = ast_end(ast);
+         node != ast_begin(ast);
+         node -- ) {
         printf("{text: \"%.*s\", index: %zu, num_args: %zu}\n", node->text_len, node->text, it, node->num_args);
     }
     printf("\n");
@@ -906,29 +916,6 @@ test_dpll_preprocess_print(struct interpreter *intpt)
     printf("############\n");
 }
 
-void
-test_dpll(struct interpreter *intpt)
-{
-    if (preprocess_command (intpt)) {
-        dpll_preprocess(intpt, & intpt->ast);
-        test_dpll_preprocess_print(intpt);
-        struct symbol_info *syminfo = symtable_get_syminfo(& (intpt->symtable), strdup("a"), 1);
-        if ( syminfo ) {
-            printf("Assigning value to the variable\n\n");
-            syminfo->has_value_assigned = true;
-            syminfo->value = 1;
-            dpll_preprocess(intpt, & intpt->ast);
-            test_dpll_preprocess_print(intpt);
-
-        } else {
-            fprintf(stderr, "TEST_DPLL: Failed to find the requested variable");
-        }
-               
-        
-    } else {
-        fprintf(stderr, "Failed to preprocess command");
-    }
-}
 
 
 
@@ -941,8 +928,9 @@ eval_commandline ( struct interpreter *intpt,
     
     if ( intpt_begin_frame(intpt)) {
         if ( ast_build_from_command( intpt, commandline, commandline_len ) ) {
-            test_dpll(intpt);
+            
 # if 0
+            test_dpll(intpt);
             //ast_representation_dbglog(intpt);
 # else
             if ( eval_ast( intpt ) ) {

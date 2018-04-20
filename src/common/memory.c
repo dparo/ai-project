@@ -26,10 +26,9 @@ void *
 xrealloc(void *ptr, size_t newsize)
 {
     void *result = realloc(ptr, newsize);
-
     if (!result) {
         char err_msg[256];
-        snprintf(err_msg, sizeof(err_msg), "MEM: Failed to reallocate %zu bytes of memory", newsize);
+        snprintf(err_msg, sizeof(err_msg), "MEM: Failed to reallocate %zu bytes of memory -> ERRNO", newsize);
         perror(err_msg);
     }
     return result;

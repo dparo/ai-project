@@ -35,9 +35,10 @@ dpll_is_empty_clause( struct interpreter *intpt,
                       struct ast *clauses_ast )
 {
     bool result = true;
-    size_t it = 0;
-    struct ast_node *node = NULL;
-    ast_for ( it, *clauses_ast, node ) {
+
+    for (struct ast_node *node = ast_begin(clauses_ast);
+         node != ast_end(clauses_ast);
+         node ++ ) {
         if ( node->type == AST_NODE_TYPE_IDENTIFIER
              || node->type == AST_NODE_TYPE_CONSTANT) {
             result = false;
@@ -57,8 +58,9 @@ dpll_is_consistent( struct interpreter *intpt,
     struct ast_node *node = NULL;
 
 
-    size_t it = 0;
-    ast_for(it, *clauses_ast, node) {
+    for (struct ast_node *node = ast_begin(clauses_ast);
+         node != ast_end(clauses_ast);
+         node ++ ) {
         if ( ast_node_is_operator(node) ) {
             if (node->op != OPERATOR_AND) {
                 result = false;
@@ -338,9 +340,9 @@ void
 dpll_preprocess ( struct interpreter *intpt,
                   struct ast         *clauses_ast)
 {
-    size_t it = 0;
-    struct ast_node *node = NULL;
-    ast_for ( it, *clauses_ast, node ) {
+    for (struct ast_node *node = ast_begin(clauses_ast);
+         node != ast_end(clauses_ast);
+         node ++ ) {
         // Important in this { if / else if / else } match the constants & identifiers first.
         if (node->type == AST_NODE_TYPE_CONSTANT ) {
             node->num_args = 0;     // No functional dependence
@@ -485,9 +487,10 @@ dpll_solve(struct interpreter *intpt,
 /*    for every literal l that occurs pure in Φ */
 /*       Φ ← pure-literal-assign(l, Φ); */
     {
-        struct ast_node *node = NULL;
-        size_t it = 0;
-        ast_for(it, *clauses_ast, node) {
+        for (struct ast_node *node = ast_begin(clauses_ast);
+             node != ast_end(clauses_ast);
+             node ++) {
+
             if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
                 bool appears_negated;
                 bool is_pure = dpll_is_pure_literal( intpt, clauses_ast, node, & appears_negated );
@@ -504,17 +507,19 @@ dpll_solve(struct interpreter *intpt,
     /*    l ← choose-literal(Φ); */
     /*    return DPLL(Φ ∧ {l}) or DPLL(Φ ∧ {not(l)}); */
     {
-        struct ast_node *pick = NULL;
-        size_t it = 0;
-        ast_for(it, *clauses_ast, pick) {
+        struct ast_node *pick = ast_begin(clauses_ast);
+        for ( ;
+             pick != ast_end(clauses_ast);
+             pick ++ ) {
             if ( pick->type == AST_NODE_TYPE_IDENTIFIER ) {
                 break;
             }
         }
         assert(pick);
         
-        struct ast_node *node = NULL;
-        ast_for(it, *clauses_ast, node) {
+        for (struct ast_node *node = ast_begin(clauses_ast);
+             node != ast_end(clauses_ast);
+             node ++ ) {
             if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
                 if ( strncmp(pick->text, node->text, MIN(pick->text_len, node->text_len)) == 0 ) {
                     const bool value = 1;
@@ -527,7 +532,9 @@ dpll_solve(struct interpreter *intpt,
         result = dpll_solve(intpt, clauses_ast);
 
         if ( !result ) { // short circuit optimization 
-            ast_for(it, *clauses_ast, node) {
+            for (struct ast_node *node = ast_begin(clauses_ast);
+                 node != ast_end(clauses_ast);
+                 node ++ ) {
                 if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
                     if ( strncmp(pick->text, node->text, MIN(pick->text_len, node->text_len)) == 0 ) {
                         const bool value = 1;
