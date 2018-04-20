@@ -22,7 +22,7 @@ $(S)_create_sized(size_t num_elems)
 struct $(S)
 $(S)_create(void)
 {
-    return $(S)_create_sized(sizeof($(T)) * 64);
+    return $(S)_create_sized(64);
 }
 
 
