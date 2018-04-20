@@ -47,12 +47,8 @@ fatal(char *fmt, ...)
 
 
 char *
-load_file_null_terminate(char *path)
+load_file_null_terminate(FILE *f, size_t *file_size_out)
 {
-    FILE *f = fopen(path, "r");
-    if (!f) {
-        fatal("Could not open file %s\n", path);
-    }
     fseek(f, 0, SEEK_END);
     size_t size = ftell(f);
     fseek(f, 0, SEEK_SET);
@@ -63,59 +59,202 @@ load_file_null_terminate(char *path)
     if ( readsize != size ) {
         fatal("Fatal error when reading file: File is %zu bytes big, but %zu bytes was read\n", size, readsize);
     }
+    *file_size_out = size;
     buffer[size] = 0;
     return buffer;
 }
 
 
 void
-log_token(Token *token)
+log_token(Token *token, FILE *f)
 {
-    printf("%.*s", token->text_len, token->text);
+    fprintf(f, "%.*s", token->text_len, token->text);
 }
+
+enum meta_replacement_rule_type {
+    META_REPLACEMENT_RULE_NONE = 0,
+    META_REPLACEMENT_RULE_STACK = 0,
+};
+
+struct meta_replacement_rule {
+    enum meta_replacement_rule_type type;
+
+    // The rule that gets passed is the equivalent of `this` or `self`
+    void (*fn_replacement_rule)(FILE *f, Token *token, struct meta_replacement_rule *rule);
+
+    
+    union {
+        // Stack replacement rule
+        struct {
+            char *stack_name;
+            char *node_type_name;
+        };
+    };
+};
+
+
+struct meta_generate_infos_internal {
+    bool file_already_opened;
+};
 
 
 struct meta_generate_infos {
-    char *input_file;
-    char *output_file;
+    struct meta_replacement_rule rule;
+    char *input_path;
+    char *output_path;
+    struct meta_generate_infos_internal mgii; // Reserved CLEAR TO ZERO
 };
+
+
+
+void stack_template_replace( FILE *f,
+                             Token *token,
+                             struct meta_replacement_rule *rule)
+{
+    if ( token->type == TT_META ) {
+        if (strncmp("S", token->text, token->text_len) == 0 ) {
+            fprintf(f, rule->stack_name);
+        } else if (strncmp("T", token->text, token->text_len) == 0 ) {
+            fprintf(f, rule->node_type_name);
+        } else {
+            log_token( token, f);
+        }
+    } else {
+        log_token(token, f);
+    }
+
+}
+
 
 struct meta_generate_infos mgi[] =
 {
-    {"code-gen/templates/stack.template.c", "__generated__/ast.h"},
+    { {.type = META_REPLACEMENT_RULE_STACK,
+       .fn_replacement_rule = & stack_template_replace,
+       .stack_name = "ast",
+       .node_type_name = "ast_node" },
+      "code-gen/templates/stack.template.c", "__generated__/ast.h",
+      {0}
+    },
+
+    { {.type = META_REPLACEMENT_RULE_STACK,
+       .fn_replacement_rule = & stack_template_replace,
+       .stack_name = "token_stack",
+       .node_type_name = "Token" },
+      "code-gen/templates/stack.template.c", "__generated__/token_stack.h",
+      {0}
+    },
+
+    
+    
     {0}
 };
+
+
+void
+mgi_execute(void);
 
 
 int
 main (int argc, char ** argv)
 {
     platform_init();
+    mgi_execute();
+# if 0
     Tokenizer tknzr;
     Token token = Empty_Token;
 
     tokenizer_init_with_memmapped_file(&tknzr, "code-gen/templates/stack.template.c");
+
     
     while( get_next_token(& tknzr, & token)) {
         if ( tknzr.err ) {
             fatal("Tokenizer parsing error: %s\n", tknzr.err_desc);
         }
-        if ( token.type == TT_META ) {
-            if (strncmp("S", token.text, token.text_len) == 0 ) {
-                printf("ast");
-            } else if (strncmp("T", token.text, token.text_len) == 0 ) {
-                printf("ast_node");
+    }
+#endif
+    return 0;
+}
+
+static FILE *
+mgi_output_file_handle(char *path)
+{
+    struct meta_generate_infos *it = mgi;
+    for (it = mgi; it->output_path != 0; it++) {
+        if ( strcmp(path, it->output_path) == 0 ) {
+            if ( it->mgii.file_already_opened) {
+                return fopen(path, "a"); // already opened append to it
             } else {
-                log_token( &token);
+                it->mgii.file_already_opened = true;
+                return fopen(path, "w");
             }
-        } else {
-            log_token(& token);
         }
     }
-    return 0;
+    return NULL;
+}
+
+
+
+void
+mgi_execute(void)
+{
+    struct meta_generate_infos *it = mgi;
+    for (it = mgi; it->input_path != 0; it++) {
+        Tokenizer tknzr = {0};
+        Token token = Empty_Token;
+        
+        if ( !it->input_path )
+            goto next_it;
+        
+        FILE *input_file = fopen(it->input_path, "r");
+
+        if (!input_file) {
+            fprintf(stderr, "CODE-GEN: Failed reading input file: %s\n", it->input_path);
+            goto next_it;
+        }
+
+        if (!it->output_path) {
+            fprintf(stderr, "CODE-GEN: Input file %s, has no associated output file\n", it->input_path);
+            goto next_it;
+        }
+        
+        FILE *output_file = mgi_output_file_handle(it->output_path);
+        if ( !output_file ) {
+            fprintf(stderr, "CODE-GEN: Output file %s failed to open\n", it->output_path);
+            goto next_it;
+        }
+
+
+        if (!it->rule.fn_replacement_rule) {
+            fprintf(stderr, "CODE-GEN: Warning `{}` has no valid replacement rule function pointer\n...Skipping\n ");
+            goto next_it;
+        }
+        
+        size_t buffer_len;
+        char *buffer = load_file_null_terminate(input_file, &buffer_len);
+            
+        tokenizer_init_from_memory(&tknzr, buffer, buffer_len);
+    
+        while( get_next_token(& tknzr, & token)) {
+            if ( tknzr.err ) {
+                fatal("Tokenizer parsing error: %s\n", tknzr.err_desc);
+            }
+            it->rule.fn_replacement_rule(output_file, & token, &(it->rule));
+        }
+
+    next_it:
+        if (input_file)
+            fclose(input_file);
+        if (output_file)
+            fclose(output_file);
+        if (tknzr.base) {
+            free(tknzr.base);
+        }
+    }
+
 }
 
 
 
 
 #endif /* MAIN_C_IMPL */
+

@@ -425,6 +425,7 @@ eat_comment ( Tokenizer *tknzr )
             if ( is_newline(tknzr)
                  && !is_preceded_by_char ( tknzr, '\\')) {
                 tokenizer_adv ( tknzr );
+                len ++;
                 break;
             }
             else {
@@ -438,6 +439,7 @@ eat_comment ( Tokenizer *tknzr )
             if ( tokenizer_deref(tknzr) == '*' && (tokenizer_deref_at(tknzr, 1) == '/')) {
                 tokenizer_adv ( tknzr );
                 tokenizer_adv ( tknzr );
+                len += 2;
                 break;
             }
             else {
@@ -1125,33 +1127,32 @@ discard_next_token ( Tokenizer* tok )
 
 
 void
-tokenizer_init_aux(Tokenizer *tknzr)
+tokenizer_init_from_memory(Tokenizer *tknzr,
+                           char *buffer, size_t buffer_len)
 {
      (void) tknzr;
+     assert(buffer);
+     assert(buffer_len);
+     tknzr->base = buffer;
+     tknzr->base_len = buffer_len;
+     tknzr->line_num = 1;
+     tknzr->at = tknzr->base;
+
+     tknzr->err = 0;
+     tknzr->err_desc[0] = 0;
+
 }
 
 
 void
 tokenizer_init_with_memmapped_file (Tokenizer *tknzr, char* filename )
 {
-     {
-          const i32 ZEROED_CHUNK_SIZE = 8;
-          i64 file_len = 0;
-          void *buffer = alloc_memmapped_file(filename, 0x000, PAGE_PROT_READ | PAGE_PROT_WRITE,
-                                              PAGE_ANONYMOUS | PAGE_PRIVATE, false, 0,
-                                              &file_len);
-          assert(buffer);
-          assert(file_len);
-          tknzr->base = buffer;
-          tknzr->base_len = file_len;
-     }
-
-     strncpy (tknzr->file, filename, TOKENIZER_FILENAME_LEN);
-     tknzr->line_num = 1;
-     tknzr->at = tknzr->base;
-
-     tknzr->err = 0;
-     tknzr->err_desc[0] = 0;
+    i64 file_len = 0;
+    void *buffer = alloc_memmapped_file(filename, 0x000, PAGE_PROT_READ | PAGE_PROT_WRITE,
+                                        PAGE_ANONYMOUS | PAGE_PRIVATE, false, 0,
+                                        &file_len);
+    strncpy (tknzr->file, filename, TOKENIZER_FILENAME_LEN);
+    tokenizer_init_from_memory(tknzr, buffer, (size_t) file_len);
 }
 
 

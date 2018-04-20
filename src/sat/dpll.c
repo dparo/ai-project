@@ -10,6 +10,26 @@
 
 
 
+
+
+
+
+struct ast *
+dpll_conver_cnf( struct interpreter *intpt,
+                 struct ast *ast )
+{
+    // biconditional elimination
+    // implication elimination
+    
+}
+
+
+
+
+
+
+
+
 bool
 dpll_is_empty_clause( struct interpreter *intpt,
                       struct ast *clauses_ast )
