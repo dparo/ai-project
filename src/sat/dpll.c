@@ -523,15 +523,4 @@ dpll_solve(struct interpreter *intpt,
 }
 
 
-
-struct ast *
-dpll_generate_nand_ast( struct ast *ast )
-{
-    size_t it;
-    struct ast_node *node;
-    ast_for(it, *ast, node) {
-    }
-}
-
-
 #endif /* DPLL_C_IMPL */
