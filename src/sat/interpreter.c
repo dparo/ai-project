@@ -671,7 +671,6 @@ ast_build_from_command ( struct interpreter *intpt,
                             if ( peek && ! (is_prefix_delimiter(peek) || is_infix_delimiter(peek))) {
                                 if (!(node.type == AST_NODE_TYPE_DELIMITER && node.del == POSTFIX_DELIMITER_SEMICOLON)) {
                                     // Mismatched parentheses
-                                    printf("Vaffanculo\n");
                                     intpt_info_printf(intpt, " ### Mismatched parens\n");
                                     goto parse_failed;
                                 }

@@ -96,7 +96,7 @@ dpll_implication_elimination ( struct ast *in,
                 for( size_t operand_num = 1;
                      operand_num <= numofoperands;
                      operand_num++ ) {
-                    struct ast_node *child = ast_get_operand_node(out, node, operand_num);
+                    struct ast_node *child = ast_get_operand_node(in, node, operand_num);
                     ast_subtree_push(out, in, child);
                 }
                 ast_push(out, node);
