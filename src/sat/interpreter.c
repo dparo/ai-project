@@ -629,20 +629,25 @@ ast_build_from_command ( struct interpreter *intpt,
             } else {
                 if ( node.type == AST_NODE_TYPE_OPERATOR ) {
                     bool ispostfix = is_postfix_operator( & node);
-                    struct ast_node *peek = NULL;
-                    while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
-                        if ( !(is_prefix_delimiter(peek) || is_infix_delimiter(peek))
-                             && ( (peek->type == AST_NODE_TYPE_IDENTIFIER || peek->type == AST_NODE_TYPE_CONSTANT)
-                                  || (op_greater_precedence(peek, & node))
-                                  || ((op_eq_precedence(peek, & node)) && (op_is_left_associative(peek))))) {
-                            ast_push(ast, peek);
-                            ast_node_stack_pop( & stack);
-                        } else { break; }
-                    }
-                    if ( ispostfix ) {
-                        ast_push(ast, & node);
+                    bool isprefix = is_prefix_operator( & node);
+                    if (isprefix) {
+                        ast_node_stack_push( & stack, & node );
                     } else {
-                        ast_node_stack_push( & stack, & node);
+                        struct ast_node *peek = NULL;
+                        while ((stack.num_nodes != 0) && (peek = ast_node_stack_peek_addr(&stack))) {
+                            if ( !(is_prefix_delimiter(peek) || is_infix_delimiter(peek))
+                                 && ( (peek->type == AST_NODE_TYPE_IDENTIFIER || peek->type == AST_NODE_TYPE_CONSTANT)
+                                      || (op_greater_precedence(peek, & node))
+                                      || ((op_eq_precedence(peek, & node)) && (op_is_left_associative(peek))))) {
+                                ast_push(ast, peek);
+                                ast_node_stack_pop( & stack);
+                            } else { break; }
+                        }
+                        if ( ispostfix ) {
+                            ast_push(ast, & node);
+                        } else {
+                            ast_node_stack_push( & stack, & node);
+                        }
                     }
                 } else {
                     if ( is_prefix_delimiter(& node) || is_infix_delimiter( & node)) {
@@ -704,6 +709,7 @@ ast_build_from_command ( struct interpreter *intpt,
         prev_t = curr_t;
         curr_t += 1;
         if (curr_t >= (t + ARRAY_LEN(t))) { curr_t = t; }
+        // SHUNT_DBG(); NOTE: Crashes !!
     }
 
 #if SHUNTING_YARD_DEBUG == 1

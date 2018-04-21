@@ -108,29 +108,61 @@ dpll_implication_elimination ( struct ast *ast,
 // ~(F & G) == (~F | ~G)                    // legge di De Morgan
 // Move nots inwards down the ast
 void
-dpll_implication_demorgan_aux ( struct ast_node *expr_node,
-                                struct ast *in,
-                                struct ast_node_stack *out )
+dpll_demorgan_aux ( struct ast_node *expr_node,
+                    struct ast *in,
+                    struct ast_node_stack *out )
 {
     struct ast_node *node = expr_node;
     if ( node->type == AST_NODE_TYPE_OPERATOR ) {
         if (node->op == OPERATOR_NEGATE ) {
-            struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
-            if (op1_node->type == AST_NODE_TYPE_OPERATOR ) {
-                if (op1_node->op == OPERATOR_OR) {
-
-                } else if (op1_node->op == OPERATOR_AND) {
-
+            struct ast_node *next_node = ast_get_operand_node( in, node, 1);
+            if (next_node->type == AST_NODE_TYPE_OPERATOR ) {
+                if (next_node->op == OPERATOR_OR || next_node-> op == OPERATOR_AND) {
+                    struct ast_node *op1_node = ast_get_operand_node( in, next_node, 1);
+                    struct ast_node *op2_node = ast_get_operand_node( in, next_node, 2);
+                    // ... first operand F
+                    dpll_demorgan_aux(op1_node, in, out);
+                    ast_node_stack_push(out, & NEGATE_NODE);
+                    dpll_demorgan_aux(op2_node, in, out);
+                    // ... second operand G
+                    ast_node_stack_push(out, & NEGATE_NODE);
+                    if (next_node->op == OPERATOR_OR) {
+                        ast_node_stack_push(out, & AND_NODE);
+                    } else if (next_node->op == OPERATOR_AND) {
+                        ast_node_stack_push(out, & OR_NODE);
+                    } else { invalid_code_path(); }
                 } else {
-                    // The `NODE` that follows the NOT it's a different operator
+                    // The `NODE` that follows the NOT it's a different operator from {AND, OR}
+                    if (next_node->op == OPERATOR_NEGATE ) {
+                        struct ast_node *op1_node = ast_get_operand_node( in, next_node, 1);
+                        dpll_demorgan_aux(op1_node, in, out);
+                        // NOTE: Do not push the negation now, DOUBLE NEGATION cancels out
+                    } else {
+                        // Every operator should be converted to AND's OR's NOT's or constants
+                        invalid_code_path();
+                    }
                 }
                                                             
             } else {
                 // The `NODE` that follows the NOT it's not an operator -> it's an identifier
+                // Push the identifier back and the not
+                ast_node_stack_push(out, next_node);
+                ast_node_stack_push(out, & NEGATE_NODE);
             }
+        } else {
+            // Top Level operator is not a negation
+            uint numofoperands = operator_num_operands(node);
+            for( size_t operand_num = 1;
+                 operand_num <= numofoperands;
+                 operand_num++ ) {
+                struct ast_node *child = ast_get_operand_node(in, node, operand_num);
+                dpll_implication_elimination_aux(child, in, out);
+            }
+            ast_node_stack_push(out, node);
         }
     } else {
         // Top `NODE` is an identifier
+        ast_node_stack_push(out, node);                
     }
 }
 
@@ -138,7 +170,7 @@ void
 dpll_demorgan ( struct ast *ast,
                 struct ast_node_stack *out )
 {
-    dpll_implication_elimination_aux(ast_end(ast) - 1, ast, out);
+    dpll_demorgan_aux(ast_end(ast) - 1, ast, out);
 }
 
 
@@ -177,12 +209,17 @@ dpll_convert_cnf( struct interpreter *intpt,
 
     struct ast_node_stack stack = ast_node_stack_create();
     struct ast result = ast_dup( ast);
-    
-    dpll_implication_elimination(& result, & stack);
-    ast_node_stack_dump( &stack, & result);
 
+    printf("#  Starting Implication elimination #########\n");
+    dpll_implication_elimination(& result, & stack);
+    ast_node_stack_dump_reversed( &stack, & result);
+    ast_node_stack_reset(& stack);
+
+    printf("#  Starting demorgan   ##########\n");
     dpll_demorgan(& result, & stack );
-    ast_node_stack_dump( &stack, & result);
+    ast_node_stack_dump_reversed( &stack, & result);
+    ast_dbglog(& result);
+
     
 
     {
