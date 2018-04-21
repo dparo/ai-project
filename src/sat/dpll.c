@@ -102,6 +102,46 @@ dpll_implication_elimination ( struct ast *ast,
     dpll_implication_elimination_aux(ast_end(ast) - 1, ast, out);
 }
 
+
+
+// ~(F | G) == (~F & ~G)                    // legge di De Morgan
+// ~(F & G) == (~F | ~G)                    // legge di De Morgan
+// Move nots inwards down the ast
+void
+dpll_implication_demorgan_aux ( struct ast_node *expr_node,
+                                struct ast *in,
+                                struct ast_node_stack *out )
+{
+    struct ast_node *node = expr_node;
+    if ( node->type == AST_NODE_TYPE_OPERATOR ) {
+        if (node->op == OPERATOR_NEGATE ) {
+            struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
+            if (op1_node->type == AST_NODE_TYPE_OPERATOR ) {
+                if (op1_node->op == OPERATOR_OR) {
+
+                } else if (op1_node->op == OPERATOR_AND) {
+
+                } else {
+                    // The `NODE` that follows the NOT it's a different operator
+                }
+                                                            
+            } else {
+                // The `NODE` that follows the NOT it's not an operator -> it's an identifier
+            }
+        }
+    } else {
+        // Top `NODE` is an identifier
+    }
+}
+
+void
+dpll_demorgan ( struct ast *ast,
+                struct ast_node_stack *out )
+{
+    dpll_implication_elimination_aux(ast_end(ast) - 1, ast, out);
+}
+
+
 void
 ast_node_stack_dump_reversed(struct ast_node_stack *stack,
                              struct ast *ast)
@@ -117,7 +157,7 @@ ast_node_stack_dump_reversed(struct ast_node_stack *stack,
 
 void
 ast_node_stack_dump(struct ast_node_stack *stack,
-                             struct ast *ast)
+                    struct ast *ast)
 {
     ast_reset(ast);
     for ( struct ast_node *node = ast_node_stack_end(stack) - 1;
@@ -139,10 +179,10 @@ dpll_convert_cnf( struct interpreter *intpt,
     struct ast result = ast_dup( ast);
     
     dpll_implication_elimination(& result, & stack);
-    //ast_node_stack_dump_reversed( &stack, & result);
-    ast_dbglog(& result);
-    //ast_node_stack_reset(& stack);
+    ast_node_stack_dump( &stack, & result);
 
+    dpll_demorgan(& result, & stack );
+    ast_node_stack_dump( &stack, & result);
     
 
     {
