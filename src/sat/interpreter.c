@@ -280,7 +280,7 @@ eval_entire_expr( struct interpreter *intpt )
     // so this if could become just an assert.
     if ( vms->bits ) {
         for (struct ast_node *node = ast_begin(ast);
-             node != ast_end(ast);
+             node < ast_end(ast);
              node ++ ) {
             if ( node->type == AST_NODE_TYPE_IDENTIFIER  || node->type == AST_NODE_TYPE_CONSTANT) {
                 bool value;
@@ -315,7 +315,7 @@ symtable_build_from_ast ( struct symtable *symtable,
                           struct ast *ast )
 {
     for (struct ast_node *node = ast_begin(ast);
-         node != ast_end(ast);
+         node < ast_end(ast);
          node ++ ) {
         if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
             if (! symtable_is_sym( symtable, node->text, node->text_len )) {
@@ -417,7 +417,7 @@ intpt_print_header( struct interpreter *intpt)
     }
 
     for (struct ast_node *node = ast_begin(ast);
-         node != ast_end(ast);
+         node < ast_end(ast);
          node ++ ) {
         if ( ast_node_is_operator(node) ) {
             ast_print_expr(intpt, node);
@@ -481,7 +481,7 @@ ast_representation_dbglog(struct interpreter *intpt)
     intpt_info_printf(intpt, "AST DEBUG LOG: ################################\n");
     // Debug expression printing
     for (struct ast_node *node = ast_begin(ast);
-         node != ast_end(ast);
+         node < ast_end(ast);
          node ++) {
         if ( ast_node_is_operator(node) ) {
             ast_print_expr(intpt, node);
@@ -607,7 +607,6 @@ ast_build_from_command ( struct interpreter *intpt,
     size_t va_args_noperands = 0;
     
     while (get_next_token( &tknzr, curr_t)) {
-        SHUNT_DBG();
         struct ast_node node;
         // NOTE: At every iteration the tokenizer error is cleared with the call to get_next_token
         if ( tknzr.err ) {
@@ -736,9 +735,6 @@ ast_build_from_command ( struct interpreter *intpt,
     SHUNT_DBG();
 #endif
     
-    ast_node_stack_dbglog( & stack );
-    ast_dbglog( ast );
-    printf("\n");
     ast_node_stack_clear(&stack);
     return true;
     
@@ -887,8 +883,11 @@ eval_commandline ( struct interpreter *intpt,
     
     if ( intpt_begin_frame(intpt)) {
         if ( ast_build_from_command( intpt, commandline, commandline_len ) ) {
-            
+            printf("##########After Parsing AST:\n");
+            ast_dbglog(ast);
+            printf("##############################\n\n\n\n");
 # if 0
+            
             test_dpll(intpt);
             //ast_representation_dbglog(intpt);
 # else

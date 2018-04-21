@@ -172,13 +172,14 @@ void
 ast_dbglog(struct ast* ast)
 {
     assert(ast);
-    printf("{ ast->num_nodes = %zu", ast_num_nodes(ast));
-    for ( struct ast_node *it = ast_begin(ast);
-          it != ast_end(ast);
-          it ++ ) {
-        printf(", [\"");
+
+    printf("{ ast->num_nodes = %zu\n    ##[Higher-Index] - - - [ i ] - - - [0]##\n  ", ast_num_nodes(ast));
+    for ( struct ast_node *it = ast_end(ast) - 1;
+          it >= ast_begin(ast);
+          it -- ) {
+        printf("[\"");
         ast_node_print(stdout, it);
-        printf("\"]{%d}", it->num_operands);
+        printf("\"]{%d}, ", it->num_operands);
     }
     printf(" }\n");
 }

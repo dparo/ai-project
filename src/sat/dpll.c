@@ -8,34 +8,6 @@
 #define DPLL_C_IMPLEMENTED
 //#######################################################
 
-
-struct ast_node *
-dpll_get_expr_subtre_end_node( struct ast *ast,
-                               struct ast_node *expr_node)
-{
-    assert(expr_node >= ast->nodes);
-    assert(expr_node < ast_end(ast));
-    
-    assert( ast_node_is_operator(expr_node));
-    uint it = 0;
-    struct ast_node *node = expr_node;
-    for ( ;
-         node >= ast_begin(ast);
-         node --, it--) {
-        if (ast_node_is_operator(node)) {
-            it += operator_num_operands(node);
-        }
-        if ( (it) == 0 ) {
-            break;
-        }
-    }
-    
-    node--;
-    assert(node != expr_node);
-    return node;
-
-}
-
 void
 ast_subtree_push( struct ast *out,
                   struct ast *in,
@@ -65,9 +37,9 @@ dpll_implication_elimination ( struct ast *in,
                                struct ast *out )
 {
     bool result = false;
-    for ( struct ast_node *node = ast_begin(in);
-          node < ast_end(in);
-          node ++ ) {
+    for ( struct ast_node *node = ast_end(in) - 1;
+          node >= ast_begin(in);
+          node -- ) {
         if ( node->type == AST_NODE_TYPE_OPERATOR ) {
             if (node->op == OPERATOR_DOUBLE_IMPLY
                 || node->op == OPERATOR_IMPLY ) {
@@ -84,6 +56,7 @@ dpll_implication_elimination ( struct ast *in,
                     ast_subtree_push(out, in, op2_node);
                     ast_push(out, & OR_NODE);
                     ast_push(out, & AND_NODE);
+
                     result = true;
                     break;
                 } else if (node->op == OPERATOR_IMPLY) {
@@ -113,35 +86,18 @@ dpll_implication_elimination ( struct ast *in,
 }
 
 
-
-
-struct ast *
+struct ast
 dpll_convert_cnf( struct interpreter *intpt,
                   struct ast *ast )
 {
-    // biconditional elimination
-    // implication elimination
+    printf("DPLL Convert CNF Debug: ### \n");
 
     
-    struct ast c[2];
-    struct ast *in = c;
-    struct ast *out = c + 1;
-    *in = ast_dup(ast);
-    *out = ast_create_sized(in->num_nodes * 2);
-
-    while (dpll_implication_elimination(in, out)) {
-        ast_dbglog(out);
-        ast_clear(in);
-        in = out;
-        out = (c + 1) == c + ARRAY_LEN(c) ? c : c + 1;
-        *out = ast_create_sized(in->num_nodes * 2);
-    }
-        
-    
-    /* for () { */
+    /* while (dpll_implication_elimination(&in, &out)) { */
     /* } */
-    
-    return NULL;
+
+    printf("DPLL Convert CNF Debug: ### END ### \n");
+    return (struct ast) {0};
 }
 
 
