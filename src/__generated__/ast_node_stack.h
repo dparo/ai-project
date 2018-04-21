@@ -64,10 +64,11 @@ ast_node_stack_grow_to( struct ast_node_stack *s,
               size_t new_max_nodes) /* Size in BYTES !!! */
 {
     assert(s);
-    size_t new_size = new_max_nodes * sizeof(struct ast_node) * 2;
-    if ( new_size == 0 ) {
-        new_size = 64 * sizeof(struct ast_node);
+    if ( new_max_nodes == 0 ) {
+        new_max_nodes = 64;
     }
+    size_t new_size = new_max_nodes * sizeof(struct ast_node) * 2;
+    new_size = 64 * sizeof(struct ast_node);
     void *temp = xrealloc(s->nodes, new_size);
     assert(temp);
     s->nodes = temp;

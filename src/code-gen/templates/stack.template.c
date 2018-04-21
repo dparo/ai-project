@@ -64,10 +64,11 @@ $(S)_grow_to( struct $(S) *s,
               size_t new_$(max_elems)) /* Size in BYTES !!! */
 {
     assert(s);
-    size_t new_size = new_$(max_elems) * sizeof($(T)) * 2;
-    if ( new_size == 0 ) {
-        new_size = 64 * sizeof($(T));
+    if ( new_$(max_elems) == 0 ) {
+        new_$(max_elems) = 64;
     }
+    size_t new_size = new_$(max_elems) * sizeof($(T)) * 2;
+    new_size = 64 * sizeof($(T));
     void *temp = xrealloc(s->$(base), new_size);
     assert(temp);
     s->$(base) = temp;

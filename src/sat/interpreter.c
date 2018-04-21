@@ -349,7 +349,7 @@ ast_get_operand_node ( struct ast *ast,
                        struct ast_node *op_node,
                        size_t operand_num )
 {
-    assert(op_node > ast->nodes);
+    assert(op_node >= ast->nodes);
     assert(op_node < ast_end(ast));
     
     assert( ast_node_is_operator(op_node));
@@ -837,8 +837,9 @@ eval_ast(struct interpreter *intpt )
 
     
     if (preprocess_command (intpt)) {
-#if 0
-        intpt_print_header(intpt);
+#if 1
+        dpll_convert_cnf(intpt, ast);
+        //intpt_print_header(intpt);
 #else
         bruteforce_solve(intpt);
 #endif

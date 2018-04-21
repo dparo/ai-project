@@ -13,43 +13,43 @@ struct ast_node *
 dpll_get_expr_subtre_end_node( struct ast *ast,
                                struct ast_node *expr_node)
 {
-    assert(expr_node > ast->nodes);
+    assert(expr_node >= ast->nodes);
     assert(expr_node < ast_end(ast));
     
     assert( ast_node_is_operator(expr_node));
     uint it = 0;
     struct ast_node *node = expr_node;
     for ( ;
-         node != ast_begin(ast);
+         node >= ast_begin(ast);
          node --, it--) {
         if (ast_node_is_operator(node)) {
             it += operator_num_operands(node);
         }
         if ( (it) == 0 ) {
-            node--;
             break;
         }
     }
-
+    
+    node--;
     assert(node != expr_node);
     return node;
 
 }
 
 void
-ast_subtree_push( struct ast *ast,
+ast_subtree_push( struct ast *out,
+                  struct ast *in,
                   struct ast_node *expr_node )
 {
-    assert(expr_node > ast->nodes);
-    assert(expr_node < ast_end(ast));
+    assert(expr_node >= in->nodes);
+    assert(expr_node < ast_end(in));
     
-    assert( ast_node_is_operator(expr_node));
     uint it = 0;
     struct ast_node *node = expr_node;
     for ( ;
-         node != ast_begin(ast);
+         node >= ast_begin(in);
          node --, it--) {
-        ast_push(ast, node);
+        ast_push(out, node);
         if (ast_node_is_operator(node)) {
             it += operator_num_operands(node);
         }
@@ -58,8 +58,6 @@ ast_subtree_push( struct ast *ast,
             break;
         }
     }
-
-    assert(node != expr_node);
 }
 
 void
@@ -67,8 +65,8 @@ dpll_implication_elimination ( struct ast *in,
                                struct ast *out )
 {
     for ( struct ast_node *node = ast_begin(in);
-          node != ast_end(in);
-          node -- ) {
+          node < ast_end(in);
+          node ++ ) {
         if ( node->type == AST_NODE_TYPE_OPERATOR ) {
             if (node->op == OPERATOR_DOUBLE_IMPLY
                 || node->op == OPERATOR_IMPLY ) {
@@ -78,18 +76,18 @@ dpll_implication_elimination ( struct ast *in,
                 if (node->op == OPERATOR_DOUBLE_IMPLY) {
                     ast_push(out, & AND_NODE);
                     ast_push(out, & OR_NODE);
-                    ast_subtree_push(out, op2_node);
+                    ast_subtree_push(out, in, op2_node);
                     ast_push(out, & NEGATE_NODE);
-                    ast_subtree_push(out, op1_node);
+                    ast_subtree_push(out, in, op1_node);
                     ast_push(out, & OR_NODE);
                     ast_push(out, & NEGATE_NODE);
-                    ast_subtree_push(out, op2_node);
-                    ast_subtree_push(out, op1_node);
+                    ast_subtree_push(out, in, op2_node);
+                    ast_subtree_push(out, in, op1_node);
                 } else if (node->op == OPERATOR_IMPLY) {
                     ast_push(out, & OR_NODE);
-                    ast_subtree_push(out, op2_node);
+                    ast_subtree_push(out, in, op2_node);
                     ast_push(out, & NEGATE_NODE);
-                    ast_subtree_push(out, op1_node);
+                    ast_subtree_push(out, in, op1_node);
                 } else {
                     invalid_code_path();
                 }
@@ -99,7 +97,7 @@ dpll_implication_elimination ( struct ast *in,
                      operand_num <= numofoperands;
                      operand_num++ ) {
                     struct ast_node *child = ast_get_operand_node(out, node, operand_num);
-                    ast_subtree_push(out, child);
+                    ast_subtree_push(out, in, child);
                 }
                 ast_push(out, node);
             }
@@ -112,7 +110,7 @@ dpll_implication_elimination ( struct ast *in,
 
 
 struct ast *
-dpll_conver_cnf( struct interpreter *intpt,
+dpll_convert_cnf( struct interpreter *intpt,
                  struct ast *ast )
 {
     // biconditional elimination
@@ -123,8 +121,11 @@ dpll_conver_cnf( struct interpreter *intpt,
     struct ast *in = c;
     struct ast *out = c + 1;
     *in = ast_dup(ast);
+    *out = ast_create_sized(in->num_nodes * 2);
 
-    dpll_implication_elimination(in, out);
+
+    dpll_implication_elimination(in, out);\
+    ast_dbglog(out);
     ast_clear(in);
     in = out;
     out = (c + 1) == c + ARRAY_LEN(c) ? c : c + 1;
@@ -150,7 +151,7 @@ dpll_is_empty_clause( struct interpreter *intpt,
     bool result = true;
 
     for ( struct ast_node *node = ast_begin(clauses_ast);
-          node != ast_end(clauses_ast);
+          node < ast_end(clauses_ast);
           node ++ ) {
         if ( node->type == AST_NODE_TYPE_IDENTIFIER
              || node->type == AST_NODE_TYPE_CONSTANT) {
@@ -172,7 +173,7 @@ dpll_is_consistent( struct interpreter *intpt,
 
 
     for (struct ast_node *node = ast_begin(clauses_ast);
-         node != ast_end(clauses_ast);
+         node < ast_end(clauses_ast);
          node ++ ) {
         if ( ast_node_is_operator(node) ) {
             if (node->op != OPERATOR_AND) {
@@ -254,7 +255,7 @@ dpll_preprocess ( struct interpreter *intpt,
                   struct ast         *clauses_ast)
 {
     for (struct ast_node *node = ast_begin(clauses_ast);
-         node != ast_end(clauses_ast);
+         node < ast_end(clauses_ast);
          node ++ ) {
         // Important in this { if / else if / else } match the constants & identifiers first.
         if (node->type == AST_NODE_TYPE_CONSTANT ) {
@@ -372,7 +373,7 @@ dpll_solve(struct interpreter *intpt,
 /*       Φ ← pure-literal-assign(l, Φ); */
     {
         for (struct ast_node *node = ast_begin(clauses_ast);
-             node != ast_end(clauses_ast);
+             node < ast_end(clauses_ast);
              node ++) {
 
             if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
@@ -393,7 +394,7 @@ dpll_solve(struct interpreter *intpt,
     {
         struct ast_node *pick = ast_begin(clauses_ast);
         for ( ;
-             pick != ast_end(clauses_ast);
+             pick < ast_end(clauses_ast);
              pick ++ ) {
             if ( pick->type == AST_NODE_TYPE_IDENTIFIER ) {
                 break;
@@ -402,7 +403,7 @@ dpll_solve(struct interpreter *intpt,
         assert(pick);
         
         for (struct ast_node *node = ast_begin(clauses_ast);
-             node != ast_end(clauses_ast);
+             node < ast_end(clauses_ast);
              node ++ ) {
             if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
                 if ( strncmp(pick->text, node->text, MIN(pick->text_len, node->text_len)) == 0 ) {
@@ -417,7 +418,7 @@ dpll_solve(struct interpreter *intpt,
 
         if ( !result ) { // short circuit optimization 
             for (struct ast_node *node = ast_begin(clauses_ast);
-                 node != ast_end(clauses_ast);
+                 node < ast_end(clauses_ast);
                  node ++ ) {
                 if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
                     if ( strncmp(pick->text, node->text, MIN(pick->text_len, node->text_len)) == 0 ) {
