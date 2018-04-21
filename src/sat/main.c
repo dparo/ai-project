@@ -106,7 +106,7 @@ main( int argc, char **argv)
     struct interpreter intpt = {0};
     
 #if 1
-    EVAL_COMMANDLINE_INPLACE ( & intpt, " (~a | ~~c)");
+    EVAL_COMMANDLINE_INPLACE ( & intpt, "(~a | ~~c)");
     //EVAL_COMMANDLINE_INPLACE ( & intpt, "a = {b, c & d, e}");
     //EVAL_COMMANDLINE_INPLACE ( & intpt, "(#x a) & b");
     //EVAL_COMMANDLINE_INPLACE ( & intpt, "a & (#x b)");

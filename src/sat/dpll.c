@@ -223,6 +223,59 @@ dpll_double_negation_elimination ( struct ast *ast,
 }
 
 
+
+void
+dpll_or_distribute_aux ( struct ast_node *expr_node,
+                         struct ast *in,
+                         struct ast_node_stack *out )
+{
+    struct ast_node *node = expr_node;
+
+    assert_msg(0, "Implement me, this is a copy & paste job from double implication elimination");
+    if ( node->type == AST_NODE_TYPE_OPERATOR ) {
+        if (node->op == OPERATOR_NEGATE ) {
+            struct ast_node *next_node = ast_get_operand_node( in, node, 1);
+            if (next_node->type == AST_NODE_TYPE_OPERATOR ) {
+                if (next_node->op == OPERATOR_NEGATE ) {
+                    struct ast_node *op1_node = ast_get_operand_node( in, next_node, 1);
+                    dpll_or_distribute_aux(op1_node, in, out);
+                    // NOTE: Do not push the negation now, DOUBLE NEGATION cancels out
+                } else {
+                    // Every operator should be converted to AND's OR's NOT's or constants
+                    invalid_code_path();
+                }
+            } else {
+                // The `NODE` that follows the NOT it's not an operator -> it's an identifier
+                // Push the identifier back and the not
+                ast_node_stack_push(out, next_node);
+                ast_node_stack_push(out, & NEGATE_NODE);
+            }
+        } else {
+            // Top Level operator is not a negation
+            uint numofoperands = operator_num_operands(node);
+            for( size_t operand_num = 1;
+                 operand_num <= numofoperands;
+                 operand_num++ ) {
+                struct ast_node *child = ast_get_operand_node(in, node, operand_num);
+                dpll_or_distribute_aux(child, in, out);
+            }
+            ast_node_stack_push(out, node);
+        }
+    } else {
+        // Top `NODE` is an identifier
+        ast_node_stack_push(out, node);                
+    }
+}
+
+
+void
+dpll_or_distribute ( struct ast *ast,
+                     struct ast_node_stack *out )
+{
+    dpll_or_distribute_aux(ast_end(ast) - 1, ast, out);
+}
+
+
 void
 ast_node_stack_dump_reversed(struct ast_node_stack *stack,
                              struct ast *ast)
@@ -283,8 +336,16 @@ dpll_convert_cnf( struct interpreter *intpt,
     //    •  `¬(∃x  P(x))`  with  `∀x  ¬P(x)`
     // After that, a ¬ may occur only immediately before a predicate symbol.
     
-    
+    // .......... IMPLEMENTATION FOR PROPOSITIONAL CALCULUS HERE .........................
 
+    // Distribute ORs inwards over ANDs: repeatedly replace P ∨ ( Q ∧ R ) with ( P ∨ Q ) ∧ ( P ∨ R ).
+    printf("#  Starting double negation elimination   ##########\n");
+    ast_node_stack_reset(& stack);
+    dpll_or_distribute(& result, & stack );
+    ast_node_stack_dump_reversed( &stack, & result);
+    ast_dbglog(& result);
+    
+    
     ast_node_stack_reset(& stack);
     printf("DPLL Convert CNF Debug: ### END ### \n");
     
