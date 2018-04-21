@@ -136,6 +136,15 @@ struct ast_node {
                         In other context it is cleared to zero */
 };
 
+static struct ast_node AND_NODE =
+{ "&", 1, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_AND, DELIMITER_NONE, 0 };
+
+static struct ast_node OR_NODE =
+{ "|", 1, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_OR, DELIMITER_NONE, 0 };
+
+static struct ast_node NEGATE_NODE =
+{ "~", 1, 1, AST_NODE_TYPE_OPERATOR, OPERATOR_NEGATE, DELIMITER_NONE, 0 };
+
 
 void
 ast_node_convert_to_constant (struct ast_node *node,
