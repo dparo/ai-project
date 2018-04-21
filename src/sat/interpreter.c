@@ -344,59 +344,56 @@ intpt_print_node(struct interpreter *intpt,
 // Since we probably will always have operators up to 3 operands
 // while looping for the first operand we can store the postion
 // of the first 2 to cut down on the number of iterations
-size_t
-ast_get_operand_index( struct ast *ast,
-                       size_t operator_index,
-                       size_t operand_num)
+struct ast_node *
+ast_get_operand_node ( struct ast *ast,
+                       struct ast_node *op_node,
+                       size_t operand_num )
 {
-    size_t fixed_index = operator_index;
-    assert(operand_num > 0);
-    assert(operator_index < ast->num_nodes);
+    assert(op_node > ast->nodes);
+    assert(op_node < ast_end(ast));
     
-    assert( ast_node_is_operator(& ast->nodes[operator_index]));
+    assert( ast_node_is_operator(op_node));
     uint it = 1;
-    do {
-        assert(it > 0);
-        struct ast_node *node = &(ast->nodes[fixed_index]);
+    struct ast_node *node = op_node;
+    for ( ;
+         node != ast_begin(ast);
+         node --, it--) {
         if ( operand_num == (it) &&
-             fixed_index != operator_index) {
+             node != op_node) {
             break;
         }
-
         if (ast_node_is_operator(node)) {
             it += operator_num_operands(node);
         }
-        it--;
-    } while( fixed_index != 0 ? fixed_index-- : fixed_index);
+    }
 
-    assert(fixed_index != operator_index);
-    return fixed_index;
+    assert(node != op_node);
+    return node;
 }
 
 void
 ast_print_expr ( struct interpreter *intpt,
-                 size_t index )
+                 struct ast_node *expr_node )
 {
     struct ast* ast = & intpt->ast;
-    struct ast_node *node = & ( ast->nodes[index] );
-    if ( node->type == AST_NODE_TYPE_IDENTIFIER || node->type == AST_NODE_TYPE_CONSTANT ) {
-        intpt_print_node(intpt, node);
-    } else if (ast_node_is_operator(node)) {
-        assert(ast_node_is_operator(node));
+    assert( expr_node >= ast->nodes && (expr_node < ast_end(ast)));
+    if ( expr_node->type == AST_NODE_TYPE_IDENTIFIER || expr_node->type == AST_NODE_TYPE_CONSTANT ) {
+        intpt_print_node(intpt, expr_node);
+    } else if (ast_node_is_operator(expr_node)) {
+        assert(ast_node_is_operator(expr_node));
         
-        uint numofoperands = operator_num_operands(node);
-        assert_msg(index >= numofoperands, "Inconsistent formula");
+        uint numofoperands = operator_num_operands(expr_node);
 
-        intpt_out_printf(intpt, index == (ast->num_nodes - 1) ? "result: (" : "(");
-        intpt_print_node(intpt, node);
+        intpt_out_printf(intpt, expr_node == (ast_end(ast) - 1) ? "result: (" : "(");
+        intpt_print_node(intpt, expr_node);
         
 
         for( size_t operand_num = 1;
              operand_num <= numofoperands;
              operand_num++ ) {
             intpt_out_printf(intpt, " ");
-            size_t fixed_index = ast_get_operand_index(ast, index, operand_num);
-            ast_print_expr(intpt, fixed_index);
+            struct ast_node *op_node = ast_get_operand_node(ast, expr_node, operand_num);
+            ast_print_expr(intpt, op_node);
         }
         intpt_out_printf(intpt, ")");
     } else {
@@ -419,12 +416,11 @@ intpt_print_header( struct interpreter *intpt)
         print_tab(intpt);
     }
 
-    size_t it = 0;
     for (struct ast_node *node = ast_begin(ast);
          node != ast_end(ast);
-         node ++, it++ ) {
+         node ++ ) {
         if ( ast_node_is_operator(node) ) {
-            ast_print_expr(intpt, it);
+            ast_print_expr(intpt, node);
             print_tab(intpt);
         }
     }
@@ -481,15 +477,14 @@ void
 ast_representation_dbglog(struct interpreter *intpt)
 {
     struct ast *ast = & intpt->ast;
-    size_t it;
 
     intpt_info_printf(intpt, "AST DEBUG LOG: ################################\n");
     // Debug expression printing
     for (struct ast_node *node = ast_begin(ast);
          node != ast_end(ast);
-         node ++, it++ ) {
+         node ++) {
         if ( ast_node_is_operator(node) ) {
-            ast_print_expr(intpt, it);
+            ast_print_expr(intpt, node);
             print_tab(intpt);
         }
     }
@@ -553,41 +548,6 @@ ast_node_swap( struct interpreter *intpt,
     size_t n = 10;
     
     //memmove(dest, src, n);
-}
-
-bool
-ast_to_prenex_form( struct interpreter *intpt)
-{
-
-    assert_msg(0, "Needs implementation, for now we always suppose to have prenex formula");
-    size_t it = 0;
-    struct ast *ast = & (intpt->ast);
-
-    for (struct ast_node *node = ast_end(ast);
-         node != ast_begin(ast);
-         node --, it++ ) {
-        size_t num_operands = operator_num_operands(node);
-        for(size_t operands = 1; operands <= num_operands; operands++) {
-            size_t operand_index = ast_get_operand_index( ast, it, operands);
-
-            struct ast_node *child_node = & (ast->nodes[operand_index]);
-            if (child_node->type == AST_NODE_TYPE_OPERATOR
-                && (child_node->op == OPERATOR_ENUMERATE || child_node->op == OPERATOR_EXIST)) {
-                if (node->type == AST_NODE_TYPE_OPERATOR && node->op == OPERATOR_AND) {
-                    
-                }
-            }
-        }
-            
-    }
-
-
-    return true;
-    goto failed; // @ NOTE: Compiler shut up!
-    
-failed: {
-        return false;
-    }
 }
 
 

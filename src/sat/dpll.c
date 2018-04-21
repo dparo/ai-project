@@ -12,6 +12,47 @@
 
 
 
+bool
+dpll_biimplication_elimination ( struct ast *in,
+                                 struct ast *out )
+{
+    for ( struct ast_node *node = ast_end(in);
+          node != ast_begin(in);
+          node -- ) {
+        if ( node->type == AST_NODE_TYPE_OPERATOR ) {
+            if (node->op == OPERATOR_DOUBLE_IMPLY ) {
+                struct ast_node *op_nodex = ast_get_operand_node( in, node, 1);
+                                                    
+            } else {
+                ast_push(out, node);
+            }
+        }
+    }
+
+    return false;
+}
+
+
+
+bool
+dpll_implication_elimination ( struct ast *in,
+                               struct ast *out )
+{
+    for ( struct ast_node *node = ast_end(in);
+          node != ast_begin(in);
+          node -- ) {
+        if ( node->type == AST_NODE_TYPE_OPERATOR ) {
+            if (node->op == OPERATOR_DOUBLE_IMPLY ) {
+
+            } else {
+                ast_push(out, node);
+            }
+        }
+    }
+    return false;
+}
+
+
 
 
 struct ast *
@@ -22,6 +63,31 @@ dpll_conver_cnf( struct interpreter *intpt,
     // implication elimination
 
 
+    struct ast c[2];
+    struct ast *in = c;
+    struct ast *out = c + 1;
+    *in = ast_dup(ast);
+
+    
+    
+    while (dpll_biimplication_elimination(in, out)) {
+        ast_clear(in);
+        in = out;
+        out = (c + 1) == c + ARRAY_LEN(c) ? c : c + 1;
+    }
+
+    while (dpll_implication_elimination(in,out)) {
+        ast_clear(in);
+        in = out;
+        out = (c + 1) == c + ARRAY_LEN(c) ? c : c + 1;
+    }
+    
+    // implication e double implication elimination
+    
+    
+    /* for () { */
+    /* } */
+    
     return NULL;
 }
 
@@ -104,71 +170,8 @@ dpll_next_unit_clause( struct interpreter *intpt,
                        struct ast_node **node,
                        bool *is_negated )
 {
-    assert(node);
-    struct ast_node *result = NULL;
-    struct ast_node *start = NULL;
-    
-    if (clauses_ast->num_nodes == 0) {
-        *node = NULL;
-        return NULL;
-    }
-    
-    if ( *node ) {
-        // Find next from this one
-        start = (*node) - 1;
-    } else {
-        // Start from the head
-        start = & clauses_ast->nodes[clauses_ast->num_nodes - 1];
-    }
-    
-    assert(start);
-    if ( !((start >= clauses_ast->nodes)
-           && (start < & clauses_ast->nodes[clauses_ast->num_nodes]))) {
-        // Not in bounds
-        *node = NULL;
-        return NULL;
-    } else {
-        struct ast_node *n = start;
-        for ( n = start; n >= clauses_ast->nodes; n-- ) {
-            if ( n->type == AST_NODE_TYPE_IDENTIFIER ||
-                 n->type == AST_NODE_TYPE_CONSTANT ||
-                 (n->type == AST_NODE_TYPE_OPERATOR && n->op == OPERATOR_NEGATE)) {
-                     if (n->type == AST_NODE_TYPE_OPERATOR && n->op == OPERATOR_NEGATE) {
-                         n--;
-                         assert_msg(n >= clauses_ast->nodes, "Malformed formula");
-                         if (n->type == AST_NODE_TYPE_IDENTIFIER || n->type == AST_NODE_TYPE_CONSTANT) {
-                             *is_negated = true;
-                             result = n;
-                             break;
-                         } else {
-                             // skip childs
-                             size_t operator_index = n - clauses_ast->nodes;
-                             size_t first_operand_index = ast_get_operand_index( clauses_ast, operator_index, 1);
-                             n = (& clauses_ast->nodes[first_operand_index]);
-                         }
-                     } else {
-                         // return this
-                         *is_negated = false;
-                         result = n;
-                         break;
 
-                     }
-            } else if (n->type == AST_NODE_TYPE_OPERATOR && n->op != OPERATOR_NEGATE) {
-                if ( n->op != OPERATOR_AND ) {
-                    // skip childs
-                    size_t operator_index = n - clauses_ast->nodes;
-                    size_t first_operand_index = ast_get_operand_index( clauses_ast, operator_index, 1);
-                    n = (& clauses_ast->nodes[first_operand_index]);
-                }
-            } else {
-                assert_msg(0, "Invalid code path for now");
-            }
-        }
-    }
-
-    *node = result;
-    return result;
-    
+    return false;
 }
 
 
@@ -176,145 +179,8 @@ dpll_next_unit_clause( struct interpreter *intpt,
 // for every symbols that appear in a unit clause
 // return that it is a unit clause and go and assign a value to it
 
-struct ast_node *
-dpll_next_unit_clause_symbol ( struct interpreter *intpt,
-                               struct ast *clauses_ast,
-                               struct ast_node **node,
-                               bool *is_negated )
-{
-    assert(node);
-    struct ast_node *result = NULL;
-    struct ast_node *start = NULL;
-    
-    if (clauses_ast->num_nodes == 0) {
-        *node = NULL;
-        return NULL;
-    }
-    
-    if ( *node ) {
-        // Find next from this one
-        start = (*node) - 1;
-    } else {
-        // Start from the head
-        start = & clauses_ast->nodes[clauses_ast->num_nodes - 1];
-    }
-    
-    assert(start);
-    if ( !((start >= clauses_ast->nodes)
-           && (start < & clauses_ast->nodes[clauses_ast->num_nodes]))) {
-        // Not in bounds
-        *node = NULL;
-        return NULL;
-    } else {
-        struct ast_node *n = start;
-        for ( n = start; n >= clauses_ast->nodes; n-- ) {
-            if ( n->type == AST_NODE_TYPE_IDENTIFIER ||
-                 n->type == AST_NODE_TYPE_CONSTANT) {
-                bool v1;
-                bool has_v1 = ast_node_value_assigned(& intpt->symtable, n, & v1);
-                if ( ! has_v1 ) {
-                    *is_negated = false;
-                    result  = n;
-                    break;
-                }
-            } else if (n->type == AST_NODE_TYPE_OPERATOR) {
-                if (n->op == OPERATOR_NEGATE) {
-                    size_t first_operand = ast_get_operand_index( clauses_ast,
-                                                                  n - clauses_ast->nodes, 1);
-                    struct ast_node *n1 = & clauses_ast->nodes[first_operand];
-                    if ( n1->type == AST_NODE_TYPE_OPERATOR) {
-                        bool v1;
-                        bool has_v1 = ast_node_value_assigned(& intpt->symtable, n, & v1);
-                        if ( ! has_v1 ) {
-                            *is_negated = true;
-                            result  = n;
-                            break;
-                        }
-                    }
-                } else if ( n->op == OPERATOR_AND ) {
-                    // Top level ANDS are always unit_clauses
-                    size_t second_operand = ast_get_operand_index( clauses_ast,
-                                                                   n - clauses_ast->nodes, 2);
-                    size_t first_operand = ast_get_operand_index( clauses_ast,
-                                                                  n - clauses_ast->nodes, 1);
-
-                    struct ast_node *n2 = & clauses_ast->nodes[second_operand];
-                    struct ast_node *n1 = & clauses_ast->nodes[first_operand];
-                    // Il primo e' identifier e non assegnato e il secondo e' non assegnato oppure identifier
-                    if (n1->type == AST_NODE_TYPE_IDENTIFIER ) {
-                        bool v1;
-                        bool has_v1 = ast_node_value_assigned(& intpt->symtable, n1, & v1);
-                        if ( ! has_v1 ) {
-                            result  = n;
-                            break;
-                        }
-                    } else if (n2->type == AST_NODE_TYPE_IDENTIFIER ) {
-                        bool v2;
-                        bool has_v2 = ast_node_value_assigned( & intpt->symtable, n2, &v2);
-                        if (!has_v2 ) {
-                            result = n;
-                            break;
-                        }
-                    }
-                } else {
-                }
-            } else {
-                assert_msg(0, "Invalid code path for now");
-            }
-        }
-    }
-
-    *node = result;
-    return result;
-    
-}
 
 
-bool
-dpll_is_pure_literal( struct interpreter *intpt,
-                      struct ast *clauses_ast,
-                      struct ast_node *node,
-                      bool *appears_negated )
-{
-    assert(node);
-    bool result = true;
-    bool found_negated = false;
-    bool found_normal = false;
-
-    assert(clauses_ast->num_nodes > 0);
-
-    struct ast_node *n;
-    for ( n = & clauses_ast->nodes[clauses_ast->num_nodes - 1];
-          n >= clauses_ast->nodes;
-          n-- ) {
-        if (n->type == AST_NODE_TYPE_OPERATOR && n->op == OPERATOR_NEGATE) {
-            n--;
-            assert_msg(n >= clauses_ast->nodes, "Malformed formula");
-            if (n->type == AST_NODE_TYPE_IDENTIFIER || n->type == AST_NODE_TYPE_CONSTANT) {
-                if ( strncmp(n->text, node->text, MIN(node->text_len, n->text_len)) == 0 ) {
-                    found_negated = true;
-                    if ( found_negated && found_normal ) { result = false; break; }
-                }
-
-            } else {
-                // skip childs
-                size_t operator_index = n - clauses_ast->nodes;
-                size_t first_operand_index = ast_get_operand_index( clauses_ast, operator_index, 1);
-                n = (& clauses_ast->nodes[first_operand_index]);
-            }
-        } else if (n->type == AST_NODE_TYPE_IDENTIFIER || n->type == AST_NODE_TYPE_CONSTANT) {
-            if ( strncmp(n->text, node->text, MIN(node->text_len, n->text_len)) == 0 ) {
-                found_normal = true;
-                if ( found_negated && found_normal ) { result = false; break; }
-            // return this
-            }            
-        }
-    }
-    if (result) {
-        *appears_negated = found_negated;
-    }
-    return result;
-}
 
 // let's supose i have an AST
 // let's mark the operators as explored
@@ -361,8 +227,9 @@ dpll_preprocess ( struct interpreter *intpt,
             size_t num_args = 0;
             size_t num_operands = operator_num_operands(node);
             for (size_t operand = 1; operand <= num_operands; operand++) {
-                size_t oi = ast_get_operand_index(clauses_ast, node - clauses_ast->nodes, operand);
-                num_args += clauses_ast->nodes[oi].num_args;
+                struct ast_node *op_node =
+                    ast_get_operand_node(clauses_ast, node, operand);
+                num_args += node->num_args;
             }
             node->num_args = num_args;
         } else {
@@ -371,45 +238,15 @@ dpll_preprocess ( struct interpreter *intpt,
     }
 }
 
-struct ast_node *
-dpll_next_unit_clause2 ( struct interpreter *intpt,
-                         struct ast *clauses_ast,
-                         struct ast_node **node,
-                         bool *is_negated )
+bool
+dpll_is_pure_literal( struct interpreter *intpt,
+                      struct ast *clauses_ast,
+                      struct ast_node *node,
+                      bool *appears_negated )
 {
-    assert(node);
-    struct ast_node *result = NULL;
-    struct ast_node *start = NULL;
-    
-    if (clauses_ast->num_nodes == 0) {
-        *node = NULL;
-        return NULL;
-    }
-    
-    if ( *node ) {
-        // Find next from this one
-        start = (*node) - 1;
-    } else {
-        // Start from the head
-        start = & clauses_ast->nodes[clauses_ast->num_nodes - 1];
-    }
-    
-    assert(start);
-    if ( !((start >= clauses_ast->nodes)
-           && (start < & clauses_ast->nodes[clauses_ast->num_nodes]))) {
-        // Not in bounds
-        *node = NULL;
-        return NULL;
-    } else {
-        struct ast_node *n = start;
-        for ( n = start; n >= clauses_ast->nodes; n-- ) {
-        }
-    }
-
-    *node = result;
-    return result;
-    
+    return false;
 }
+
 
 // input in the ast there should be a formula
 // of this kind: c1 & c2 & c3 & c4
