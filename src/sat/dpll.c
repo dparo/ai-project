@@ -60,10 +60,11 @@ ast_subtree_push( struct ast *out,
     }
 }
 
-void
+bool
 dpll_implication_elimination ( struct ast *in,
                                struct ast *out )
 {
+    bool result = false;
     for ( struct ast_node *node = ast_begin(in);
           node < ast_end(in);
           node ++ ) {
@@ -74,20 +75,25 @@ dpll_implication_elimination ( struct ast *in,
                 struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
 
                 if (node->op == OPERATOR_DOUBLE_IMPLY) {
+                    ast_subtree_push(out, in, op1_node);
+                    ast_subtree_push(out, in, op2_node);
+                    ast_push(out, & NEGATE_NODE);
+                    ast_push(out, & OR_NODE);
+                    ast_subtree_push(out, in, op1_node);
+                    ast_push(out, & NEGATE_NODE);
+                    ast_subtree_push(out, in, op2_node);
+                    ast_push(out, & OR_NODE);
                     ast_push(out, & AND_NODE);
-                    ast_push(out, & OR_NODE);
-                    ast_subtree_push(out, in, op2_node);
-                    ast_push(out, & NEGATE_NODE);
-                    ast_subtree_push(out, in, op1_node);
-                    ast_push(out, & OR_NODE);
-                    ast_push(out, & NEGATE_NODE);
-                    ast_subtree_push(out, in, op2_node);
-                    ast_subtree_push(out, in, op1_node);
+                    result = true;
+                    break;
                 } else if (node->op == OPERATOR_IMPLY) {
-                    ast_push(out, & OR_NODE);
-                    ast_subtree_push(out, in, op2_node);
-                    ast_push(out, & NEGATE_NODE);
                     ast_subtree_push(out, in, op1_node);
+                    ast_push(out, & NEGATE_NODE);
+                    ast_subtree_push(out, in, op2_node);
+                    ast_push(out, & OR_NODE);
+                    
+                    result = true;
+                    break;
                 } else {
                     invalid_code_path();
                 }
@@ -103,7 +109,7 @@ dpll_implication_elimination ( struct ast *in,
             }
         }
     }
-
+    return result;
 }
 
 
@@ -111,24 +117,25 @@ dpll_implication_elimination ( struct ast *in,
 
 struct ast *
 dpll_convert_cnf( struct interpreter *intpt,
-                 struct ast *ast )
+                  struct ast *ast )
 {
     // biconditional elimination
     // implication elimination
 
-
+    
     struct ast c[2];
     struct ast *in = c;
     struct ast *out = c + 1;
     *in = ast_dup(ast);
     *out = ast_create_sized(in->num_nodes * 2);
 
-
-    dpll_implication_elimination(in, out);\
-    ast_dbglog(out);
-    ast_clear(in);
-    in = out;
-    out = (c + 1) == c + ARRAY_LEN(c) ? c : c + 1;
+    while (dpll_implication_elimination(in, out)) {
+        ast_dbglog(out);
+        ast_clear(in);
+        in = out;
+        out = (c + 1) == c + ARRAY_LEN(c) ? c : c + 1;
+        *out = ast_create_sized(in->num_nodes * 2);
+    }
         
     
     /* for () { */

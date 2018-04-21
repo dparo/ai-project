@@ -356,7 +356,7 @@ ast_get_operand_node ( struct ast *ast,
     uint it = 1;
     struct ast_node *node = op_node;
     for ( ;
-         node != ast_begin(ast);
+         node >= ast_begin(ast);
          node --, it--) {
         if ( operand_num == (it) &&
              node != op_node) {
@@ -367,7 +367,7 @@ ast_get_operand_node ( struct ast *ast,
         }
     }
 
-    assert(node != op_node);
+    assert(node >= ast->nodes);
     return node;
 }
 
@@ -597,7 +597,6 @@ ast_build_from_command ( struct interpreter *intpt,
 
     // operator stack
 
-    fprintf(stderr, "FIX ME " __FILE__ " need clearing between calls");
     struct ast_node_stack stack = ast_node_stack_create_sized(1024);
 
 
