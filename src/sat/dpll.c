@@ -175,6 +175,55 @@ dpll_demorgan ( struct ast *ast,
 
 
 void
+dpll_double_negation_elimination_aux ( struct ast_node *expr_node,
+                                       struct ast *in,
+                                       struct ast_node_stack *out )
+{
+    struct ast_node *node = expr_node;
+    if ( node->type == AST_NODE_TYPE_OPERATOR ) {
+        if (node->op == OPERATOR_NEGATE ) {
+            struct ast_node *next_node = ast_get_operand_node( in, node, 1);
+            if (next_node->type == AST_NODE_TYPE_OPERATOR ) {
+                if (next_node->op == OPERATOR_NEGATE ) {
+                    struct ast_node *op1_node = ast_get_operand_node( in, next_node, 1);
+                    dpll_double_negation_elimination_aux(op1_node, in, out);
+                    // NOTE: Do not push the negation now, DOUBLE NEGATION cancels out
+                } else {
+                    // Every operator should be converted to AND's OR's NOT's or constants
+                    invalid_code_path();
+                }
+            } else {
+                // The `NODE` that follows the NOT it's not an operator -> it's an identifier
+                // Push the identifier back and the not
+                ast_node_stack_push(out, next_node);
+                ast_node_stack_push(out, & NEGATE_NODE);
+            }
+        } else {
+            // Top Level operator is not a negation
+            uint numofoperands = operator_num_operands(node);
+            for( size_t operand_num = 1;
+                 operand_num <= numofoperands;
+                 operand_num++ ) {
+                struct ast_node *child = ast_get_operand_node(in, node, operand_num);
+                dpll_double_negation_elimination_aux(child, in, out);
+            }
+            ast_node_stack_push(out, node);
+        }
+    } else {
+        // Top `NODE` is an identifier
+        ast_node_stack_push(out, node);                
+    }
+}
+
+void
+dpll_double_negation_elimination ( struct ast *ast,
+                                   struct ast_node_stack *out )
+{
+    dpll_double_negation_elimination_aux(ast_end(ast) - 1, ast, out);
+}
+
+
+void
 ast_node_stack_dump_reversed(struct ast_node_stack *stack,
                              struct ast *ast)
 {
@@ -213,21 +262,30 @@ dpll_convert_cnf( struct interpreter *intpt,
     printf("#  Starting Implication elimination #########\n");
     dpll_implication_elimination(& result, & stack);
     ast_node_stack_dump_reversed( &stack, & result);
-    ast_node_stack_reset(& stack);
 
+    
     printf("#  Starting demorgan   ##########\n");
+    ast_node_stack_reset(& stack);
     dpll_demorgan(& result, & stack );
     ast_node_stack_dump_reversed( &stack, & result);
     ast_dbglog(& result);
 
+
+
+    printf("#  Starting double negation elimination   ##########\n");
+    ast_node_stack_reset(& stack);
+    dpll_double_negation_elimination(& result, & stack );
+    ast_node_stack_dump_reversed( &stack, & result);
+    ast_dbglog(& result);
+
+    // replace
+    //    •  `¬(∀x  P(x))`  with  `∃x  ¬P(x)`
+    //    •  `¬(∃x  P(x))`  with  `∀x  ¬P(x)`
+    // After that, a ¬ may occur only immediately before a predicate symbol.
+    
     
 
-    {
-        ast_node_stack_dump_reversed( &stack, & result);
-        ast_dbglog(& result);
-        ast_node_stack_reset(& stack);
-    }
-    
+    ast_node_stack_reset(& stack);
     printf("DPLL Convert CNF Debug: ### END ### \n");
     
     return result;
