@@ -59,6 +59,14 @@ $(S)_clear(struct $(S) *s)
 }
 
 
+void
+$(S)_reset(struct $(S) *s)
+{
+    s->$(num_elems) = 0;
+}
+
+
+
 static inline void
 $(S)_grow_to( struct $(S) *s,
               size_t new_$(max_elems)) /* Size in BYTES !!! */

@@ -59,6 +59,14 @@ ast_clear(struct ast *s)
 }
 
 
+void
+ast_reset(struct ast *s)
+{
+    s->num_nodes = 0;
+}
+
+
+
 static inline void
 ast_grow_to( struct ast *s,
               size_t new_max_nodes) /* Size in BYTES !!! */

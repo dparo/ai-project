@@ -8,69 +8,87 @@
 #define DPLL_C_IMPLEMENTED
 //#######################################################
 
+
+struct ast_node *
+dpll_get_expr_subtree_end_node( struct ast *ast,
+                                struct ast_node *expr_node)
+{
+    assert(expr_node >= ast->nodes);
+    assert(expr_node < ast_end(ast));
+
+    if ( !ast_node_is_operator(expr_node)) {
+        return expr_node;
+    } else {
+        uint it = 0;
+        struct ast_node *node = expr_node;
+        for ( ;
+              node >= ast_begin(ast);
+              node --, it--) {
+            if (ast_node_is_operator(node)) {
+                it += operator_num_operands(node);
+            }
+            if ( (it) == 0 ) {
+                break;
+            }
+        }
+        assert(node != expr_node);
+        return node;
+    }
+
+}
+
 void
-ast_subtree_push( struct ast *out,
+ast_subtree_push( struct ast_node_stack *out,
                   struct ast *in,
                   struct ast_node *expr_node )
 {
-    assert(expr_node >= in->nodes);
-    assert(expr_node < ast_end(in));
-    
-    uint it = 0;
-    struct ast_node *node = expr_node;
-    for ( ;
-         node >= ast_begin(in);
-         node --, it--) {
-        ast_push(out, node);
-        if (ast_node_is_operator(node)) {
-            it += operator_num_operands(node);
-        }
-        if ( (it) == 0 ) {
-            node--;
-            break;
-        }
+    struct ast_node *end_node = dpll_get_expr_subtree_end_node( in, expr_node);
+
+    for (struct ast_node *node = end_node;
+         node <= expr_node;
+         node ++ ) {
+        ast_node_stack_push(out, node);
     }
 }
 
 bool
 dpll_implication_elimination ( struct ast *in,
-                               struct ast *out )
+                               struct ast_node_stack *out )
 {
     bool result = false;
-    for ( struct ast_node *node = ast_end(in) - 1;
-          node >= ast_begin(in);
-          node -- ) {
+    for ( struct ast_node *node = ast_begin(in);
+          node < ast_end(in);
+          node ++ ) {
         if ( node->type == AST_NODE_TYPE_OPERATOR ) {
-            if (node->op == OPERATOR_DOUBLE_IMPLY
-                || node->op == OPERATOR_IMPLY ) {
+            if (!result && (node->op == OPERATOR_DOUBLE_IMPLY
+                            || node->op == OPERATOR_IMPLY) ) {
                 struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
                 struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
 
                 if (node->op == OPERATOR_DOUBLE_IMPLY) {
                     ast_subtree_push(out, in, op1_node);
                     ast_subtree_push(out, in, op2_node);
-                    ast_push(out, & NEGATE_NODE);
-                    ast_push(out, & OR_NODE);
+                    ast_node_stack_push(out, & NEGATE_NODE);
+                    ast_node_stack_push(out, & OR_NODE);
                     ast_subtree_push(out, in, op1_node);
-                    ast_push(out, & NEGATE_NODE);
+                    ast_node_stack_push(out, & NEGATE_NODE);
                     ast_subtree_push(out, in, op2_node);
-                    ast_push(out, & OR_NODE);
-                    ast_push(out, & AND_NODE);
+                    ast_node_stack_push(out, & OR_NODE);
+                    ast_node_stack_push(out, & AND_NODE);
 
                     result = true;
-                    break;
                 } else if (node->op == OPERATOR_IMPLY) {
                     ast_subtree_push(out, in, op1_node);
-                    ast_push(out, & NEGATE_NODE);
+                    ast_node_stack_push(out, & NEGATE_NODE);
                     ast_subtree_push(out, in, op2_node);
-                    ast_push(out, & OR_NODE);
-                    
+                    ast_node_stack_push(out, & OR_NODE);
                     result = true;
-                    break;
                 } else {
                     invalid_code_path();
                 }
             } else {
+                ast_subtree_push( out, in, node );
+#if 0
                 uint numofoperands = operator_num_operands(node);
                 for( size_t operand_num = 1;
                      operand_num <= numofoperands;
@@ -78,13 +96,27 @@ dpll_implication_elimination ( struct ast *in,
                     struct ast_node *child = ast_get_operand_node(in, node, operand_num);
                     ast_subtree_push(out, in, child);
                 }
-                ast_push(out, node);
+                ast_node_stack_push(out, node);
+#endif
             }
         }
     }
     return result;
 }
 
+void
+ast_node_stack_dump_reversed(struct ast_node_stack *stack,
+                             struct ast *ast)
+{
+    ast_reset(ast);
+    for ( struct ast_node *node = ast_node_stack_begin(stack);
+          node < ast_node_stack_end(stack);
+          node ++ ) {
+        printf("Dumping %.*s\n", node->text_len, node->text);
+        ast_push(ast, node);
+    }
+    
+}
 
 struct ast
 dpll_convert_cnf( struct interpreter *intpt,
@@ -92,12 +124,24 @@ dpll_convert_cnf( struct interpreter *intpt,
 {
     printf("DPLL Convert CNF Debug: ### \n");
 
+    struct ast_node_stack stack = ast_node_stack_create();
+    struct ast result = ast_dup( ast);
     
-    /* while (dpll_implication_elimination(&in, &out)) { */
-    /* } */
+    while (dpll_implication_elimination(& result, & stack)) {
+        ast_node_stack_dump_reversed( &stack, & result);
+        ast_dbglog(& result);
+        ast_node_stack_reset(& stack);
+    }
 
+    
+    ast_node_stack_dump_reversed( &stack, & result);
+    ast_dbglog(& result);
+    ast_node_stack_reset(& stack);
+
+    
     printf("DPLL Convert CNF Debug: ### END ### \n");
-    return (struct ast) {0};
+    
+    return result;
 }
 
 
