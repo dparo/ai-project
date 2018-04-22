@@ -156,7 +156,7 @@ dpll_demorgan_aux ( struct ast_node *expr_node,
                  operand_num <= numofoperands;
                  operand_num++ ) {
                 struct ast_node *child = ast_get_operand_node(in, node, operand_num);
-                dpll_implication_elimination_aux(child, in, out);
+                dpll_demorgan_aux(child, in, out);
             }
             ast_node_stack_push(out, node);
         }
@@ -189,8 +189,10 @@ dpll_double_negation_elimination_aux ( struct ast_node *expr_node,
                     dpll_double_negation_elimination_aux(op1_node, in, out);
                     // NOTE: Do not push the negation now, DOUBLE NEGATION cancels out
                 } else {
-                    // Every operator should be converted to AND's OR's NOT's or constants
-                    invalid_code_path();
+                    // After applying the DEMORGAN semplification the operators `not`
+                    // should garanteed to be the lasts operator, they can only precedes
+                    // identifier if they not preeced other `nots`
+                    assert(next_node->type == AST_NODE_TYPE_IDENTIFIER);
                 }
             } else {
                 // The `NODE` that follows the NOT it's not an operator -> it's an identifier
@@ -223,7 +225,9 @@ dpll_double_negation_elimination ( struct ast *ast,
 }
 
 
-
+// Distribute ORs inwards over ANDs: repeatedly replace
+//        P ∨ ( Q ∧ R )    with    ( P ∨ Q ) ∧ ( P ∨ R ).
+//        ( Q ∧ R ) ∨ P    with    ( P ∨ Q ) ∧ ( P ∨ R ).
 void
 dpll_or_distribute_aux ( struct ast_node *expr_node,
                          struct ast *in,
@@ -231,27 +235,38 @@ dpll_or_distribute_aux ( struct ast_node *expr_node,
 {
     struct ast_node *node = expr_node;
 
-    assert_msg(0, "Implement me, this is a copy & paste job from double implication elimination");
     if ( node->type == AST_NODE_TYPE_OPERATOR ) {
-        if (node->op == OPERATOR_NEGATE ) {
-            struct ast_node *next_node = ast_get_operand_node( in, node, 1);
-            if (next_node->type == AST_NODE_TYPE_OPERATOR ) {
-                if (next_node->op == OPERATOR_NEGATE ) {
-                    struct ast_node *op1_node = ast_get_operand_node( in, next_node, 1);
-                    dpll_or_distribute_aux(op1_node, in, out);
-                    // NOTE: Do not push the negation now, DOUBLE NEGATION cancels out
-                } else {
-                    // Every operator should be converted to AND's OR's NOT's or constants
-                    invalid_code_path();
-                }
+        if (node->op == OPERATOR_OR ) {
+            struct ast_node *or_op1_node = ast_get_operand_node( in, node, 1);
+            struct ast_node *or_op2_node = ast_get_operand_node( in, node, 2);
+            if ((or_op2_node->type == AST_NODE_TYPE_OPERATOR && or_op2_node->op == OPERATOR_AND)
+                || (or_op1_node->type == AST_NODE_TYPE_OPERATOR && or_op1_node->op == OPERATOR_AND)) {
+                struct ast_node *p_node  = (or_op2_node->type == AST_NODE_TYPE_OPERATOR && or_op2_node->op == OPERATOR_AND)
+                    ? or_op1_node : or_op2_node;
+                struct ast_node *and_node = (or_op2_node->type == AST_NODE_TYPE_OPERATOR && or_op2_node->op == OPERATOR_AND)
+                    ? or_op2_node : or_op1_node;
+                struct ast_node *q_node = ast_get_operand_node( in, and_node, 1);
+                struct ast_node *r_node = ast_get_operand_node( in, and_node, 2);
+                    
+                dpll_or_distribute_aux(p_node, in, out);
+                dpll_or_distribute_aux(q_node, in, out);
+                ast_node_stack_push(out, & OR_NODE);
+                dpll_or_distribute_aux(p_node, in, out);
+                dpll_or_distribute_aux(r_node, in, out);
+                ast_node_stack_push(out, & OR_NODE);
+                ast_node_stack_push(out, & AND_NODE);
             } else {
-                // The `NODE` that follows the NOT it's not an operator -> it's an identifier
-                // Push the identifier back and the not
-                ast_node_stack_push(out, next_node);
-                ast_node_stack_push(out, & NEGATE_NODE);
+                // The or is not followed by an and op
+
+
+
+                /* /LEZZO/ */
+                dpll_or_distribute_aux(or_op1_node, in, out);
+                dpll_or_distribute_aux(or_op2_node, in, out);
+                ast_node_stack_push(out, node);
             }
         } else {
-            // Top Level operator is not a negation
+            // Top Level operator is not an OR `operator`
             uint numofoperands = operator_num_operands(node);
             for( size_t operand_num = 1;
                  operand_num <= numofoperands;
@@ -339,7 +354,7 @@ dpll_convert_cnf( struct interpreter *intpt,
     // .......... IMPLEMENTATION FOR PROPOSITIONAL CALCULUS HERE .........................
 
     // Distribute ORs inwards over ANDs: repeatedly replace P ∨ ( Q ∧ R ) with ( P ∨ Q ) ∧ ( P ∨ R ).
-    printf("#  Starting double negation elimination   ##########\n");
+    printf("#  Starting Or Distribution   ##########\n");
     ast_node_stack_reset(& stack);
     dpll_or_distribute(& result, & stack );
     ast_node_stack_dump_reversed( &stack, & result);
