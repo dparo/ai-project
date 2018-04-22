@@ -61,7 +61,9 @@ dpll_operator_conversion_aux ( struct ast_node *expr_node,
         struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
         struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
         
-        if (node->op == OPERATOR_DOUBLE_IMPLY) {
+        if (node->op == OPERATOR_DOUBLE_IMPLY
+            || node->op == OPERATOR_EQUAL_EQUAL
+            || node->op == OPERATOR_NOT_EQUAL ) {
             dpll_operator_conversion_aux(op1_node, in, out);
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & NEGATE_NODE);
@@ -71,7 +73,9 @@ dpll_operator_conversion_aux ( struct ast_node *expr_node,
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & OR_NODE);
             ast_node_stack_push(out, & AND_NODE);
-            
+            if (node->op == OPERATOR_NOT_EQUAL )
+                ast_node_stack_push(out, & NEGATE_NODE);
+                
         } else if (node->op == OPERATOR_IMPLY) {
             dpll_operator_conversion_aux(op1_node, in, out);
             ast_node_stack_push(out, & NEGATE_NODE);
@@ -363,7 +367,7 @@ dpll_convert_cnf( struct interpreter *intpt,
     struct ast_node_stack stack = ast_node_stack_create();
     struct ast result = ast_dup( ast);
 
-    printf("#  Starting Implication elimination #########\n");
+    printf("#  Starting Operators Conversion #########\n");
     dpll_operator_conversion(& result, & stack);
     ast_node_stack_dump_reversed( &stack, & result);
     ast_dbglog(& result);
