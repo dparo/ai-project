@@ -52,7 +52,7 @@ ast_subtree_push( struct ast_node_stack *out,
 }
 
 void
-dpll_implication_elimination_aux ( struct ast_node *expr_node,
+dpll_operator_conversion_aux ( struct ast_node *expr_node,
                                    struct ast *in,
                                    struct ast_node_stack *out )
 {
@@ -64,20 +64,20 @@ dpll_implication_elimination_aux ( struct ast_node *expr_node,
             struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
 
             if (node->op == OPERATOR_DOUBLE_IMPLY) {
-                dpll_implication_elimination_aux(op1_node, in, out);
-                dpll_implication_elimination_aux(op2_node, in, out);
+                dpll_operator_conversion_aux(op1_node, in, out);
+                dpll_operator_conversion_aux(op2_node, in, out);
                 ast_node_stack_push(out, & NEGATE_NODE);
                 ast_node_stack_push(out, & OR_NODE);
-                dpll_implication_elimination_aux(op1_node, in, out);
+                dpll_operator_conversion_aux(op1_node, in, out);
                 ast_node_stack_push(out, & NEGATE_NODE);
-                dpll_implication_elimination_aux(op2_node, in, out);
+                dpll_operator_conversion_aux(op2_node, in, out);
                 ast_node_stack_push(out, & OR_NODE);
                 ast_node_stack_push(out, & AND_NODE);
 
             } else if (node->op == OPERATOR_IMPLY) {
-                dpll_implication_elimination_aux(op1_node, in, out);
+                dpll_operator_conversion_aux(op1_node, in, out);
                 ast_node_stack_push(out, & NEGATE_NODE);
-                dpll_implication_elimination_aux(op2_node, in, out);
+                dpll_operator_conversion_aux(op2_node, in, out);
                 ast_node_stack_push(out, & OR_NODE);
             } 
         } else {
@@ -86,7 +86,7 @@ dpll_implication_elimination_aux ( struct ast_node *expr_node,
                  operand_num <= numofoperands;
                  operand_num++ ) {
                 struct ast_node *child = ast_get_operand_node(in, node, operand_num);
-                dpll_implication_elimination_aux(child, in, out);
+                dpll_operator_conversion_aux(child, in, out);
             }
             ast_node_stack_push(out, node);
         }
@@ -96,10 +96,10 @@ dpll_implication_elimination_aux ( struct ast_node *expr_node,
 }
 
 void
-dpll_implication_elimination ( struct ast *ast,
-                               struct ast_node_stack *out )
+dpll_operator_conversion ( struct ast *ast,
+                           struct ast_node_stack *out )
 {
-    dpll_implication_elimination_aux(ast_end(ast) - 1, ast, out);
+    dpll_operator_conversion_aux(ast_end(ast) - 1, ast, out);
 }
 
 
@@ -151,6 +151,11 @@ dpll_demorgan_aux ( struct ast_node *expr_node,
             }
         } else {
             // Top Level operator is not a negation
+            assert((node->type == AST_NODE_TYPE_OPERATOR || node->type == AST_NODE_TYPE_IDENTIFIER));
+            if (node->type == AST_NODE_TYPE_OPERATOR) {
+                assert_msg(node->op == OPERATOR_AND || node->op == OPERATOR_OR,
+                    "Before Demogan applies every opreator should be converted to NOTS ORS ANDS");
+            }
             uint numofoperands = operator_num_operands(node);
             for( size_t operand_num = 1;
                  operand_num <= numofoperands;
@@ -317,6 +322,9 @@ ast_node_stack_dump(struct ast_node_stack *stack,
     }    
 }
 
+#define DPLL_TEST_C_IMPL
+#include "dpll-test.c"
+
 
 struct ast
 dpll_convert_cnf( struct interpreter *intpt,
@@ -328,15 +336,17 @@ dpll_convert_cnf( struct interpreter *intpt,
     struct ast result = ast_dup( ast);
 
     printf("#  Starting Implication elimination #########\n");
-    dpll_implication_elimination(& result, & stack);
+    dpll_operator_conversion(& result, & stack);
     ast_node_stack_dump_reversed( &stack, & result);
-
+    ast_dbglog(& result);
+    test_dpll_operator_conversion_invariant(& result);
     
     printf("#  Starting demorgan   ##########\n");
     ast_node_stack_reset(& stack);
     dpll_demorgan(& result, & stack );
     ast_node_stack_dump_reversed( &stack, & result);
     ast_dbglog(& result);
+    test_dpll_demorgan_invariant(& result);
 
 
 
@@ -345,6 +355,8 @@ dpll_convert_cnf( struct interpreter *intpt,
     dpll_double_negation_elimination(& result, & stack );
     ast_node_stack_dump_reversed( &stack, & result);
     ast_dbglog(& result);
+    test_dpll_double_negation_elimination_invariant(& result);
+        
 
     // replace
     //    •  `¬(∀x  P(x))`  with  `∃x  ¬P(x)`
@@ -359,6 +371,7 @@ dpll_convert_cnf( struct interpreter *intpt,
     dpll_or_distribute(& result, & stack );
     ast_node_stack_dump_reversed( &stack, & result);
     ast_dbglog(& result);
+    test_dpll_or_distribute_invariant(& result);
     
     
     ast_node_stack_reset(& stack);
