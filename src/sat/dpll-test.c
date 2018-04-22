@@ -81,7 +81,7 @@ test_dpll_double_negation_elimination_invariant(struct ast *ast)
 
 
 void
-test_dpll_or_distribute_invariant(struct ast *ast)
+test_dpll_or_distribution_invariant(struct ast *ast)
 {
 #if __DEBUG
     test_dpll_operator_conversion_invariant(ast);

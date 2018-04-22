@@ -233,10 +233,15 @@ dpll_double_negation_elimination ( struct ast *ast,
 // Distribute ORs inwards over ANDs: repeatedly replace
 //        P ∨ ( Q ∧ R )    with    ( P ∨ Q ) ∧ ( P ∨ R ).
 //        ( Q ∧ R ) ∨ P    with    ( P ∨ Q ) ∧ ( P ∨ R ).
+
+
+
+//  ( b ∧ a ) ∨ s    with    ( s ∨ b ) ∧ ( s ∨ a )
 void
-dpll_or_distribute_aux ( struct ast_node *expr_node,
-                         struct ast *in,
-                         struct ast_node_stack *out )
+dpll_or_distribution_aux ( struct ast_node *expr_node,
+                           struct ast *in,
+                           struct ast_node_stack *out,
+                           bool *did_work)
 {
     struct ast_node *node = expr_node;
 
@@ -253,21 +258,22 @@ dpll_or_distribute_aux ( struct ast_node *expr_node,
                 struct ast_node *q_node = ast_get_operand_node( in, and_node, 1);
                 struct ast_node *r_node = ast_get_operand_node( in, and_node, 2);
                     
-                dpll_or_distribute_aux(p_node, in, out);
-                dpll_or_distribute_aux(q_node, in, out);
+                dpll_or_distribution_aux(p_node, in, out, did_work);
+                dpll_or_distribution_aux(q_node, in, out, did_work);
                 ast_node_stack_push(out, & OR_NODE);
-                dpll_or_distribute_aux(p_node, in, out);
-                dpll_or_distribute_aux(r_node, in, out);
+                dpll_or_distribution_aux(p_node, in, out, did_work);
+                dpll_or_distribution_aux(r_node, in, out, did_work);
                 ast_node_stack_push(out, & OR_NODE);
                 ast_node_stack_push(out, & AND_NODE);
+                *did_work = true;
             } else {
                 // The or is not followed by an and op
 
 
 
                 /* /LEZZO/ */
-                dpll_or_distribute_aux(or_op1_node, in, out);
-                dpll_or_distribute_aux(or_op2_node, in, out);
+                dpll_or_distribution_aux(or_op1_node, in, out, did_work);
+                dpll_or_distribution_aux(or_op2_node, in, out, did_work);
                 ast_node_stack_push(out, node);
             }
         } else {
@@ -277,7 +283,7 @@ dpll_or_distribute_aux ( struct ast_node *expr_node,
                  operand_num <= numofoperands;
                  operand_num++ ) {
                 struct ast_node *child = ast_get_operand_node(in, node, operand_num);
-                dpll_or_distribute_aux(child, in, out);
+                dpll_or_distribution_aux(child, in, out, did_work);
             }
             ast_node_stack_push(out, node);
         }
@@ -288,11 +294,13 @@ dpll_or_distribute_aux ( struct ast_node *expr_node,
 }
 
 
-void
-dpll_or_distribute ( struct ast *ast,
-                     struct ast_node_stack *out )
+bool
+dpll_or_distribution ( struct ast *ast,
+                       struct ast_node_stack *out )
 {
-    dpll_or_distribute_aux(ast_end(ast) - 1, ast, out);
+    bool result = false;
+    dpll_or_distribution_aux(ast_end(ast) - 1, ast, out, & result);
+    return result;
 }
 
 
@@ -304,7 +312,7 @@ ast_node_stack_dump_reversed(struct ast_node_stack *stack,
     for ( struct ast_node *node = ast_node_stack_begin(stack);
           node < ast_node_stack_end(stack);
           node ++ ) {
-        printf("Dumping %.*s\n", node->text_len, node->text);
+        // printf("Dumping %.*s\n", node->text_len, node->text);
         ast_push(ast, node);
     }    
 }
@@ -317,7 +325,7 @@ ast_node_stack_dump(struct ast_node_stack *stack,
     for ( struct ast_node *node = ast_node_stack_end(stack) - 1;
           node >= ast_node_stack_begin(stack);
           node -- ) {
-        printf("Dumping %.*s\n", node->text_len, node->text);
+        //printf("Dumping %.*s\n", node->text_len, node->text);
         ast_push(ast, node);
     }    
 }
@@ -368,10 +376,13 @@ dpll_convert_cnf( struct interpreter *intpt,
     // Distribute ORs inwards over ANDs: repeatedly replace P ∨ ( Q ∧ R ) with ( P ∨ Q ) ∧ ( P ∨ R ).
     printf("#  Starting Or Distribution   ##########\n");
     ast_node_stack_reset(& stack);
-    dpll_or_distribute(& result, & stack );
+    while (dpll_or_distribution(& result, & stack )) {
+        ast_node_stack_dump_reversed( &stack, & result);
+        ast_node_stack_reset(& stack);
+    }
     ast_node_stack_dump_reversed( &stack, & result);
     ast_dbglog(& result);
-    test_dpll_or_distribute_invariant(& result);
+    test_dpll_or_distribution_invariant(& result);
     
     
     ast_node_stack_reset(& stack);
