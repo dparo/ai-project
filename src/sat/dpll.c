@@ -104,7 +104,35 @@ dpll_operator_conversion_aux ( struct ast_node *expr_node,
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & OR_NODE);
             ast_node_stack_push(out, & AND_NODE);
+        } else if (node->op == OPERATOR_GREATER) {
+            // (a > b) ==== (a & ~b)
+            dpll_operator_conversion_aux(op1_node, in, out);
+            dpll_operator_conversion_aux(op2_node, in, out);
+            ast_node_stack_push(out, & NEGATE_NODE);
+            ast_node_stack_push(out, & AND_NODE);           
+        } else if (node->op == OPERATOR_GREATER_EQUAL) {
+            // (a >= b) ==== (a | ~b)
+            dpll_operator_conversion_aux(op1_node, in, out);
+            dpll_operator_conversion_aux(op2_node, in, out);
+            ast_node_stack_push(out, & NEGATE_NODE);
+            ast_node_stack_push(out, & OR_NODE);
+        } else if (node->op == OPERATOR_LESS ) {
+            // (a < b) ==== (~a & b)
+            dpll_operator_conversion_aux(op1_node, in, out);
+            ast_node_stack_push(out, & NEGATE_NODE);
+            dpll_operator_conversion_aux(op2_node, in, out);
+            ast_node_stack_push(out, & AND_NODE);
+        } else if (node->op == OPERATOR_LESS_EQUAL ) {
+            // (a <= b) ==== (~a | b)
+            dpll_operator_conversion_aux(op1_node, in, out);
+            ast_node_stack_push(out, & NEGATE_NODE);
+            dpll_operator_conversion_aux(op2_node, in, out);
+            ast_node_stack_push(out, & OR_NODE);
         } else {
+            assert_msg(0, "Operator needs to be converted as ANDs ORs and NOTs\n"
+                       "The following code is not reasonable to do");
+            
+# if 0 
             uint numofoperands = operator_num_operands(node);
             for( size_t operand_num = 1;
                  operand_num <= numofoperands;
@@ -113,8 +141,9 @@ dpll_operator_conversion_aux ( struct ast_node *expr_node,
                 dpll_operator_conversion_aux(child, in, out);
             }
             ast_node_stack_push(out, node);
+#endif
         }
-    }  else {
+    } else {
         ast_node_stack_push( out, node );
     }
 }

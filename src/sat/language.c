@@ -435,9 +435,7 @@ ast_node_from_token( struct ast_node *node,
         }
     } else if (curr_t->type == TT_CONSTANT ) {
         node->type = AST_NODE_TYPE_CONSTANT;
-    }
-
-    else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
+    } else if (curr_t->type == TT_PUNCT_OPEN_PAREN) {
         if (prev_t && prev_t->type == TT_IDENTIFIER) {
             node->type = AST_NODE_TYPE_OPERATOR;
             node->op = OPERATOR_FNCALL;
@@ -461,9 +459,7 @@ ast_node_from_token( struct ast_node *node,
             node->type = AST_NODE_TYPE_DELIMITER;
         }
         node->del = PREFIX_DELIMITER_BRACE;
-    }
-
-    else if (curr_t->type == TT_PUNCT_CLOSE_PAREN) {
+    } else if (curr_t->type == TT_PUNCT_CLOSE_PAREN) {
         node->type = AST_NODE_TYPE_DELIMITER;
         node->del = POSTFIX_DELIMITER_PAREN;
     } else if (curr_t->type == TT_PUNCT_CLOSE_BRACKET) {
@@ -472,10 +468,7 @@ ast_node_from_token( struct ast_node *node,
     } else if (curr_t->type == TT_PUNCT_CLOSE_BRACE) {
         node->type = AST_NODE_TYPE_DELIMITER;
         node->del = POSTFIX_DELIMITER_BRACE;
-    }
-
-    
-    else if (curr_t->type == TT_PUNCT_COMMA) {
+    } else if (curr_t->type == TT_PUNCT_COMMA) {
         node->type = AST_NODE_TYPE_DELIMITER;
         node->del = INFIX_DELIMITER_COMMA;
     } else if (curr_t->type == TT_PUNCT_SEMICOLON) {
@@ -487,8 +480,7 @@ ast_node_from_token( struct ast_node *node,
     } else if (curr_t->type == TT_PUNCT_COLON) {
         node->type = AST_NODE_TYPE_DELIMITER;
         node->del = POSTFIX_DELIMITER_COLON;
-    }
-    else {
+    } else {
         node->type = AST_NODE_TYPE_OPERATOR;
         switch( curr_t->type ) {
         case TT_PUNCT_LOGICAL_NOT: case TT_PUNCT_BITWISE_NOT: { node->op = OPERATOR_NEGATE; } break;

@@ -21,7 +21,6 @@
 #include <stdarg.h>
 #include <string.h>
 #include <math.h>
-#include <math.h>
 #include <limits.h>
 #include <time.h>
 #include <ctype.h>
@@ -30,12 +29,6 @@
 #define UNUSED(...)  (void)(__VA_ARGS__)
 #define MIN(a,b)     ((a) < (b) ? (a) : (b))
 #define MAX(a,b)     ((a) < (b) ? (b) : (a))
-
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <arpa/inet.h>
 
 
 #define MEMORY_C_IMPL
