@@ -94,13 +94,17 @@ test_dpll_or_distribution_invariant(struct ast *ast)
         if (node->type == AST_NODE_TYPE_OPERATOR) {
             if (node->op == OPERATOR_OR ) {
                 struct ast_node *op1_node = ast_get_operand_node( ast, node, 1);
-                struct ast_node *op2_node = ast_get_operand_node( ast, node, 1);
+                struct ast_node *op2_node = ast_get_operand_node( ast, node, 2);
                 if ( op1_node->type == AST_NODE_TYPE_OPERATOR)
                     assert(op1_node->op != OPERATOR_AND);
                 if ( op2_node->type == AST_NODE_TYPE_OPERATOR)
                     assert(op2_node->op != OPERATOR_AND);
                 
             } else if (node->op == OPERATOR_AND ) {
+            } else if (node->op == OPERATOR_NEGATE) {
+                struct ast_node *op1_node = ast_get_operand_node( ast, node, 1);
+                assert(op1_node->type == AST_NODE_TYPE_IDENTIFIER ||
+                       op1_node->type == AST_NODE_TYPE_CONSTANT);
             } else {
                 assert(node->type == AST_NODE_TYPE_IDENTIFIER ||
                        node ->type == AST_NODE_TYPE_CONSTANT);
