@@ -22,16 +22,15 @@ struct interpreter {
 //#######################################################
 
 
+struct interpreter global_interpreter = {0};
 
-PRINTF_STYLE(2, 3)
+
+PRINTF_STYLE(1, 2)
 static inline int
-intpt_out_printf ( struct interpreter *intpt,
-                   char *format,
-                   ... )
-
+interpreter_log ( char *format,
+                  ... )
 {
-    assert(intpt);
-    FILE *f = intpt->stream_out ? intpt->stream_out : stdout;
+    FILE *f = global_interpreter.stream_out ? global_interpreter.stream_out : stdout;
     va_list ap;
     
     va_start(ap, format);
@@ -42,15 +41,13 @@ intpt_out_printf ( struct interpreter *intpt,
 
 
 
-PRINTF_STYLE(2, 3)
+PRINTF_STYLE(1, 2)
 static inline int
-intpt_info_printf ( struct interpreter *intpt,
-                    char *format,
-                    ... )
+interpreter_logi ( char *format,
+                   ... )
 
 {
-    assert(intpt);
-    FILE *f = intpt->stream_info ? intpt->stream_info : stdout;
+    FILE *f = global_interpreter.stream_info ? global_interpreter.stream_info : stdout;
     va_list ap;
     
     va_start(ap, format);
@@ -252,25 +249,25 @@ ast_node_constant_to_bool( struct ast_node *node )
 
 
 static inline void
-print_tab(struct interpreter *intpt)
+log_tabulator( void )
 {
-    intpt_out_printf(intpt, "\t");
+    interpreter_log("\t");
 }
 
 
 void
-eval_entire_expr( struct interpreter *intpt )
+eval_entire_expr( void )
 {
-    struct ast *ast = &intpt->ast;
-    struct symtable *symtable = & intpt->symtable;
-    struct vm_inputs *vmi = & intpt->vmi;
+    struct ast *ast = &global_interpreter.ast;
+    struct symtable *symtable = & global_interpreter.symtable;
+    struct vm_inputs *vmi = & global_interpreter.vmi;
 
 # if 0 // This assert is not needed cuz eval_entire_expr may be called with constant like `0 | 1`
     assert(vmi->num_inputs > 0);
 #endif
 
 
-    struct vm_stack *vms = & intpt->vms;
+    struct vm_stack *vms = & global_interpreter.vms;
     
     assert(vms->num_bits == 0);
     // assert_msg(0, "Needs to handle it with recursion man");
@@ -300,8 +297,8 @@ eval_entire_expr( struct interpreter *intpt )
                 // Token is an operator: Needs to perform the operation
                 //                       and push it into the stack
                 eval_operator( node, vms ) ;
-                intpt_out_printf(intpt, "%d", vm_stack_peek_value(vms));
-                print_tab(intpt);
+                interpreter_log("%d", vm_stack_peek_value(vms));
+                log_tabulator();
             }            
         }
 #if 0  // Not really necessary: Example    `a; (B | C)` cannot be avaluated with this assert restriction
@@ -327,10 +324,9 @@ symtable_build_from_ast ( struct symtable *symtable,
 
 
 static inline void
-intpt_print_node(struct interpreter *intpt,
-                struct ast_node *node)
+intpt_print_node( struct ast_node *node )
 {
-    FILE *f = intpt->stream_info ? intpt->stream_info : stdout;
+    FILE *f = global_interpreter.stream_info ? global_interpreter.stream_info : stdout;
     ast_node_print(f, node);
 }
 
@@ -372,30 +368,29 @@ ast_get_operand_node ( struct ast *ast,
 }
 
 void
-ast_print_expr ( struct interpreter *intpt,
-                 struct ast_node *expr_node )
+ast_print_expr ( struct ast_node *expr_node )
 {
-    struct ast* ast = & intpt->ast;
+    struct ast* ast = & global_interpreter.ast;
     assert( expr_node >= ast->nodes && (expr_node < ast_end(ast)));
     if ( expr_node->type == AST_NODE_TYPE_IDENTIFIER || expr_node->type == AST_NODE_TYPE_CONSTANT ) {
-        intpt_print_node(intpt, expr_node);
+        intpt_print_node(expr_node);
     } else if (ast_node_is_operator(expr_node)) {
         assert(ast_node_is_operator(expr_node));
         
         uint numofoperands = operator_num_operands(expr_node);
 
-        intpt_out_printf(intpt, expr_node == (ast_end(ast) - 1) ? "result: (" : "(");
-        intpt_print_node(intpt, expr_node);
+        interpreter_log(expr_node == (ast_end(ast) - 1) ? "result: (" : "(");
+        intpt_print_node(expr_node);
         
 
         for( size_t operand_num = 1;
              operand_num <= numofoperands;
              operand_num++ ) {
-            intpt_out_printf(intpt, " ");
+            interpreter_log(" ");
             struct ast_node *op_node = ast_get_operand_node(ast, expr_node, operand_num);
-            ast_print_expr(intpt, op_node);
+            ast_print_expr(op_node);
         }
-        intpt_out_printf(intpt, ")");
+        interpreter_log(")");
     } else {
         invalid_code_path("");
     }
@@ -403,38 +398,38 @@ ast_print_expr ( struct interpreter *intpt,
 
 
 void
-intpt_print_header( struct interpreter *intpt)
+intpt_print_header( void )
 {
-    struct symtable *symtable = & intpt->symtable;
-    struct ast *ast = &intpt->ast;
+    struct symtable *symtable = & global_interpreter.symtable;
+    struct ast *ast = &global_interpreter.ast;
     
     int s_it;
     char *key;
     void *value; (void) value;
     ast_symtable_for(s_it, symtable, key, value) {
-        intpt_out_printf(intpt, "%s", key);
-        print_tab(intpt);
+        interpreter_log("%s", key);
+        log_tabulator();
     }
 
     for (struct ast_node *node = ast_begin(ast);
          node < ast_end(ast);
          node ++ ) {
         if ( ast_node_is_operator(node) ) {
-            ast_print_expr(intpt, node);
-            print_tab(intpt);
+            ast_print_expr(node);
+            log_tabulator();
         }
     }
         
 
-    intpt_out_printf(intpt, "\n");
-    intpt_out_printf(intpt, "\n");
+    interpreter_log("\n");
+    interpreter_log("\n");
 }
 
 void
-intpt_print_inputs( struct interpreter *intpt )
+intpt_print_inputs( void )
 {
-    struct symtable *symtable = & intpt->symtable;
-    struct vm_inputs *vmi = & intpt->vmi;
+    struct symtable *symtable = & global_interpreter.symtable;
+    struct vm_inputs *vmi = & global_interpreter.vmi;
     
     int s_it;
     char *key;
@@ -448,8 +443,8 @@ intpt_print_inputs( struct interpreter *intpt )
         assert(syminfo);
         size_t vmi_index = syminfo->vmi_index;
         bool bool_value = vm_inputs_get_value(vmi, vmi_index);
-        intpt_out_printf(intpt, "%d", bool_value);
-        print_tab(intpt);
+        interpreter_log("%d", bool_value);
+        log_tabulator();
     }
 }
 
@@ -474,22 +469,22 @@ symtable_preprocess_expr ( struct symtable *symtable )
 
 
 void
-ast_representation_dbglog(struct interpreter *intpt)
+ast_representation_dbglog( void )
 {
-    struct ast *ast = & intpt->ast;
+    struct ast *ast = & global_interpreter.ast;
 
-    intpt_info_printf(intpt, "AST DEBUG LOG: ################################\n");
+    interpreter_logi("AST DEBUG LOG: ################################\n");
     // Debug expression printing
     for (struct ast_node *node = ast_begin(ast);
          node < ast_end(ast);
          node ++) {
         if ( ast_node_is_operator(node) ) {
-            ast_print_expr(intpt, node);
-            print_tab(intpt);
+            ast_print_expr(node);
+            log_tabulator();
         }
     }
-    intpt_info_printf(intpt, "\n###############################################\n");
-    intpt_info_printf(intpt, "\n\n");
+    interpreter_logi("\n###############################################\n");
+    interpreter_logi("\n\n");
 }
 
 
@@ -497,14 +492,14 @@ ast_representation_dbglog(struct interpreter *intpt)
 #include "dpll.c"
 
 void
-bruteforce_solve(struct interpreter *intpt)
+bruteforce_solve( void )
 {
-    struct ast *ast = & intpt->ast;
-    struct symtable *symtable =  & intpt->symtable;
-    struct vm_inputs *vmi = & intpt->vmi;
-    struct vm_stack *vms = & intpt->vms;
+    struct ast *ast = & global_interpreter.ast;
+    struct symtable *symtable =  & global_interpreter.symtable;
+    struct vm_inputs *vmi = & global_interpreter.vmi;
+    struct vm_stack *vms = & global_interpreter.vms;
     
-    intpt_print_header(intpt);
+    intpt_print_header();
         
     size_t max_it = 1 << symtable_num_syms(symtable);
 
@@ -515,39 +510,15 @@ bruteforce_solve(struct interpreter *intpt)
         vm_inputs_dbglog(vmi);
 #       endif
         // Use the value right here and compute
-        intpt_print_inputs(intpt);
+        intpt_print_inputs();
         {
-            eval_entire_expr(intpt);
+            eval_entire_expr();
 
-            intpt_out_printf(intpt, "\n");
+            interpreter_log("\n");
         }
 
         vm_inputs_increment(vmi);
     }
-}
-
-bool
-ast_check_validity( struct interpreter *intpt)
-{
-    return true;
-}
-
-
-
-
-void
-ast_node_swap( struct interpreter *intpt,
-               size_t ast_node1_index,
-               size_t ast_node2_index )
-{
-    assert(intpt);
-    assert(ast_node1_index < intpt->ast.num_nodes);
-    assert(ast_node2_index < intpt->ast.num_nodes);
-
-    void *dest, *src;
-    size_t n = 10;
-    
-    //memmove(dest, src, n);
 }
 
 
@@ -563,10 +534,9 @@ ast_node_swap( struct interpreter *intpt,
 // This function is pretty self-contained. The interpreter
 // cares only about the AST which is pretty stable at this point.
 bool
-ast_build_from_command ( struct interpreter *intpt,
-                         char *commandline, size_t commandline_len )
+ast_build_from_command ( char *commandline, size_t commandline_len )
 {
-    struct ast *ast = & intpt->ast;
+    struct ast *ast = & global_interpreter.ast;
     ast_clear(ast);
 
     // Ensure null-termination, It is not strictly necessary
@@ -611,13 +581,13 @@ ast_build_from_command ( struct interpreter *intpt,
         // NOTE: At every iteration the tokenizer error is cleared with the call to get_next_token
         if ( tknzr.err ) {
             puts(tknzr.err_desc);
-            intpt_info_printf( intpt, " ### Internal parsing error\n");
+            interpreter_logi(" ### Internal parsing error\n");
             goto parse_failed;
 
         }
         bool conversion = ast_node_from_token(&node, curr_t, prev_t);
         if ( !conversion ) {
-            intpt_info_printf(intpt, " ### Parsing error\n ### Token `%.*s` is not supported\n", curr_t->text_len, curr_t->text );
+            interpreter_logi(" ### Parsing error\n ### Token `%.*s` is not supported\n", curr_t->text_len, curr_t->text );
             goto parse_failed;
         }
 
@@ -674,7 +644,7 @@ ast_build_from_command ( struct interpreter *intpt,
                             if ( peek && ! (is_prefix_delimiter(peek) || is_infix_delimiter(peek))) {
                                 if (!(node.type == AST_NODE_TYPE_DELIMITER && node.del == POSTFIX_DELIMITER_SEMICOLON)) {
                                     // Mismatched parentheses
-                                    intpt_info_printf(intpt, " ### Mismatched parens\n");
+                                    interpreter_logi(" ### Mismatched parens\n");
                                     goto parse_failed;
                                 }
                             }
@@ -726,7 +696,7 @@ ast_build_from_command ( struct interpreter *intpt,
             
         SHUNT_DBG();
         if ( is_prefix_delimiter(peek) || is_postfix_delimiter(peek)) {
-            intpt_info_printf( intpt, " ### Mismatched parens\n");
+            interpreter_logi(" ### Mismatched parens\n");
             goto parse_failed;
         }
                                 
@@ -746,7 +716,7 @@ ast_build_from_command ( struct interpreter *intpt,
     
 parse_failed: {
         ast_node_stack_clear(&stack);
-        intpt_info_printf(intpt, " ### Failed formula parsing\n");
+        interpreter_logi(" ### Failed formula parsing\n");
         return false;
     }
 
@@ -754,11 +724,11 @@ parse_failed: {
 
 
 bool
-intpt_begin_frame(struct interpreter *intpt )
+intpt_begin_frame(void )
 {
     bool result = true;
     bool symtable_result = false;
-    struct symtable *symtable =  & intpt->symtable;
+    struct symtable *symtable =  & global_interpreter.symtable;
     symtable_clear(symtable);
     if (symtable_is_valid(symtable)) {
         symtable_result = symtable_clear(symtable);
@@ -767,33 +737,32 @@ intpt_begin_frame(struct interpreter *intpt )
     }
     result &= symtable_result;
     
-    intpt->vms.num_bits = 0;
-    intpt->ast.num_nodes = 0;
-    intpt->vmi.num_inputs = 0;
+    global_interpreter.vms.num_bits = 0;
+    global_interpreter.ast.num_nodes = 0;
+    global_interpreter.vmi.num_inputs = 0;
 
     
 
-    struct ast *ast = & intpt->ast;
-    assert(intpt->vms.num_bits == 0);
-    assert(intpt->ast.num_nodes == 0);
-    assert(symtable_num_syms(& (intpt->symtable)) == 0);
-    assert(intpt->vmi.num_inputs == 0);
+    struct ast *ast = & global_interpreter.ast;
+    assert(global_interpreter.vms.num_bits == 0);
+    assert(global_interpreter.ast.num_nodes == 0);
+    assert(symtable_num_syms(& (global_interpreter.symtable)) == 0);
+    assert(global_interpreter.vmi.num_inputs == 0);
     return result;
 }
 
 void
-intpt_end_frame( struct interpreter *intpt)
+intpt_end_frame( void )
 {
-    (void) intpt;
 }
 
 
 bool
-preprocess_command ( struct interpreter *intpt )
+preprocess_command ( void )
 {
     bool alloc_result = true;
-    struct ast *ast = & intpt->ast;
-    struct symtable *symtable = & intpt->symtable;
+    struct ast *ast = & global_interpreter.ast;
+    struct symtable *symtable = & global_interpreter.symtable;
 
     for (struct ast_node *node = ast_end(ast);
          node != ast_begin(ast);
@@ -801,7 +770,7 @@ preprocess_command ( struct interpreter *intpt )
         if ( node->type == AST_NODE_TYPE_CONSTANT ) {
             bool valid = valid_constant(node);
             if ( ! valid ) {
-                intpt_info_printf(intpt, " ### %.*s is not a valid constant: valid constants are {`0`, `1`}\n", node->text_len, node->text);
+                interpreter_logi(" ### %.*s is not a valid constant: valid constants are {`0`, `1`}\n", node->text_len, node->text);
                 goto INVALID_EXPR;
             }
         }
@@ -810,7 +779,7 @@ preprocess_command ( struct interpreter *intpt )
     symtable_build_from_ast(symtable, ast);
     symtable_preprocess_expr(symtable);
     
-    struct vm_inputs *vmi = & intpt -> vmi;
+    struct vm_inputs *vmi = & global_interpreter.vmi;
     vm_inputs_init_from_symtable( vmi, symtable);
 
 
@@ -820,7 +789,7 @@ preprocess_command ( struct interpreter *intpt )
     }
 
 INVALID_EXPR: {
-        intpt_info_printf(intpt, " ### Semantic or syntactic error\n");
+        interpreter_logi(" ### Semantic or syntactic error\n");
         return 0;
     }
 }
@@ -829,19 +798,19 @@ INVALID_EXPR: {
 
 
 bool
-eval_ast(struct interpreter *intpt )
+eval_ast( void )
 {
     bool result = false;
-    struct ast *ast = & intpt->ast;
-    struct vm_inputs *vmi = & intpt->vmi;
+    struct ast *ast = & global_interpreter.ast;
+    struct vm_inputs *vmi = & global_interpreter.vmi;
 
     
-    if (preprocess_command (intpt)) {
+    if (preprocess_command ()) {
 #if 1
-        dpll_convert_cnf(intpt, ast);
-        //intpt_print_header(intpt);
+        dpll_convert_cnf(ast);
+        //intpt_print_header();
 #else
-        bruteforce_solve(intpt);
+        bruteforce_solve();
 #endif
         result = true;
     } else {
@@ -852,9 +821,9 @@ eval_ast(struct interpreter *intpt )
 
 
 void
-test_dpll_preprocess_print(struct interpreter *intpt)
+test_dpll_preprocess_print(void)
 {
-    struct ast *ast = & intpt->ast;
+    struct ast *ast = & global_interpreter.ast;
     struct ast_node *node;
     size_t it = 0;
     // Debug expression printing
@@ -870,7 +839,7 @@ test_dpll_preprocess_print(struct interpreter *intpt)
     struct symbol_info *syminfo;
     int s_it = 0;
     printf("\nSyminfo#####\n");
-    ast_symtable_for(s_it, &(intpt->symtable), symname, syminfo) {
+    ast_symtable_for(s_it, &(global_interpreter.symtable), symname, syminfo) {
         printf("{text: \"%s\", index: %d, has_value_assigned: %d, value: %d}\n", symname, s_it, syminfo->has_value_assigned, syminfo->value);
     }
     
@@ -881,30 +850,29 @@ test_dpll_preprocess_print(struct interpreter *intpt)
 
 
 void
-eval_commandline ( struct interpreter *intpt,
-                   char *commandline,
+eval_commandline ( char *commandline,
                    size_t commandline_len )
 {
-    struct ast *ast = & intpt->ast;
+    struct ast *ast = & global_interpreter.ast;
     
-    if ( intpt_begin_frame(intpt)) {
-        if ( ast_build_from_command( intpt, commandline, commandline_len ) ) {
+    if ( intpt_begin_frame()) {
+        if ( ast_build_from_command( commandline, commandline_len ) ) {
             printf("##########After Parsing AST:\n");
             ast_dbglog(ast);
             printf("##############################\n\n\n\n");
 # if 0
             
-            test_dpll(intpt);
-            //ast_representation_dbglog(intpt);
+            test_dpll();
+            //ast_representation_dbglog();
 # else
-            if ( eval_ast( intpt ) ) {
+            if ( eval_ast() ) {
                 
             }
 #endif
         }
-        intpt_end_frame(intpt);
+        intpt_end_frame();
     } else {
-        intpt_info_printf(intpt, "Failed to setup Interpreter context for evaluating the command\n");
+        interpreter_logi("Failed to setup Interpreter context for evaluating the command\n");
     }
 }
 

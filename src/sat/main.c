@@ -78,9 +78,9 @@ user_interact(char **commandline, size_t *commandline_len)
 }
 
 
-#define EVAL_COMMANDLINE_INPLACE(intpt, command)                 \
+#define EVAL_COMMANDLINE_INPLACE(command)                 \
     printf("\n\nformula: %s\n\n", command);                      \
-    eval_commandline((intpt), strdup(command), strlen(command))
+    eval_commandline(strdup(command), strlen(command))
         
 
 #define COMM_LINE_ARGS_C_IMPL
@@ -96,23 +96,22 @@ main( int argc, char **argv)
     char * commandline = NULL;
     size_t commandline_len = 0;
 
-    struct interpreter intpt = {0};
-    
+   
 #if 1
-    EVAL_COMMANDLINE_INPLACE ( & intpt, "P ^ Q");
-    //EVAL_COMMANDLINE_INPLACE ( & intpt, "a = {b, c & d, e}");
-    //EVAL_COMMANDLINE_INPLACE ( & intpt, "(#x a) & b");
-    //EVAL_COMMANDLINE_INPLACE ( & intpt, "a & (#x b)");
+    EVAL_COMMANDLINE_INPLACE ("P ^ Q");
+    //EVAL_COMMANDLINE_INPLACE ("a = {b, c & d, e}");
+    //EVAL_COMMANDLINE_INPLACE ("(#x a) & b");
+    //EVAL_COMMANDLINE_INPLACE ("a & (#x b)");
 #else
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_len = 0; }
-        intpt_info_printf(& intpt, "\n\n");
+        intpt_info_printf("\n\n");
         user_interact(& commandline, & commandline_len);
         if ( commandline && commandline_len) {
             printf("\n\n\n");
-            eval_commandline( & intpt, commandline, commandline_len);
+            eval_commandline( commandline, commandline_len);
         } else {
-            intpt_info_printf( &intpt, "Failed to get line from the terminal");
+            intpt_info_printf("Failed to get line from the terminal");
         }
     }
 #endif

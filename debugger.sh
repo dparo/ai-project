@@ -1,4 +1,4 @@
 #!/bin/bash
 
-urxvt -e ddd -f ./bin/pci &
+urxvt -e ddd -f bin/pci &
 exit

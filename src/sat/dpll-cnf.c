@@ -389,8 +389,7 @@ ast_node_stack_dump(struct ast_node_stack *stack,
 
 
 struct ast
-dpll_convert_cnf( struct interpreter *intpt,
-                  struct ast *ast )
+dpll_convert_cnf( struct ast *ast )
 {
     printf("DPLL Convert CNF Debug: ### \n");
 

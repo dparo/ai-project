@@ -14,11 +14,10 @@
 
 
 bool
-dpll_eval(struct interpreter *intpt,
-          struct ast *cnf)
+dpll_eval(struct ast *cnf)
 {
-    struct symtable *symtable = & intpt->symtable;
-    struct vm_stack *vms = & intpt->vms;
+    struct symtable *symtable = & global_interpreter.symtable;
+    struct vm_stack *vms = & global_interpreter.vms;
 
     bool result = false;
     for (struct ast_node *node = ast_begin(cnf);
@@ -45,8 +44,7 @@ dpll_eval(struct interpreter *intpt,
 
 
 static inline bool
-dpll_is_empty_clause( struct interpreter *intpt,
-                      struct ast *cnf )
+dpll_is_empty_clause( struct ast *cnf )
 {
     return ( ast_num_nodes(cnf) == 0);
 }
@@ -58,10 +56,9 @@ dpll_is_empty_clause( struct interpreter *intpt,
 /*        then return true; */
 
 bool
-dpll_is_consistent( struct interpreter *intpt,
-                    struct ast *cnf )
+dpll_is_consistent( struct ast *cnf )
 {
-    struct symtable *symtable = & intpt->symtable;
+    struct symtable *symtable = & global_interpreter.symtable;
     bool result = false;
     struct ast_node *node = ast_peek_addr(cnf);
     if (node == NULL) {
@@ -144,8 +141,7 @@ dpll_search_parent_node( struct ast *cnf,
 }
 
 bool
-dpll_is_identifier_unit_clause( struct interpreter *intpt,
-                                struct ast *cnf,
+dpll_is_identifier_unit_clause( struct ast *cnf,
                                 struct ast_node *identifier,
                                 bool *is_negated)
 {
@@ -213,15 +209,14 @@ dpll_is_identifier_unit_clause( struct interpreter *intpt,
     while (node = dpll_next_unit_clause(intpt, cnf, & node ) { .... }
 */
 struct ast_node *
-dpll_next_unit_clause( struct interpreter *intpt,
-                       struct ast *cnf,
+dpll_next_unit_clause( struct ast *cnf,
                        bool *is_negated )
 {
     for ( struct ast_node *node = ast_begin(cnf);
           node < ast_end(cnf);
           node++ ) {
         if (node->type == AST_NODE_TYPE_IDENTIFIER) {
-            if (dpll_is_identifier_unit_clause(intpt, cnf, node, is_negated)) {
+            if (dpll_is_identifier_unit_clause(cnf, node, is_negated)) {
                 return node;
             }
         } else if (node->type == AST_NODE_TYPE_CONSTANT) {
@@ -251,15 +246,13 @@ dpll_next_unit_clause( struct interpreter *intpt,
 
 
 void
-dpll_preprocess ( struct interpreter *intpt,
-                  struct ast         *cnf)
+dpll_preprocess ( struct ast         *cnf)
 {
 
 }
 
 struct ast_node_stack
-dpll_unit_propagate( struct interpreter *intpt,
-                     struct ast *cnf,
+dpll_unit_propagate( struct ast *cnf,
                      struct ast_node *id,
                      bool value )
 {
@@ -269,7 +262,7 @@ dpll_unit_propagate( struct interpreter *intpt,
     assert(cnf->num_nodes > 0);
 
 
-    struct ast_node *father = (ast_end(cnf) - 1)->type;
+    struct ast_node *father = (ast_end(cnf) - 1);
     for ( struct ast_node *node = ast_end(cnf) - 1;
           node >= ast_begin(cnf);
           node -- ) {
@@ -281,30 +274,29 @@ dpll_unit_propagate( struct interpreter *intpt,
 }
 
 bool
-dpll_solve_recurse(struct interpreter *intpt,
-                   struct ast *cnf)
+dpll_solve_recurse(struct ast *cnf)
 {
     bool result = false;
-    struct symtable *symtable = & intpt->symtable;
-    struct vm_inputs *vmi = & intpt->vmi;
+    struct symtable *symtable = & global_interpreter.symtable;
+    struct vm_inputs *vmi = & global_interpreter.vmi;
 
     // DEF: A formula is consistent if it's true.
     //      A formula which is NOT consistent it is NOT necessary false.
     /*    if Φ is a consistent set of literals */
     /*        then return true; */
-    if ( dpll_is_consistent(intpt, cnf))
+    if ( dpll_is_consistent(cnf))
         return true;
 
     //    AST Has been reduced to 0 nodes
     /*    if Φ contains an empty clause */
     /*        then return false; */
-    if (dpll_is_empty_clause(intpt, cnf))
+    if (dpll_is_empty_clause(cnf))
         return false;
 
 
     struct ast_node *unit_clause = NULL;
     bool is_negated = false;
-    while ((unit_clause = dpll_next_unit_clause( intpt, cnf, &is_negated ))) {
+    while ((unit_clause = dpll_next_unit_clause( cnf, &is_negated ))) {
         // Assign value to it and generate a new ast and propagate
     }
 
@@ -328,14 +320,13 @@ dpll_solve_recurse(struct interpreter *intpt,
 
 
 void
-dpll_solve(struct interpreter *intpt,
-           struct ast *ast)
+dpll_solve(struct ast *ast)
 {
-    dpll_preprocess(intpt, ast);
-    struct ast cnf = dpll_convert_cnf( intpt,ast );
+    dpll_preprocess(ast);
+    struct ast cnf = dpll_convert_cnf( ast );
 
     assert_msg(0, "The preprocess Stage should start with a unit-propagation stage");
-    dpll_solve_recurse(intpt, & cnf);
+    dpll_solve_recurse(& cnf);
 
 
 CLEANUP:
@@ -361,13 +352,12 @@ CLEANUP:
 // --------------------------------------------------------
 /* function DPLL(Φ) */
 bool
-__old__dpll_solve_recurse(struct interpreter *intpt,
-                          struct ast *cnf)
+__old__dpll_solve_recurse(struct ast *cnf)
 {
-    struct symtable *symtable = & intpt->symtable;
-    struct vm_inputs *vmi = & intpt->vmi;
-    intpt_info_printf(intpt, "Input to the dpll solver is:\n\t");
-    ast_representation_dbglog(intpt);
+    struct symtable *symtable = & global_interpreter.symtable;
+    struct vm_inputs *vmi = & global_interpreter.vmi;
+    interpreter_logi("Input to the dpll solver is:\n\t");
+    ast_representation_dbglog();
 
    
 
@@ -379,13 +369,13 @@ __old__dpll_solve_recurse(struct interpreter *intpt,
     //      A formula which is NOT consistent it is NOT necessary false.
 /*    if Φ is a consistent set of literals */
 /*        then return true; */
-    if ( dpll_is_consistent(intpt, cnf) )
+    if ( dpll_is_consistent(cnf) )
         return true;
     
 //    AST Has been reduced to 0 nodes
 /*    if Φ contains an empty clause */
 /*        then return false; */
-    if ( dpll_is_empty_clause(intpt, cnf))
+    if ( dpll_is_empty_clause(cnf))
         return false;
 
 # if 0
@@ -408,7 +398,7 @@ __old__dpll_solve_recurse(struct interpreter *intpt,
 /*       Φ ← unit-propagate(l, Φ); */
     struct ast_node *node = NULL;
     bool is_negated = false;
-    while ( dpll_next_unit_clause(intpt, cnf, &node, & is_negated) ) {
+    while ( dpll_next_unit_clause(cnf, &node, & is_negated) ) {
         const bool value =  ! is_negated;
         ast_node_convert_to_constant(node, value);
         // Now handle the propagation, not really necessary to rebuild
@@ -430,7 +420,7 @@ __old__dpll_solve_recurse(struct interpreter *intpt,
 
             if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
                 bool appears_negated;
-                bool is_pure = dpll_is_pure_literal( intpt, cnf, node, & appears_negated );
+                bool is_pure = dpll_is_pure_literal( cnf, node, & appears_negated );
                 if (is_pure) {
                     const bool value = 1;
                     ast_node_convert_to_constant(node, value);
@@ -466,7 +456,7 @@ __old__dpll_solve_recurse(struct interpreter *intpt,
         }
 
 
-        result = dpll_solve_recurse(intpt, cnf);
+        result = dpll_solve_recurse(cnf);
 
         if ( !result ) { // short circuit optimization 
             for (struct ast_node *node = ast_begin(cnf);
@@ -479,7 +469,7 @@ __old__dpll_solve_recurse(struct interpreter *intpt,
                     }
                 }
             }
-            result |= dpll_solve_recurse(intpt, cnf);
+            result |= dpll_solve_recurse(cnf);
         }
     }
 
