@@ -1,12 +1,13 @@
-#ifndef DPLL_TEST_C_INCLUDE
-#define DPLL_TEST_C_INCLUDE
+#ifndef DPLL_CNF_TEST_C_INCLUDE
+#define DPLL_CNF_TEST_C_INCLUDE
 
 
 //#######################################################
-#endif /* DPLL_TEST_C_INCLUDE */
-#if !defined DPLL_TEST_C_IMPLEMENTED && defined DPLL_TEST_C_IMPL
-#define DPLL_TEST_C_IMPLEMENTED
+#endif /* DPLL_CNF_TEST_C_INCLUDE */
+#if !defined DPLL_CNF_TEST_C_IMPLEMENTED && defined DPLL_CNF_TEST_C_IMPL
+#define DPLL_CNF_TEST_C_IMPLEMENTED
 //#######################################################
+
 void
 test_dpll_operator_conversion_invariant(struct ast* ast)
 {
@@ -121,4 +122,6 @@ test_dpll_or_distribution_invariant(struct ast *ast)
 
 
 
-#endif /* DPLL_TEST_C_IMPL */
+
+
+#endif /* DPLL_CNF_TEST_C_IMPL */
