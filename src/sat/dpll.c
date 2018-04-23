@@ -574,22 +574,28 @@ dpll_is_identifier_unit_clause( struct interpreter *intpt,
     } break;
 
     case OPERATOR_NOT: {
-        *is_negated = true;
-        return true;
-    } break;
-
-    case OPERATOR_OR: {
-
-        assert_msg(0, "Implementation DETAILS: Parent operators may be OR'ed\n"
-                   " with some constants or something like that so they do not\n"
-                   " partecipate in the determination of the unit_clause");
         struct ast_node *new_parent = dpll_search_parent_node(cnf, parent);
         if ( new_parent ) {
             if (new_parent->type == AST_NODE_TYPE_OPERATOR
                 && new_parent->op == OPERATOR_OR) {
                 return false;
+            } else {
+                assert(new_parent->type == AST_NODE_TYPE_OPERATOR
+                       && new_parent->op == OPERATOR_AND);
+                *is_negated = true;
+                return true;
             }
+        } else {
+            *is_negated = true;
+            return true;
         }
+    } break;
+
+    case OPERATOR_OR: {
+        // The OR operator means indecision over the input
+        // and needs more unit-propagation and assignments
+        // to be resolved
+        return false;
     } break;
 
     default: {
@@ -681,6 +687,7 @@ void
 dpll_preprocess ( struct interpreter *intpt,
                   struct ast         *cnf)
 {
+    assert_msg(0, "The preprocess Stage should start with a unit-propagation stage");
 }
 
 bool
