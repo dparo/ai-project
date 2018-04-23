@@ -452,7 +452,7 @@ static inline bool
 dpll_is_empty_clause( struct interpreter *intpt,
                       struct ast *cnf )
 {
-    return ( ast_num_nodes(ast) == 0);
+    return ( ast_num_nodes(cnf) == 0);
 }
 
 
@@ -522,6 +522,85 @@ dpll_is_consistent( struct interpreter *intpt,
     return result;
 }
 
+
+struct ast_node *
+dpll_search_parent_node( struct ast *cnf,
+                         struct ast_node *child)
+{
+    assert(child >= ast_begin(cnf));
+    struct ast_node *result = NULL;
+
+    for( struct ast_node *node = ast_end(cnf) - 1;
+         node > child;
+         node -- ) {
+        uint numofoperands = operator_num_operands(node);
+        for( size_t operand_num = 1;
+             operand_num <= numofoperands;
+             operand_num++ ) {
+            if (ast_get_operand_node(cnf, node, operand_num) == child) {
+                // Found the father
+                return node;
+            }
+        }
+
+    }
+    return NULL;
+}
+
+bool
+dpll_is_identifier_unit_clause( struct interpreter *intpt,
+                                struct ast *cnf,
+                                struct ast_node *identifier,
+                                bool *is_negated)
+{
+    assert(identifier->type == AST_NODE_TYPE_IDENTIFIER);
+    struct ast_node *parent = dpll_search_parent_node(cnf, identifier);
+    if (!parent) {
+        *is_negated = false;
+        return true;
+    }
+    
+    assert(parent);
+    assert(parent->type == AST_NODE_TYPE_OPERATOR);
+    switch (parent->op) {
+    case OPERATOR_AND: {
+#    if __DEBUG
+        struct ast_node *new_parent = dpll_search_parent_node(cnf, parent);
+        assert(!new_parent || (new_parent->type == AST_NODE_TYPE_OPERATOR
+                              && new_parent->op == OPERATOR_AND));
+#    endif
+        *is_negated = false;
+        return true;
+    } break;
+
+    case OPERATOR_NOT: {
+        *is_negated = true;
+        return true;
+    } break;
+
+    case OPERATOR_OR: {
+
+        assert_msg(0, "Implementation DETAILS: Parent operators may be OR'ed\n"
+                   " with some constants or something like that so they do not\n"
+                   " partecipate in the determination of the unit_clause");
+        struct ast_node *new_parent = dpll_search_parent_node(cnf, parent);
+        if ( new_parent ) {
+            if (new_parent->type == AST_NODE_TYPE_OPERATOR
+                && new_parent->op == OPERATOR_OR) {
+                return false;
+            }
+        }
+    } break;
+
+    default: {
+        invalid_code_path();
+    } break;
+    }
+
+    return false;
+}
+
+
 /*
     USAGE:
     struct ast_node *node = NULL; // <--- NULL Initialization is important to determine first call
@@ -534,11 +613,20 @@ dpll_is_consistent( struct interpreter *intpt,
 struct ast_node *
 dpll_next_unit_clause( struct interpreter *intpt,
                        struct ast *cnf,
-                       struct ast_node **node,
                        bool *is_negated )
 {
-
-    return false;
+    for ( struct ast_node *node = ast_begin(cnf);
+          node < ast_end(cnf);
+          node++ ) {
+        if (node->type == AST_NODE_TYPE_IDENTIFIER) {
+            if (dpll_is_identifier_unit_clause(intpt, cnf, node, is_negated)) {
+                return node;
+            }
+        } else if (node->type == AST_NODE_TYPE_CONSTANT) {
+        } else if (node->type == AST_NODE_TYPE_OPERATOR) {
+        }
+    }
+    return NULL;
 }
 
 
@@ -649,11 +737,6 @@ dpll_solve(struct interpreter *intpt,
 CLEANUP:
     ast_clear(& cnf);
 }
-
-
-
-
-
 
 
 

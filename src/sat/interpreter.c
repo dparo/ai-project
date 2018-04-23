@@ -862,7 +862,7 @@ test_dpll_preprocess_print(struct interpreter *intpt)
     for (struct ast_node *node = ast_end(ast);
          node != ast_begin(ast);
          node --, it ++ ) {
-        printf("{text: \"%.*s\", index: %zu, num_args: %zu}\n", node->text_len, node->text, it, node->num_args);
+        printf("{text: \"%.*s\", index: %zu}\n", node->text_len, node->text, it);
     }
     printf("\n");
 
