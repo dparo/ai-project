@@ -48,14 +48,14 @@ ast_free(struct ast *s)
         free(s->nodes);
     }
     s->nodes = 0;
+    s->num_nodes = 0;
+    s->max_nodes = 0;
 }
 
 void
 ast_clear(struct ast *s)
 {
     ast_free(s);
-    s->num_nodes = 0;
-    s->max_nodes = 0;
 }
 
 
@@ -111,6 +111,9 @@ static inline struct ast_node *
 ast_peek_addr (struct ast *s)
 {
     assert(s);
+    if (!(s->num_nodes)) {
+        return (struct ast_node *) 0x00;
+    }
     return & (s->nodes[(s->num_nodes) - 1]);
 }
 
@@ -121,7 +124,9 @@ ast_pop_addr (struct ast *s)
 {
     assert(s);
     struct ast_node *result = ast_peek_addr(s);
-    (s->num_nodes)--;
+    if ( result ) {
+        (s->num_nodes)--;
+    }
     return result;
 }
 
@@ -129,6 +134,7 @@ static inline struct ast_node
 ast_pop (struct ast *s)
 {
     assert(s);
+    assert((s->num_nodes));
     return s->nodes[--(s->num_nodes)];
 }
 
@@ -136,6 +142,7 @@ static inline struct ast_node
 ast_pop_discard (struct ast *s)
 {
     assert(s);
+    assert(s->num_nodes);
     --(s->num_nodes);
 }
 

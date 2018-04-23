@@ -142,7 +142,7 @@ eval_operator( struct ast_node *node,
         vm_stack_push(vms, result);
     } break;
         
-    case OPERATOR_NEGATE: {
+    case OPERATOR_NOT: {
         result = !v[0];
         vm_stack_push(vms, result);
     } break;

@@ -15,7 +15,7 @@ test_dpll_operator_conversion_invariant(struct ast* ast)
          node >= ast_begin(ast);
          node -- ) {
         if (node->type == AST_NODE_TYPE_OPERATOR) {
-            assert( node->op == OPERATOR_NEGATE || node->op == OPERATOR_OR ||
+            assert( node->op == OPERATOR_NOT || node->op == OPERATOR_OR ||
                     node->op == OPERATOR_AND);
         } else if (node->type == AST_NODE_TYPE_IDENTIFIER ||
                    node->type == AST_NODE_TYPE_CONSTANT) {
@@ -35,10 +35,10 @@ test_dpll_demorgan_invariant(struct ast* ast)
          node >= ast_begin(ast);
          node -- ) {
         if (node->type == AST_NODE_TYPE_OPERATOR) {
-            if (node->op == OPERATOR_NEGATE ) {
+            if (node->op == OPERATOR_NOT ) {
                 struct ast_node *op1_node = ast_get_operand_node( ast, node, 1);
                 if (op1_node->type == AST_NODE_TYPE_OPERATOR ) {
-                    assert(op1_node->op == OPERATOR_NEGATE);
+                    assert(op1_node->op == OPERATOR_NOT);
                 } else if (op1_node->type == AST_NODE_TYPE_IDENTIFIER ||
                            op1_node->type == AST_NODE_TYPE_CONSTANT) {
                     // GOOD..
@@ -59,10 +59,10 @@ test_dpll_double_negation_elimination_invariant(struct ast *ast)
          node >= ast_begin(ast);
          node -- ) {
         if (node->type == AST_NODE_TYPE_OPERATOR) {
-            if (node->op == OPERATOR_NEGATE ) {
+            if (node->op == OPERATOR_NOT ) {
                 struct ast_node *op1_node = ast_get_operand_node( ast, node, 1);
                 if (op1_node->type == AST_NODE_TYPE_OPERATOR ) {
-                    assert(op1_node->op != OPERATOR_NEGATE);
+                    assert(op1_node->op != OPERATOR_NOT);
                 } else if (op1_node->type == AST_NODE_TYPE_IDENTIFIER ||
                            op1_node->type == AST_NODE_TYPE_CONSTANT) {
                     // GOOD..
@@ -101,7 +101,7 @@ test_dpll_or_distribution_invariant(struct ast *ast)
                     assert(op2_node->op != OPERATOR_AND);
                 
             } else if (node->op == OPERATOR_AND ) {
-            } else if (node->op == OPERATOR_NEGATE) {
+            } else if (node->op == OPERATOR_NOT) {
                 struct ast_node *op1_node = ast_get_operand_node( ast, node, 1);
                 assert(op1_node->type == AST_NODE_TYPE_IDENTIFIER ||
                        op1_node->type == AST_NODE_TYPE_CONSTANT);

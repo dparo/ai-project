@@ -10,7 +10,7 @@
 
 enum operator {
     OPERATOR_NONE = 0,
-    OPERATOR_NEGATE,
+    OPERATOR_NOT,
     OPERATOR_AND,
     OPERATOR_NAND,
     OPERATOR_NOR,
@@ -62,7 +62,7 @@ static const struct operator_infos {
     enum operator_prefixing prefixing;
 } OPS[] = {
     [OPERATOR_NONE] =              { INT_MIN, 0, 0, POSTFIX_OP},
-    [OPERATOR_NEGATE] =            { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
+    [OPERATOR_NOT] =            { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_AND] =               { 11, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_NAND] =              { 11, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_NOR] =              { 11, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
@@ -130,20 +130,16 @@ struct ast_node {
     enum ast_node_type type;
     enum operator op;
     enum delimiter del;
-    
-    size_t num_args; /* Num of arguments that this node is functionally dependent f(a1, a2, a3 ...)
-                        This is used to determina unit clauses in place when solving with dpll
-                        In other context it is cleared to zero */
 };
 
 static struct ast_node AND_NODE =
-{ "&", 1, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_AND, DELIMITER_NONE, 0 };
+{ "&", 1, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_AND, DELIMITER_NONE };
 
 static struct ast_node OR_NODE =
-{ "|", 1, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_OR, DELIMITER_NONE, 0 };
+{ "|", 1, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_OR, DELIMITER_NONE };
 
 static struct ast_node NEGATE_NODE =
-{ "~", 1, 1, AST_NODE_TYPE_OPERATOR, OPERATOR_NEGATE, DELIMITER_NONE, 0 };
+{ "~", 1, 1, AST_NODE_TYPE_OPERATOR, OPERATOR_NOT, DELIMITER_NONE };
 
 
 void
@@ -483,7 +479,7 @@ ast_node_from_token( struct ast_node *node,
     } else {
         node->type = AST_NODE_TYPE_OPERATOR;
         switch( curr_t->type ) {
-        case TT_PUNCT_LOGICAL_NOT: case TT_PUNCT_BITWISE_NOT: { node->op = OPERATOR_NEGATE; } break;
+        case TT_PUNCT_LOGICAL_NOT: case TT_PUNCT_BITWISE_NOT: { node->op = OPERATOR_NOT; } break;
         case TT_PUNCT_LOGICAL_AND: case TT_PUNCT_BITWISE_AND: { node->op = OPERATOR_AND; } break;
         case TT_PUNCT_LOGICAL_NAND: case TT_PUNCT_BITWISE_NAND: { node->op = OPERATOR_NAND; } break;
         case TT_PUNCT_LOGICAL_NOR: case TT_PUNCT_BITWISE_NOR: { node->op = OPERATOR_NOR; } break;

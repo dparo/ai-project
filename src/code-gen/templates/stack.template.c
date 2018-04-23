@@ -48,14 +48,14 @@ $(S)_free(struct $(S) *s)
         free(s->$(base));
     }
     s->$(base) = 0;
+    s->$(num_elems) = 0;
+    s->$(max_elems) = 0;
 }
 
 void
 $(S)_clear(struct $(S) *s)
 {
     $(S)_free(s);
-    s->$(num_elems) = 0;
-    s->$(max_elems) = 0;
 }
 
 
@@ -107,10 +107,13 @@ $(S)_is_empty(struct $(S) *s)
 }
 
 
-static inline $(T) *
+static inline $T *
 $(S)_peek_addr (struct $(S) *s)
 {
     assert(s);
+    if (!(s->$(num_elems))) {
+        return ($T *) 0x00;
+    }
     return & (s->$(base)[(s->$(num_elems)) - 1]);
 }
 
@@ -121,7 +124,9 @@ $(S)_pop_addr (struct $(S) *s)
 {
     assert(s);
     $(T) *result = $(S)_peek_addr(s);
-    (s->$(num_elems))--;
+    if ( result ) {
+        (s->$(num_elems))--;
+    }
     return result;
 }
 
@@ -129,6 +134,7 @@ static inline $(T)
 $(S)_pop (struct $(S) *s)
 {
     assert(s);
+    assert((s->$(num_elems)));
     return s->$(base)[--(s->$(num_elems))];
 }
 
@@ -136,6 +142,7 @@ static inline $(T)
 $(S)_pop_discard (struct $(S) *s)
 {
     assert(s);
+    assert(s->$(num_elems));
     --(s->$(num_elems));
 }
 
