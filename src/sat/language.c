@@ -132,6 +132,22 @@ struct ast_node {
     enum delimiter del;
 };
 
+
+
+bool ast_node_cmp( struct ast_node *n1,
+                   struct ast_node *n2)
+{
+    if (n1->type == n2->type ) {
+        if (n1->type == AST_NODE_TYPE_OPERATOR) {
+            return n1->op == n2->op;
+        } else {
+            return (0 == strncmp(n1->text, n2->text, MIN(n1->text_len, n2->text_len)));
+        }
+    } else {
+        return false;
+    }
+}
+
 static struct ast_node AND_NODE =
 { "&", 1, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_AND, DELIMITER_NONE };
 

@@ -12,6 +12,38 @@
 #include "dpll-cnf.c"
 
 
+
+bool
+dpll_eval(struct interpreter *intpt,
+          struct ast *cnf)
+{
+    struct symtable *symtable = & intpt->symtable;
+    struct vm_stack *vms = & intpt->vms;
+
+    bool result = false;
+    for (struct ast_node *node = ast_begin(cnf);
+         node < ast_end(cnf);
+         node ++ ) {
+        if ( node->type == AST_NODE_TYPE_IDENTIFIER  || node->type == AST_NODE_TYPE_CONSTANT) {
+            bool value;
+            if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
+                struct symbol_info *syminfo = symtable_get_syminfo(symtable, node->text, node->text_len);
+                assert(syminfo->has_value_assigned);
+                value = syminfo->value;
+            } else if ( node->type == AST_NODE_TYPE_CONSTANT ) {
+                value = ast_node_constant_to_bool(node);
+            }
+            vm_stack_push( vms, value );
+        } else {
+            // Token is an operator: Needs to perform the operation
+            //                       and push it into the stack
+            eval_operator( node, vms ) ;
+        }            
+    }
+    return result;
+}
+
+
 static inline bool
 dpll_is_empty_clause( struct interpreter *intpt,
                       struct ast *cnf )
@@ -193,42 +225,13 @@ dpll_next_unit_clause( struct interpreter *intpt,
                 return node;
             }
         } else if (node->type == AST_NODE_TYPE_CONSTANT) {
+            assert_msg(0, "No constants Allowed, unit_propagation should removed them");
         } else if (node->type == AST_NODE_TYPE_OPERATOR) {
         }
     }
     return NULL;
 }
 
-
-bool
-dpll_eval(struct interpreter *intpt,
-          struct ast *cnf)
-{
-    struct symtable *symtable = & intpt->symtable;
-    struct vm_stack *vms = & intpt->vms;
-
-    bool result = false;
-    for (struct ast_node *node = ast_begin(cnf);
-         node < ast_end(cnf);
-         node ++ ) {
-        if ( node->type == AST_NODE_TYPE_IDENTIFIER  || node->type == AST_NODE_TYPE_CONSTANT) {
-            bool value;
-            if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
-                struct symbol_info *syminfo = symtable_get_syminfo(symtable, node->text, node->text_len);
-                assert(syminfo->has_value_assigned);
-                value = syminfo->value;
-            } else if ( node->type == AST_NODE_TYPE_CONSTANT ) {
-                value = ast_node_constant_to_bool(node);
-            }
-            vm_stack_push( vms, value );
-        } else {
-            // Token is an operator: Needs to perform the operation
-            //                       and push it into the stack
-            eval_operator( node, vms ) ;
-        }            
-    }
-    return result;
-}
 
 // Algorithm for on the AST Symbols,
 // for every symbols that appear in a unit clause
@@ -251,20 +254,31 @@ void
 dpll_preprocess ( struct interpreter *intpt,
                   struct ast         *cnf)
 {
-    assert_msg(0, "The preprocess Stage should start with a unit-propagation stage");
+
 }
 
-bool
-dpll_is_pure_literal( struct interpreter *intpt,
-                      struct ast *cnf,
-                      struct ast_node *node,
-                      bool *appears_negated )
+struct ast_node_stack
+dpll_unit_propagate( struct interpreter *intpt,
+                     struct ast *cnf,
+                     struct ast_node *id,
+                     bool value )
 {
-    return false;
+    struct ast_node_stack result = ast_node_stack_create();
+    assert(id);
+    assert(id->type == AST_NODE_TYPE_IDENTIFIER);
+    assert(cnf->num_nodes > 0);
+
+
+    struct ast_node *father = (ast_end(cnf) - 1)->type;
+    for ( struct ast_node *node = ast_end(cnf) - 1;
+          node >= ast_begin(cnf);
+          node -- ) {
+        assert_msg(0, "Needs recursive implementation propagating upward");
+    }
+    
+
+    return result;
 }
-
-
-
 
 bool
 dpll_solve_recurse(struct interpreter *intpt,
@@ -287,6 +301,26 @@ dpll_solve_recurse(struct interpreter *intpt,
     if (dpll_is_empty_clause(intpt, cnf))
         return false;
 
+
+    struct ast_node *unit_clause = NULL;
+    bool is_negated = false;
+    while ((unit_clause = dpll_next_unit_clause( intpt, cnf, &is_negated ))) {
+        // Assign value to it and generate a new ast and propagate
+    }
+
+    
+
+    // A Pure literal is any literal that does not appear with its' negation in the formula
+    // WIKIPEDIA DEF: In the context of a formula in the
+    //                conjunctive normal form, a literal is pure if the literal's
+    //                complement does not appear in the formula.
+    /*    for every literal l that occurs pure in Φ */
+    /*       Φ ← pure-literal-assign(l, Φ); */
+    { }                         /* Not used in this DPLL implementation */
+    // .....
+
+    
+    
     
     
     return result;
@@ -300,7 +334,7 @@ dpll_solve(struct interpreter *intpt,
     dpll_preprocess(intpt, ast);
     struct ast cnf = dpll_convert_cnf( intpt,ast );
 
-
+    assert_msg(0, "The preprocess Stage should start with a unit-propagation stage");
     dpll_solve_recurse(intpt, & cnf);
 
 
@@ -335,10 +369,7 @@ __old__dpll_solve_recurse(struct interpreter *intpt,
     intpt_info_printf(intpt, "Input to the dpll solver is:\n\t");
     ast_representation_dbglog(intpt);
 
-
-    assert_msg(0, "Needs implementation for the propagation of the AST"
-               " It needs to recompact or choose a deferred less recursive aproach");
-    
+   
 
 //  I still do not understand this one
     // Verifies validity of the formula either by solving it.
@@ -385,13 +416,13 @@ __old__dpll_solve_recurse(struct interpreter *intpt,
     }
         
 
-
     // A Pure literal is any literal that does not appear with its' negation in the formula
     // WIKIPEDIA DEF: In the context of a formula in the
     //                conjunctive normal form, a literal is pure if the literal's
     //                complement does not appear in the formula.
 /*    for every literal l that occurs pure in Φ */
 /*       Φ ← pure-literal-assign(l, Φ); */
+
     {
         for (struct ast_node *node = ast_begin(cnf);
              node < ast_end(cnf);
