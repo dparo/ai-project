@@ -299,7 +299,7 @@ dpll_double_negation_elimination_aux ( struct ast_node *expr_node,
             uint numofoperands = operator_num_operands(node);
             for( size_t operand_num = 1;
                  operand_num <= numofoperands;
-                 operand_num++ ) {
+                      operand_num++ ) {
                 struct ast_node *child = ast_get_operand_node(in, node, operand_num);
                 dpll_double_negation_elimination_aux(child, in, out);
             }
