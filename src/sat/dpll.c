@@ -326,15 +326,12 @@ dpll_solve(struct ast *ast)
     struct ast cnf = dpll_convert_cnf( ast );
 
     assert_msg(0, "The preprocess Stage should start with a unit-propagation stage");
-    dpll_solve_recurse(& cnf);
+    dpll_solve_recurse(&cnf);
 
-
+    
 CLEANUP:
     ast_clear(& cnf);
 }
-
-
-
 
 
 void
@@ -344,6 +341,11 @@ dpll_test(struct ast *ast)
    
     struct ast cnf = dpll_convert_cnf(ast);
     bool is_consistent = dpll_is_consistent( &cnf );
+    bool is_negated = false;
+   
+    struct ast_node *node =
+        dpll_next_unit_clause( & cnf, & is_negated );
+   
 CLEANUP:
     ast_clear(& cnf);
 }
