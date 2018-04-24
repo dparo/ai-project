@@ -1,0 +1,18 @@
+
+
+# Quick way to edit current
+# line of code with the editor
+
+define e
+  p __LINE__
+  edit $
+end
+
+set logging file .gdblog
+set logging on
+
+# set history filename gdb.txt
+# set history save on
+
+
+start

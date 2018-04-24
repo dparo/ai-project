@@ -17,12 +17,13 @@ EDITOR=emacsclient
 export EDITOR
 
 
-rm gdb.txt
+rm .gdblog
 
 konsole -e  gdb \
-        -ex "tui enable" -ex "tty $(tty)" -ex "set logging on" -ex "start" \
+        -ex "tui enable" -ex "tty $(tty)" \
+        -ex "source .gdbsource" \
         bin/pci &
 
 sleep 1
 
-konsole -e tail -F "gdb.txt" &
+konsole -e tail -F ".gdblog" &
