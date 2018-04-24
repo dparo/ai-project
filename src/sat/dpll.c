@@ -337,6 +337,15 @@ CLEANUP:
 
 
 
+void
+dpll_test(struct ast *ast)
+{
+    dpll_preprocess(ast);
+    struct ast cnf = dpll_convert_cnf(ast);
+    bool is_consistent = dpll_is_consistent( &cnf );
+CLEANUP:
+    ast_clear(& cnf);
+}
 
 
 

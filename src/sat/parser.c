@@ -17,9 +17,9 @@
 enum Token_Type {
     TT_NONE = 0,
     TT_IDENTIFIER = 1,
-    TT_KEYWORD,
-    TT_STRING_LITERAL,
-    TT_CONSTANT = 3,
+    TT_KEYWORD = 2,
+    TT_STRING_LITERAL = 3,
+    TT_CONSTANT = 4,
 
 
     

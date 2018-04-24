@@ -98,7 +98,7 @@ main( int argc, char **argv)
 
    
 #if 1
-    EVAL_COMMANDLINE_INPLACE ("P ^ Q");
+    EVAL_COMMANDLINE_INPLACE ("B");
     //EVAL_COMMANDLINE_INPLACE ("a = {b, c & d, e}");
     //EVAL_COMMANDLINE_INPLACE ("(#x a) & b");
     //EVAL_COMMANDLINE_INPLACE ("a & (#x b)");

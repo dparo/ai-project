@@ -807,7 +807,7 @@ eval_ast( void )
     
     if (preprocess_command ()) {
 #if 1
-        dpll_convert_cnf(ast);
+        dpll_test(ast);
         //intpt_print_header();
 #else
         bruteforce_solve();
