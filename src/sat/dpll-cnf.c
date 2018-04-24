@@ -59,12 +59,23 @@ dpll_operator_conversion_aux ( struct ast_node *expr_node,
 {
     struct ast_node *node = expr_node;
     if ( node->type == AST_NODE_TYPE_OPERATOR ) {
-        struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
-        struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
-        
-        if (node->op == OPERATOR_DOUBLE_IMPLY
-            || node->op == OPERATOR_EQUAL_EQUAL
+        if ( node->op == OPERATOR_NOT ) {
+            struct ast_node *op1_node = ast_get_operand_node(in, node, 1);
+            dpll_operator_conversion_aux(op1_node, in, out);
+            ast_node_stack_push(out, node);
+        } else if ( node->op == OPERATOR_OR
+                    || node->op == OPERATOR_AND ) {
+            struct ast_node *op1_node = ast_get_operand_node(in, node, 1);
+            struct ast_node *op2_node = ast_get_operand_node(in, node, 2);
+            dpll_operator_conversion_aux(op1_node, in, out);
+            dpll_operator_conversion_aux(op2_node, in, out);
+            ast_node_stack_push(out, node);
+        } else if (node->op == OPERATOR_DOUBLE_IMPLY|| node->op == OPERATOR_EQUAL_EQUAL
             || node->op == OPERATOR_NOT_EQUAL ) {
+            struct ast_node *op1_node = ast_get_operand_node(in, node, 1);
+            struct ast_node *op2_node = ast_get_operand_node(in, node, 2);
+
+            
             dpll_operator_conversion_aux(op1_node, in, out);
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & NEGATE_NODE);
@@ -78,24 +89,36 @@ dpll_operator_conversion_aux ( struct ast_node *expr_node,
                 ast_node_stack_push(out, & NEGATE_NODE);
                 
         } else if (node->op == OPERATOR_IMPLY) {
+            struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
+            struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
+
             dpll_operator_conversion_aux(op1_node, in, out);
             ast_node_stack_push(out, & NEGATE_NODE);
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & OR_NODE);
         } else if (node->op == OPERATOR_NOR ) {
+            struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
+            struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
+            
             dpll_operator_conversion_aux(op1_node, in, out);
             ast_node_stack_push(out, & NEGATE_NODE);
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & OR_NODE);
             ast_node_stack_push(out, & NEGATE_NODE);
         } else if (node->op == OPERATOR_NAND ) {
+            struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
+            struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
+
             dpll_operator_conversion_aux(op1_node, in, out);
             ast_node_stack_push(out, & NEGATE_NODE);
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & AND_NODE);
             ast_node_stack_push(out, & NEGATE_NODE);
         } else if (node->op == OPERATOR_XOR) {
-            // P ^ Q = (~P | ~Q) & (P | Q)
+            // P ^ Q = (~P | ~Q) & (P | Q)           
+            struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
+            struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
+            
             dpll_operator_conversion_aux(op1_node, in, out);
             ast_node_stack_push(out, & NEGATE_NODE);
             dpll_operator_conversion_aux(op2_node, in, out);
@@ -107,24 +130,36 @@ dpll_operator_conversion_aux ( struct ast_node *expr_node,
             ast_node_stack_push(out, & AND_NODE);
         } else if (node->op == OPERATOR_GREATER) {
             // (a > b) ==== (a & ~b)
+            struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
+            struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
+
             dpll_operator_conversion_aux(op1_node, in, out);
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & NEGATE_NODE);
             ast_node_stack_push(out, & AND_NODE);           
         } else if (node->op == OPERATOR_GREATER_EQUAL) {
             // (a >= b) ==== (a | ~b)
+            struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
+            struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
+
             dpll_operator_conversion_aux(op1_node, in, out);
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & NEGATE_NODE);
             ast_node_stack_push(out, & OR_NODE);
         } else if (node->op == OPERATOR_LESS ) {
             // (a < b) ==== (~a & b)
+            struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
+            struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
+
             dpll_operator_conversion_aux(op1_node, in, out);
             ast_node_stack_push(out, & NEGATE_NODE);
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & AND_NODE);
         } else if (node->op == OPERATOR_LESS_EQUAL ) {
             // (a <= b) ==== (~a | b)
+            struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
+            struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
+
             dpll_operator_conversion_aux(op1_node, in, out);
             ast_node_stack_push(out, & NEGATE_NODE);
             dpll_operator_conversion_aux(op2_node, in, out);

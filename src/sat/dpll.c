@@ -70,7 +70,7 @@ dpll_is_consistent( struct ast *cnf )
             struct ast_node *child_node = ast_get_operand_node( cnf, node, 1);
             assert(child_node);
             if ( child_node->type == AST_NODE_TYPE_CONSTANT) {
-                bool v = ast_node_constant_to_bool( node );
+                bool v = ast_node_constant_to_bool( child_node );
                 result = !v;
             } else {
                 // Negation can only precedes constants or identifiers
