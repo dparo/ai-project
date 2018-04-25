@@ -13,6 +13,17 @@
 
 
 void
+dpll_test_invariant_no_value_assigned(struct ast_node *node)
+{
+#if __DEBUG
+    struct symtable *symtable = & global_interpreter.symtable;
+    struct symbol_info *syminfo = symtable_syminfo_from_node(symtable, node);
+    assert(! syminfo->has_value_assigned);
+#endif
+}
+
+
+void
 dpll_identifier_assign_value(struct ast_node *node,
                              bool value)
 {
@@ -292,14 +303,23 @@ dpll_stack_dump_into_stack ( struct ast_node_stack *dumper,
 }
 
 
+
+// `id` Maybe `NULL`, if `id` null unit propagate
+// will only merge constants, usefull as preprocess
+// step. Value could be anything in this case, pass 0
+
+// if `id` != NULL when unit_propagate finds that node
+// it considers it as a constant and can do
+// more agressive propagation
 struct ast_node_stack
 dpll_unit_propagate_recurse( struct ast *cnf,
                              struct ast_node *id,
                              bool value,
                              struct ast_node *node)
 {
-    assert(id);
-    assert(id->type == AST_NODE_TYPE_IDENTIFIER);
+    if (id) {
+        assert(id->type == AST_NODE_TYPE_IDENTIFIER);
+    }
     assert(cnf->num_nodes > 0);
 
 
@@ -334,10 +354,11 @@ dpll_unit_propagate_recurse( struct ast *cnf,
 
 
         case OPERATOR_AND: case OPERATOR_OR: {
-            struct ast_node_stack op1_stack = dpll_unit_propagate_recurse(cnf, id, value,
-                                                                          ast_get_operand_node( cnf, node, 2));
-            struct ast_node_stack op2_stack = dpll_unit_propagate_recurse(cnf, id, value,
-                                                                          ast_get_operand_node( cnf, node, 1));
+            struct ast_node *temp1 = ast_get_operand_node( cnf, node, 1);
+            struct ast_node *temp2 = ast_get_operand_node( cnf, node, 2);
+            
+            struct ast_node_stack op1_stack = dpll_unit_propagate_recurse(cnf, id, value, temp1);
+            struct ast_node_stack op2_stack = dpll_unit_propagate_recurse(cnf, id, value, temp2);
             
             assert(! ast_node_stack_is_empty(& op1_stack));
             assert(! ast_node_stack_is_empty(& op2_stack));
@@ -348,10 +369,6 @@ dpll_unit_propagate_recurse( struct ast *cnf,
             if ( (op1->type == AST_NODE_TYPE_CONSTANT && op2->type == AST_NODE_TYPE_CONSTANT)
                  || (node->op == OPERATOR_AND && (ast_node_is_false_constant(op1) || ast_node_is_false_constant(op2)))
                  || (node->op == OPERATOR_OR && (ast_node_is_true_constant(op1) || ast_node_is_true_constant(op2)))) {
-                // Discard both subtree's
-                // and return constant
-                ast_node_stack_free(& op1_stack);
-                ast_node_stack_free(& op2_stack);
                 struct ast_node *pushed;
                 const bool and_condition = ast_node_is_true_constant(op1) && ast_node_is_true_constant(op2);
                 const bool or_condition = ast_node_is_true_constant(op1) || ast_node_is_true_constant(op2);
@@ -362,6 +379,10 @@ dpll_unit_propagate_recurse( struct ast *cnf,
                 }
                 struct ast_node_stack s = ast_node_stack_create();
                 ast_node_stack_push( &s, pushed);
+                // Discard both subtree's
+                // and return constant
+                ast_node_stack_free(& op1_stack);
+                ast_node_stack_free(& op2_stack);
                 return s;
             } else if (op1->type == AST_NODE_TYPE_CONSTANT || op2->type == AST_NODE_TYPE_CONSTANT) {
                 assert(!(op1->type == AST_NODE_TYPE_CONSTANT && op2->type == AST_NODE_TYPE_CONSTANT));
@@ -389,7 +410,7 @@ dpll_unit_propagate_recurse( struct ast *cnf,
 
             
     } else if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
-        if ( ast_node_cmp(node, id) ) {
+        if ( id && ast_node_cmp(node, id) ) {
             struct ast_node_stack s = ast_node_stack_create();
             ast_node_stack_push(&s, value ? & TRUE_CONSTANT_NODE : & FALSE_CONSTANT_NODE );
             return s;
@@ -421,6 +442,36 @@ dpll_unit_propagate( struct ast *cnf,
     return dpll_unit_propagate_recurse(cnf, id, value, ast_end(cnf) - 1 );
 }
 
+
+struct ast_node *
+dpll_pick_random_unassigned_literal (struct ast *cnf)
+{
+    struct symtable *symtable = & global_interpreter.symtable;
+
+    struct ast_node *picked = NULL;
+
+    // we'll pick the first one that we find
+    for (struct ast_node *node = ast_begin(cnf);
+         node < ast_end(cnf);
+         node++) {
+        if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
+            picked = node;
+            break;
+        }
+    }
+          
+#if __DEBUG
+    if ( !NULL ) {
+        struct symbol_info *syminfo = symtable_syminfo_from_node(symtable, picked);
+        assert(!(syminfo->has_value_assigned));
+    }
+#endif
+    return picked;
+
+}
+
+
+// @NOTE: The same `cnf` get's reused across recursive calls
 bool
 dpll_solve_recurse(struct ast *cnf)
 {
@@ -445,16 +496,39 @@ dpll_solve_recurse(struct ast *cnf)
     struct ast_node *unit_clause = NULL;
     bool is_negated = false;
     while ((unit_clause = dpll_next_unit_clause( cnf, &is_negated ))) {
+        printf("\n# Got unit clause: `%.*s`\n", unit_clause->text_len, unit_clause->text);
         bool value = ! is_negated;
+        dpll_test_invariant_no_value_assigned(unit_clause);
         // Assign value to it and generate a new ast and propagate
         dpll_identifier_assign_value(unit_clause, value);
 
         struct ast_node_stack stack = dpll_unit_propagate(cnf, unit_clause, value);
+        // @NOTE: `cnf` get's cleared inside `ast_node_stack_dump_xxx`
         ast_node_stack_dump_reversed( &stack, cnf);
-        ast_node_stack_reset(&stack);
-    }
-
+        ast_node_stack_free(&stack);
+        printf("\n### Getting the propageted result ##### \n");
+        ast_dbglog(cnf);
+        printf("\n");
     
+    }
+    
+    
+    struct ast_node *random = dpll_pick_random_unassigned_literal(cnf);
+    if ( random ) {
+        bool result;
+        bool assigned_value = true;
+        dpll_identifier_assign_value(random, assigned_value);
+        struct ast_node_stack s1 = dpll_unit_propagate(cnf, random, assigned_value);
+
+
+        assigned_value = false;
+        dpll_identifier_assign_value(random, assigned_value);
+        struct ast_node_stack s2 = dpll_unit_propagate(cnf, random, assigned_value);
+        
+    } else {
+        // No assignment -> last recursive call to determine the result
+        return dpll_solve_recurse(cnf);
+    }
 
     // A Pure literal is any literal that does not appear with its' negation in the formula
     // WIKIPEDIA DEF: In the context of a formula in the
@@ -480,10 +554,18 @@ dpll_solve(struct ast *ast)
     dpll_preprocess(ast);
     struct ast cnf = dpll_convert_cnf( ast );
 
-    fprintf(stderr, "@TODO: The preprocess Stage should start with a unit-propagation stage");
+    struct ast_node_stack stack = dpll_unit_propagate(& cnf, NULL, 0);
+    ast_node_stack_dump_reversed( &stack, & cnf);
+    ast_node_stack_free(&stack);
+
+    printf("\n### Getting the preprocess propagated result ##### \n");
+    ast_dbglog(& cnf);
+    printf("\n");
+        
+
     dpll_solve_recurse(& cnf);
 
-    ast_clear(& cnf);
+    ast_free(& cnf);
 }
 
 

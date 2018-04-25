@@ -96,9 +96,10 @@ main( int argc, char **argv)
     char * commandline = NULL;
     size_t commandline_len = 0;
 
+    interpreter_init();
    
 #if 1
-    EVAL_COMMANDLINE_INPLACE ("a | b");
+    EVAL_COMMANDLINE_INPLACE ("a & 0");
     //EVAL_COMMANDLINE_INPLACE ("a = {b, c & d, e}");
     //EVAL_COMMANDLINE_INPLACE ("(#x a) & b");
     //EVAL_COMMANDLINE_INPLACE ("a & (#x b)");
@@ -119,6 +120,10 @@ main( int argc, char **argv)
     printf("\n\n###################################################\n");
     printf("###########  TERMINATING APPLICATION ##############\n");
     printf("###################################################\n\n");
+
+
+    interpreter_terminate();
+    
     return 0;
 }
 

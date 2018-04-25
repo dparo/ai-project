@@ -754,6 +754,8 @@ intpt_begin_frame(void )
 void
 intpt_end_frame( void )
 {
+    struct symtable *symtable =  & global_interpreter.symtable;
+    symtable_clear(symtable);
 }
 
 
@@ -875,6 +877,20 @@ eval_commandline ( char *commandline,
         interpreter_logi("Failed to setup Interpreter context for evaluating the command\n");
     }
 }
+
+
+void
+interpreter_init(void)
+{
+}
+
+void
+interpreter_terminate(void)
+{
+    struct symtable *symtable = & global_interpreter.symtable;
+    symtable_delete(symtable);    
+}
+
 
 
 

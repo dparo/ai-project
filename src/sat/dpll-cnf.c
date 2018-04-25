@@ -473,7 +473,7 @@ dpll_convert_cnf( struct ast *ast )
     test_dpll_or_distribution_invariant(& result);
     
     
-    ast_node_stack_reset(& stack);
+    ast_node_stack_free(& stack);
     printf("DPLL Convert CNF Debug: ### END ### \n");
     
     return result;
