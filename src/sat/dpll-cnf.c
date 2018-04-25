@@ -70,23 +70,19 @@ dpll_operator_conversion_aux ( struct ast_node *expr_node,
             dpll_operator_conversion_aux(op1_node, in, out);
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, node);
-        } else if (node->op == OPERATOR_DOUBLE_IMPLY|| node->op == OPERATOR_EQUAL_EQUAL
-            || node->op == OPERATOR_NOT_EQUAL ) {
+        } else if (node->op == OPERATOR_DOUBLE_IMPLY|| node->op == OPERATOR_EQUAL_EQUAL) {
             struct ast_node *op1_node = ast_get_operand_node(in, node, 1);
             struct ast_node *op2_node = ast_get_operand_node(in, node, 2);
-
-            
             dpll_operator_conversion_aux(op1_node, in, out);
+            ast_node_stack_push(out, & NEGATE_NODE);
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & NEGATE_NODE);
             ast_node_stack_push(out, & OR_NODE);
             dpll_operator_conversion_aux(op1_node, in, out);
-            ast_node_stack_push(out, & NEGATE_NODE);
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & OR_NODE);
             ast_node_stack_push(out, & AND_NODE);
-            if (node->op == OPERATOR_NOT_EQUAL )
-                ast_node_stack_push(out, & NEGATE_NODE);
+            ast_node_stack_push(out, & NEGATE_NODE);
                 
         } else if (node->op == OPERATOR_IMPLY) {
             struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
@@ -114,7 +110,8 @@ dpll_operator_conversion_aux ( struct ast_node *expr_node,
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & AND_NODE);
             ast_node_stack_push(out, & NEGATE_NODE);
-        } else if (node->op == OPERATOR_XOR) {
+        } else if (node->op == OPERATOR_XOR ||
+                   node->op == OPERATOR_NOT_EQUAL) {
             // P ^ Q = (~P | ~Q) & (P | Q)           
             struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
             struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
@@ -213,8 +210,8 @@ dpll_demorgan_aux ( struct ast_node *expr_node,
                     dpll_demorgan_aux(op1_node, in, out);
                     ast_node_stack_push(out, & NEGATE_NODE);
                     dpll_demorgan_aux(op2_node, in, out);
-                    // ... second operand G
                     ast_node_stack_push(out, & NEGATE_NODE);
+                    // ... second operand G
                     if (next_node->op == OPERATOR_OR) {
                         ast_node_stack_push(out, & AND_NODE);
                     } else if (next_node->op == OPERATOR_AND) {
@@ -223,9 +220,10 @@ dpll_demorgan_aux ( struct ast_node *expr_node,
                 } else {
                     // The `NODE` that follows the NOT it's a different operator from {AND, OR}
                     if (next_node->op == OPERATOR_NOT ) {
+                        // NOTE: Do not push the negation now, DOUBLE NEGATION cancels out
                         struct ast_node *op1_node = ast_get_operand_node( in, next_node, 1);
                         dpll_demorgan_aux(op1_node, in, out);
-                        // NOTE: Do not push the negation now, DOUBLE NEGATION cancels out
+
                     } else {
                         // Every operator should be converted to AND's OR's NOT's or constants
                         invalid_code_path();
@@ -243,7 +241,7 @@ dpll_demorgan_aux ( struct ast_node *expr_node,
             assert((node->type == AST_NODE_TYPE_OPERATOR || node->type == AST_NODE_TYPE_IDENTIFIER));
             if (node->type == AST_NODE_TYPE_OPERATOR) {
                 assert_msg(node->op == OPERATOR_AND || node->op == OPERATOR_OR,
-                    "Before Demogan applies every opreator should be converted to NOTS ORS ANDS");
+                    "Before Demogan applies every operator should be converted to NOTS ORS ANDS");
             }
             uint numofoperands = operator_num_operands(node);
             for( size_t operand_num = 1;
@@ -424,25 +422,25 @@ ast_node_stack_dump(struct ast_node_stack *stack,
 
 
 struct ast
-dpll_convert_cnf( struct ast *ast )
+dpll_convert_cnf( struct ast *raw_ast )
 {
     printf("DPLL Convert CNF Debug: ### \n");
 
     struct ast_node_stack stack = ast_node_stack_create();
-    struct ast result = ast_dup( ast);
+    struct ast result = ast_dup(raw_ast);
 
     printf("#  Starting Operators Conversion #########\n");
     dpll_operator_conversion(& result, & stack);
     ast_node_stack_dump_reversed( &stack, & result);
     ast_dbglog(& result);
-    test_dpll_operator_conversion_invariant(& result);
+    test_dpll_operator_conversion_invariant(raw_ast, & result);
     
     printf("#  Starting demorgan   ##########\n");
     ast_node_stack_reset(& stack);
     dpll_demorgan(& result, & stack );
     ast_node_stack_dump_reversed( &stack, & result);
     ast_dbglog(& result);
-    test_dpll_demorgan_invariant(& result);
+    test_dpll_demorgan_invariant(raw_ast, & result);
 
 
 
@@ -451,7 +449,7 @@ dpll_convert_cnf( struct ast *ast )
     dpll_double_negation_elimination(& result, & stack );
     ast_node_stack_dump_reversed( &stack, & result);
     ast_dbglog(& result);
-    test_dpll_double_negation_elimination_invariant(& result);
+    test_dpll_double_negation_elimination_invariant(raw_ast, & result);
         
 
     // replace
@@ -470,7 +468,7 @@ dpll_convert_cnf( struct ast *ast )
     }
     ast_node_stack_dump_reversed( &stack, & result);
     ast_dbglog(& result);
-    test_dpll_or_distribution_invariant(& result);
+    test_dpll_or_distribution_invariant(raw_ast, & result);
     
     
     ast_node_stack_free(& stack);

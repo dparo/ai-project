@@ -15,7 +15,6 @@ gdb \
     -ex "start"
 
 
-
 #-ex "set logging file $GDBLOG" \
     #-ex "set logging on" \
 

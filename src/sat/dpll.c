@@ -284,7 +284,7 @@ dpll_next_unit_clause( struct ast *cnf,
 
 
 void
-dpll_preprocess ( struct ast         *cnf)
+dpll_preprocess ( struct ast *raw_ast)
 {
 
 }
@@ -461,7 +461,7 @@ dpll_pick_random_unassigned_literal (struct ast *cnf)
     }
           
 #if __DEBUG
-    if ( !NULL ) {
+    if ( picked ) {
         struct symbol_info *syminfo = symtable_syminfo_from_node(symtable, picked);
         assert(!(syminfo->has_value_assigned));
     }
@@ -470,6 +470,25 @@ dpll_pick_random_unassigned_literal (struct ast *cnf)
 
 }
 
+void
+dpll_print_solution(bool result)
+{
+    struct symtable *symtable = & global_interpreter.symtable;
+    interpreter_log("DPLL: Found solution ");
+    interpreter_log( result ? "`TRUE`" : "`FALSE`");
+    interpreter_log(" for input with assigned values \n\t");
+
+
+    int it = 0;
+    char *k;
+    void *v;
+    ast_symtable_for(it, symtable, k, v) {
+        struct symbol_info *syminfo = (struct symbol_info*) v;
+        interpreter_log(" [\"%s\"]{ a: %d, v: %d }, ",  k, syminfo->has_value_assigned, syminfo->value );
+        log_tabulator();
+    }
+    interpreter_log( "\n");
+}
 
 // @NOTE: The same `cnf` get's reused across recursive calls
 bool
@@ -483,14 +502,18 @@ dpll_solve_recurse(struct ast *cnf)
     //      A formula which is NOT consistent it is NOT necessary false.
     /*    if Φ is a consistent set of literals */
     /*        then return true; */
-    if ( dpll_is_consistent(cnf))
+    if ( dpll_is_consistent(cnf)) {
+        dpll_print_solution(true);
         return true;
+    }
 
     //    AST Has been reduced to 0 nodes
     /*    if Φ contains an empty clause */
     /*        then return false; */
-    if (dpll_is_empty_or_false_clause(cnf))
+    if (dpll_is_empty_or_false_clause(cnf)) {
+        dpll_print_solution(false);
         return false;
+    }
 
 
     struct ast_node *unit_clause = NULL;
@@ -511,24 +534,7 @@ dpll_solve_recurse(struct ast *cnf)
         printf("\n");
     
     }
-    
-    
-    struct ast_node *random = dpll_pick_random_unassigned_literal(cnf);
-    if ( random ) {
-        bool result;
-        bool assigned_value = true;
-        dpll_identifier_assign_value(random, assigned_value);
-        struct ast_node_stack s1 = dpll_unit_propagate(cnf, random, assigned_value);
 
-
-        assigned_value = false;
-        dpll_identifier_assign_value(random, assigned_value);
-        struct ast_node_stack s2 = dpll_unit_propagate(cnf, random, assigned_value);
-        
-    } else {
-        // No assignment -> last recursive call to determine the result
-        return dpll_solve_recurse(cnf);
-    }
 
     // A Pure literal is any literal that does not appear with its' negation in the formula
     // WIKIPEDIA DEF: In the context of a formula in the
@@ -541,6 +547,41 @@ dpll_solve_recurse(struct ast *cnf)
 
     
     
+    struct ast_node *random = dpll_pick_random_unassigned_literal(cnf);
+    if ( random ) {
+        bool result = false;
+        bool assigned_value = true;
+        dpll_identifier_assign_value(random, assigned_value);
+        struct ast_node_stack s1 = dpll_unit_propagate(cnf, random, assigned_value);
+        ast_node_stack_dump_reversed( & s1, cnf);
+        ast_node_stack_free(& s1);
+
+        struct ast cnf1 = ast_dup(cnf);
+        result |= dpll_solve_recurse(& cnf1);
+        ast_free(& cnf1);
+        
+        if ( !result ) {
+            // Continue evaluation
+            assigned_value = false;
+            dpll_identifier_assign_value(random, assigned_value);
+            struct ast_node_stack s2 = dpll_unit_propagate(cnf, random, assigned_value);
+            ast_node_stack_dump_reversed( & s2, cnf);
+            ast_node_stack_free(& s2);
+
+            struct ast cnf2 = ast_dup(cnf);
+            result |= dpll_solve_recurse(& cnf2);
+            ast_free(& cnf2);
+        
+        }
+        return result;
+        
+    } else {
+        // No assignment -> last recursive call to determine the result
+        return dpll_solve_recurse(cnf);
+    }
+
+    
+    
     
     
     return result;
@@ -549,10 +590,10 @@ dpll_solve_recurse(struct ast *cnf)
 
 
 void
-dpll_solve(struct ast *ast)
+dpll_solve(struct ast *raw_ast)
 {
-    dpll_preprocess(ast);
-    struct ast cnf = dpll_convert_cnf( ast );
+    dpll_preprocess(raw_ast);
+    struct ast cnf = dpll_convert_cnf( raw_ast );
 
     struct ast_node_stack stack = dpll_unit_propagate(& cnf, NULL, 0);
     ast_node_stack_dump_reversed( &stack, & cnf);

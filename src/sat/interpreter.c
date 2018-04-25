@@ -256,9 +256,8 @@ log_tabulator( void )
 
 
 void
-eval_entire_expr( void )
+eval_entire_expr( struct ast *ast )
 {
-    struct ast *ast = &global_interpreter.ast;
     struct symtable *symtable = & global_interpreter.symtable;
     struct vm_inputs *vmi = & global_interpreter.vmi;
 
@@ -368,9 +367,9 @@ ast_get_operand_node ( struct ast *ast,
 }
 
 void
-ast_print_expr ( struct ast_node *expr_node )
+ast_print_expr ( struct ast* ast,
+                 struct ast_node *expr_node )
 {
-    struct ast* ast = & global_interpreter.ast;
     assert( expr_node >= ast->nodes && (expr_node < ast_end(ast)));
     if ( expr_node->type == AST_NODE_TYPE_IDENTIFIER || expr_node->type == AST_NODE_TYPE_CONSTANT ) {
         intpt_print_node(expr_node);
@@ -388,7 +387,7 @@ ast_print_expr ( struct ast_node *expr_node )
              operand_num++ ) {
             interpreter_log(" ");
             struct ast_node *op_node = ast_get_operand_node(ast, expr_node, operand_num);
-            ast_print_expr(op_node);
+            ast_print_expr(ast, op_node);
         }
         interpreter_log(")");
     } else {
@@ -398,10 +397,9 @@ ast_print_expr ( struct ast_node *expr_node )
 
 
 void
-intpt_print_header( void )
+intpt_print_header( struct ast *ast )
 {
     struct symtable *symtable = & global_interpreter.symtable;
-    struct ast *ast = &global_interpreter.ast;
     
     int s_it;
     char *key;
@@ -415,7 +413,7 @@ intpt_print_header( void )
          node < ast_end(ast);
          node ++ ) {
         if ( ast_node_is_operator(node) ) {
-            ast_print_expr(node);
+            ast_print_expr(ast, node);
             log_tabulator();
         }
     }
@@ -479,7 +477,7 @@ ast_representation_dbglog( void )
          node < ast_end(ast);
          node ++) {
         if ( ast_node_is_operator(node) ) {
-            ast_print_expr(node);
+            ast_print_expr(ast, node);
             log_tabulator();
         }
     }
@@ -492,14 +490,13 @@ ast_representation_dbglog( void )
 #include "dpll.c"
 
 void
-bruteforce_solve( void )
+bruteforce_solve( struct ast *ast )
 {
-    struct ast *ast = & global_interpreter.ast;
     struct symtable *symtable =  & global_interpreter.symtable;
     struct vm_inputs *vmi = & global_interpreter.vmi;
     struct vm_stack *vms = & global_interpreter.vms;
     
-    intpt_print_header();
+    intpt_print_header(ast);
         
     size_t max_it = 1 << symtable_num_syms(symtable);
 
@@ -512,7 +509,7 @@ bruteforce_solve( void )
         // Use the value right here and compute
         intpt_print_inputs();
         {
-            eval_entire_expr();
+            eval_entire_expr( ast );
 
             interpreter_log("\n");
         }
@@ -544,7 +541,7 @@ ast_build_from_command ( char *commandline, size_t commandline_len )
     assert(commandline[commandline_len] == 0);
 
 
-#define SHUNTING_YARD_DEBUG 0
+#define SHUNTING_YARD_DEBUG 1
     
 #if SHUNTING_YARD_DEBUG == 1
 #define SHUNT_DBG() do { ast_node_stack_dbglog( & stack ); ast_dbglog( ast ); printf("\n"); } while(0);
@@ -800,20 +797,14 @@ INVALID_EXPR: {
 
 
 bool
-eval_ast( void )
+eval_ast( struct ast *ast )
 {
     bool result = false;
-    struct ast *ast = & global_interpreter.ast;
     struct vm_inputs *vmi = & global_interpreter.vmi;
 
     
     if (preprocess_command ()) {
-#if 1
-        dpll_test(ast);
-        //intpt_print_header();
-#else
-        bruteforce_solve();
-#endif
+        bruteforce_solve(ast);
         result = true;
     } else {
         result = false;
@@ -862,12 +853,11 @@ eval_commandline ( char *commandline,
             printf("##########After Parsing AST:\n");
             ast_dbglog(ast);
             printf("##############################\n\n\n\n");
-# if 0
-            
-            test_dpll();
-            //ast_representation_dbglog();
-# else
-            if ( eval_ast() ) {
+#if 1
+        dpll_test(ast);
+        //intpt_print_header();
+#else
+            if ( eval_ast(ast) ) {
                 
             }
 #endif

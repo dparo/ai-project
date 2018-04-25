@@ -5,5 +5,5 @@
 
 
 emacs --execute "(set 'compile-command \"cd $PWD/src/ && ./build.sh debug\")" "./src/sat/main.c" &
-./debugger.sh &
+#./debugger.sh &
 exit

@@ -99,20 +99,21 @@ main( int argc, char **argv)
     interpreter_init();
    
 #if 1
-    EVAL_COMMANDLINE_INPLACE ("a & 0");
+    EVAL_COMMANDLINE_INPLACE ("(a ~| b)");
+    //EVAL_COMMANDLINE_INPLACE ("(a <-> b) == (a == b)");
     //EVAL_COMMANDLINE_INPLACE ("a = {b, c & d, e}");
     //EVAL_COMMANDLINE_INPLACE ("(#x a) & b");
     //EVAL_COMMANDLINE_INPLACE ("a & (#x b)");
 #else
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_len = 0; }
-        intpt_info_printf("\n\n");
+        interpreter_logi("\n\n");
         user_interact(& commandline, & commandline_len);
         if ( commandline && commandline_len) {
             printf("\n\n\n");
             eval_commandline( commandline, commandline_len);
         } else {
-            intpt_info_printf("Failed to get line from the terminal");
+            interpreter_logi("Failed to get line from the terminal");
         }
     }
 #endif
