@@ -272,6 +272,9 @@ dpll_demorgan_aux ( struct ast_node *expr_node,
         if (node->op == OPERATOR_NOT ) {
             struct ast_node *next_node = ast_get_operand_node( in, node, 1);
             assert(next_node);
+#if 1
+            dpll_demorgan_aux(next_node, in, out, !negation_propag);
+#else
             if (negation_propag) {
                 dpll_demorgan_aux(next_node, in, out, false);
             } else if (next_node->type == AST_NODE_TYPE_OPERATOR &&
@@ -284,6 +287,7 @@ dpll_demorgan_aux ( struct ast_node *expr_node,
                 assert( negation_propag == false);
                 dpll_demorgan_aux(next_node, in, out, true);
             }
+#endif
         } else if (node->op == OPERATOR_AND
                    || node->op == OPERATOR_OR ) {
             if (negation_propag) {
