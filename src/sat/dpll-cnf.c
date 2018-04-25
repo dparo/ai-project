@@ -192,9 +192,9 @@ dpll_operator_conversion ( struct ast *ast,
 // ~(F & G) == (~F | ~G)                    // legge di De Morgan
 // Move nots inwards down the ast
 void
-dpll_demorgan_aux ( struct ast_node *expr_node,
-                    struct ast *in,
-                    struct ast_node_stack *out )
+__old_bugged_dpll_demorgan_aux ( struct ast_node *expr_node,
+                                 struct ast *in,
+                                 struct ast_node_stack *out )
 {
     struct ast_node *node = expr_node;
     if ( node->type == AST_NODE_TYPE_OPERATOR ) {
@@ -205,9 +205,9 @@ dpll_demorgan_aux ( struct ast_node *expr_node,
                     struct ast_node *op1_node = ast_get_operand_node( in, next_node, 1);
                     struct ast_node *op2_node = ast_get_operand_node( in, next_node, 2);
                     // ... first operand F
-                    dpll_demorgan_aux(op1_node, in, out);
+                    __old_bugged_dpll_demorgan_aux(op1_node, in, out);
                     ast_node_stack_push(out, & NEGATE_NODE);
-                    dpll_demorgan_aux(op2_node, in, out);
+                    __old_bugged_dpll_demorgan_aux(op2_node, in, out);
                     ast_node_stack_push(out, & NEGATE_NODE);
                     // ... second operand G
                     if (next_node->op == OPERATOR_OR) {
@@ -220,7 +220,7 @@ dpll_demorgan_aux ( struct ast_node *expr_node,
                     if (next_node->op == OPERATOR_NOT ) {
                         // NOTE: Do not push the negation now, DOUBLE NEGATION cancels out
                         struct ast_node *op1_node = ast_get_operand_node( in, next_node, 1);
-                        dpll_demorgan_aux(op1_node, in, out);
+                        __old_bugged_dpll_demorgan_aux(op1_node, in, out);
 
                     } else {
                         // Every operator should be converted to AND's OR's NOT's or constants
@@ -246,13 +246,90 @@ dpll_demorgan_aux ( struct ast_node *expr_node,
                  operand_num <= numofoperands;
                  operand_num++ ) {
                 struct ast_node *child = ast_get_operand_node(in, node, operand_num);
-                dpll_demorgan_aux(child, in, out);
+                __old_bugged_dpll_demorgan_aux(child, in, out);
             }
             ast_node_stack_push(out, node);
         }
     } else {
         // Top `NODE` is an identifier
-        ast_node_stack_push(out, node);                
+        ast_node_stack_push(out, node);
+    }
+}
+
+
+
+// ~(F | G) == (~F & ~G)                    // legge di De Morgan
+// ~(F & G) == (~F | ~G)                    // legge di De Morgan
+// Move nots inwards down the ast
+void
+dpll_demorgan_aux ( struct ast_node *expr_node,
+                    struct ast *in,
+                    struct ast_node_stack *out,
+                    bool negation_propag) // In the first call set this to false
+{
+    struct ast_node *node = expr_node;
+    if ( node->type == AST_NODE_TYPE_OPERATOR ) {
+        if (node->op == OPERATOR_NOT ) {
+            struct ast_node *next_node = ast_get_operand_node( in, node, 1);
+            assert(next_node);
+            if (negation_propag) {
+                dpll_demorgan_aux(next_node, in, out, false);
+            } else if (next_node->type == AST_NODE_TYPE_OPERATOR &&
+                       next_node->op == OPERATOR_NOT ) {
+                next_node = ast_get_operand_node( in, next_node, 1);
+                assert(next_node);
+                dpll_demorgan_aux(next_node, in, out, false);
+            } else {
+                // `NOT` followed by: `OR` | `AND` | ID | CONSTANT
+                assert( negation_propag == false);
+                dpll_demorgan_aux(next_node, in, out, true);
+            }
+        } else if (node->op == OPERATOR_AND
+                   || node->op == OPERATOR_OR ) {
+            if (negation_propag) {
+                // Apply De-Morgan
+                struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
+                struct ast_node *op2_node = ast_get_operand_node( in, node, 2);
+                assert(op1_node);
+                assert(op2_node);
+                dpll_demorgan_aux(op1_node, in, out, true);
+                dpll_demorgan_aux(op2_node, in, out, true);
+                if (node->op == OPERATOR_OR) {
+                    ast_node_stack_push(out, & AND_NODE);
+                } else if (node->op == OPERATOR_AND) {
+                    ast_node_stack_push(out, & OR_NODE);
+                } else { invalid_code_path(); }
+            } else {
+                struct ast_node *op1_node = ast_get_operand_node( in, node, 1);
+                struct ast_node *op2_node = ast_get_operand_node( in, node, 2);
+                assert(op1_node);
+                assert(op2_node);
+                dpll_demorgan_aux(op1_node, in, out, false);
+                dpll_demorgan_aux(op2_node, in, out, false);
+                ast_node_stack_push(out, node);
+            }
+
+        } else {
+            // Top Level operator is not a negation
+            if (node->type == AST_NODE_TYPE_OPERATOR) {
+                assert_msg(node->op == OPERATOR_AND || node->op == OPERATOR_OR,
+                    "Before Demogan applies every operator should be converted to NOTS ORS ANDS");
+            }
+            fprintf(stderr, "@TODO: Handle the De-Morgan negation propagation for those operators if any");
+            uint numofoperands = operator_num_operands(node);
+            for( size_t operand_num = 1;
+                 operand_num <= numofoperands;
+                 operand_num++ ) {
+                struct ast_node *child = ast_get_operand_node(in, node, operand_num);
+                dpll_demorgan_aux(child, in, out, false); /* <---- This `FALSE` ? ? ?  */
+            }
+            ast_node_stack_push(out, node);
+        }
+    } else {
+        // Top `NODE` is an identifier or a constant
+        ast_node_stack_push(out, node);
+        if (negation_propag)
+            ast_node_stack_push(out, & NEGATE_NODE);
     }
 }
 
@@ -260,7 +337,7 @@ void
 dpll_demorgan ( struct ast *ast,
                 struct ast_node_stack *out )
 {
-    dpll_demorgan_aux(ast_end(ast) - 1, ast, out);
+    dpll_demorgan_aux(ast_end(ast) - 1, ast, out, false);
 }
 
 

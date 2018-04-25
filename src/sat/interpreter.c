@@ -541,7 +541,7 @@ ast_build_from_command ( char *commandline, size_t commandline_len )
     assert(commandline[commandline_len] == 0);
 
 
-#define SHUNTING_YARD_DEBUG 1
+#define SHUNTING_YARD_DEBUG 0
     
 #if SHUNTING_YARD_DEBUG == 1
 #define SHUNT_DBG() do { ast_node_stack_dbglog( & stack ); ast_dbglog( ast ); printf("\n"); } while(0);
