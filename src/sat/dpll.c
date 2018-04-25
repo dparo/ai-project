@@ -487,26 +487,21 @@ dpll_solve(struct ast *ast)
 }
 
 
-
-
 void
 dpll_test(struct ast *ast)
 {
     // dpll_preprocess(ast);
 
     dpll_solve(ast);
+
 #if 0 
     struct ast cnf = dpll_convert_cnf(ast);
     bool is_consistent = dpll_is_consistent( &cnf );
     bool is_negated = false;
-
     
     struct ast_node *node = 
         dpll_next_unit_clause( & cnf,
                                & is_negated );
-
-
-CLEANUP:
     ast_clear(& cnf);
 #endif
 }
