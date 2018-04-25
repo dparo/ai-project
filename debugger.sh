@@ -16,14 +16,27 @@ EDITOR=emacsclient
 
 export EDITOR
 
+# STDOUT=$(mktemp)
+# GDBLOG=$(mktemp)
 
-rm .gdblog
+# -ex "tty $(tty)"
 
-konsole -e  gdb \
-        -ex "tui enable" -ex "tty $(tty)" \
-        -ex "source .gdbsource" \
-        bin/pci &
 
-sleep 1
+# konsole -e tail -F "$STDOUT" &
+# konsole -e tail -F "$GDBLOG" &
 
-konsole -e tail -F ".gdblog" &
+
+gdb \
+    -ex "tui enable"  \
+    -ex "source .gdbsource" \
+    -ex "tty /dev/null" \
+    bin/pci \
+    -ex "start"
+
+
+
+    #-ex "set logging file $GDBLOG" \
+    #-ex "set logging on" \
+
+    
+

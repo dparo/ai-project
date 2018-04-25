@@ -8,11 +8,5 @@ define e
   edit $
 end
 
-set logging file .gdblog
-set logging on
-
 # set history filename gdb.txt
 # set history save on
-
-
-start

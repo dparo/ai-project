@@ -57,9 +57,24 @@ dpll_eval(struct ast *cnf)
 
 
 static inline bool
-dpll_is_empty_clause( struct ast *cnf )
+dpll_is_empty_or_false_clause( struct ast *cnf )
 {
-    return ( ast_num_nodes(cnf) == 0);
+    if (ast_num_nodes(cnf) == 0)
+        return true;
+    else if (ast_num_nodes(cnf) > 0) {
+        return ast_node_is_false_constant( ast_end(cnf) - 1);
+    }
+    if (ast_num_nodes(cnf) > 1) {
+        struct ast_node *node = (ast_end(cnf) - 1);
+        if (node->type == AST_NODE_TYPE_OPERATOR &&
+            node->op == OPERATOR_NOT) {
+            struct ast_node *child_node = ast_get_operand_node( cnf, node, 1);
+            if ( ast_node_is_true_constant(child_node)) {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 
@@ -230,7 +245,9 @@ dpll_next_unit_clause( struct ast *cnf,
                 return node;
             }
         } else if (node->type == AST_NODE_TYPE_CONSTANT) {
-            assert_msg(0, "No constants Allowed, unit_propagation should removed them");
+            if (node != ast_peek_addr(cnf)) {
+                assert_msg(0, "No constants Allowed, unit_propagation should removed them");
+            }
         } else if (node->type == AST_NODE_TYPE_OPERATOR) {
         }
     }
@@ -262,78 +279,147 @@ dpll_preprocess ( struct ast         *cnf)
 }
 
 
-bool
-dpll_unit_propagate( struct ast *cnf,
-                     struct ast_node_stack *result,
-                     struct ast_node *id,
-                     bool value)
+
+void
+dpll_stack_dump_into_stack ( struct ast_node_stack *dumper,
+                             struct ast_node_stack *dumpee)
 {
-    bool keep_calling = false;
+    for( struct ast_node *node = ast_node_stack_begin(dumper);
+         node < ast_node_stack_end(dumper);
+         node ++ ) {
+        ast_node_stack_push(dumpee, node);
+    }
+}
+
+
+struct ast_node_stack
+dpll_unit_propagate_recurse( struct ast *cnf,
+                             struct ast_node *id,
+                             bool value,
+                             struct ast_node *node)
+{
     assert(id);
     assert(id->type == AST_NODE_TYPE_IDENTIFIER);
     assert(cnf->num_nodes > 0);
 
 
-    for ( struct ast_node *node = ast_begin(cnf);
-          node < ast_end(cnf);
-          node ++ ) {
-        if ( node->type == AST_NODE_TYPE_OPERATOR ) {
-            assert(node->op == OPERATOR_NOT
-                   || node->op == OPERATOR_OR
-                   || node->op == OPERATOR_AND);
+    if ( node->type == AST_NODE_TYPE_OPERATOR ) {
+        assert(node->op == OPERATOR_NOT
+               || node->op == OPERATOR_OR
+               || node->op == OPERATOR_AND);        
+        switch(node->op) {
 
-            switch(node->op) {
-
-            case OPERATOR_NOT: {
-                struct ast_node *child_node = ast_get_operand_node( cnf, node, 1);
-                if (child_node->type == AST_NODE_TYPE_CONSTANT) {
-                    ast_node_stack_push(result, (ast_node_is_true_constant(child_node)
-                                                 ? & FALSE_CONSTANT_NODE
-                                                 : & TRUE_CONSTANT_NODE));
-                } else {
-                    ast_node_stack_push(result, child_node);
-                    ast_node_stack_push(result, node);
-                }
-            } break;
-
-            case OPERATOR_AND: {
-                
-            } break;
-
-            case OPERATOR_OR: {
-
-            } break;
-                
-                
-            default:{
-                invalid_code_path();
-            } break;
+        case OPERATOR_NOT: {
+            struct ast_node_stack op1_stack = dpll_unit_propagate_recurse(cnf, id, value,
+                                                                          ast_get_operand_node( cnf, node, 1));
+            
+            assert(! ast_node_stack_is_empty(& op1_stack));
+            struct ast_node *child = ast_node_stack_peek_addr(& op1_stack);
+            if ( ast_node_is_true_constant(child)) {
+                struct ast_node_stack s = ast_node_stack_create();
+                ast_node_stack_push( &s, & FALSE_CONSTANT_NODE);
+                ast_node_stack_free ( &op1_stack);
+                return s;
+            } else if( ast_node_is_false_constant(child)) {
+                struct ast_node_stack s = ast_node_stack_create();
+                ast_node_stack_push( &s, & TRUE_CONSTANT_NODE);
+                ast_node_stack_free ( &op1_stack);
+                return s;
+            } else {
+                ast_node_stack_push( & op1_stack, node);
+                return op1_stack;
             }
+            
+        } break;
+
+
+        case OPERATOR_AND: case OPERATOR_OR: {
+            struct ast_node_stack op1_stack = dpll_unit_propagate_recurse(cnf, id, value,
+                                                                          ast_get_operand_node( cnf, node, 2));
+            struct ast_node_stack op2_stack = dpll_unit_propagate_recurse(cnf, id, value,
+                                                                          ast_get_operand_node( cnf, node, 1));
+            
+            assert(! ast_node_stack_is_empty(& op1_stack));
+            assert(! ast_node_stack_is_empty(& op2_stack));
+            
+            struct ast_node *op1 = ast_node_stack_peek_addr(& op1_stack);
+            struct ast_node *op2 = ast_node_stack_peek_addr(& op1_stack);
+
+            if ( (op1->type == AST_NODE_TYPE_CONSTANT || op2->type == AST_NODE_TYPE_CONSTANT)
+                 || (node->op == OPERATOR_AND && (ast_node_is_false_constant(op1) || ast_node_is_false_constant(op2)))
+                 || (node->op == OPERATOR_OR && (ast_node_is_true_constant(op1) || ast_node_is_true_constant(op2)))) {
+                // Discard both subtree's
+                // and return constant
+                ast_node_stack_free(& op1_stack);
+                ast_node_stack_free(& op2_stack);
+                struct ast_node *pushed;
+                const bool and_condition = ast_node_is_true_constant(op1) && ast_node_is_true_constant(op2);
+                const bool or_condition = ast_node_is_true_constant(op1) || ast_node_is_true_constant(op2);
+                if (and_condition || or_condition ) {
+                    pushed = & TRUE_CONSTANT_NODE;
+                } else {
+                    pushed = & FALSE_CONSTANT_NODE;
+                }
+                struct ast_node_stack s = ast_node_stack_create();
+                ast_node_stack_push( &s, pushed);
+                return s;
+            } else if (op1->type == AST_NODE_TYPE_CONSTANT || op2->type == AST_NODE_TYPE_CONSTANT) {
+                assert(op1->type == AST_NODE_TYPE_CONSTANT && op2->type == AST_NODE_TYPE_CONSTANT);
+                if (op1->type == AST_NODE_TYPE_CONSTANT) {
+                    ast_node_stack_free(& op1_stack);
+                    return op2_stack;
+                } else if (op2->type == AST_NODE_TYPE_CONSTANT) {
+                    ast_node_stack_free(& op2_stack);
+                    return op1_stack;
+                }
+            } else {
+                // Merging cannot happen further
+                dpll_stack_dump_into_stack(& op2_stack, & op1_stack);
+                ast_node_stack_free(& op2_stack);
+                // Push finally this operator
+                ast_node_stack_push(& op1_stack, node);
+                return op1_stack;
+            }
+        } break;
+
+        default:{
+            invalid_code_path();
+        } break;
+        }
 
             
-        } else if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
-            if ( ast_node_cmp(node, id) ) {
-                ast_node_stack_push(result, & TRUE_CONSTANT_NODE);
-                keep_calling = true;
-                break;
-            } else {
-                ast_node_stack_push(result, node);
-            }
-        } else if ( node->type == AST_NODE_TYPE_CONSTANT) {
-            // Constant can only should only found as top level
-            assert(node == ast_end(cnf) - 1);
-            ast_node_stack_push(result, node);
-            keep_calling = false;
-            break;
+    } else if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
+        if ( ast_node_cmp(node, id) ) {
+            struct ast_node_stack s = ast_node_stack_create();
+            ast_node_stack_push(&s, value ? & TRUE_CONSTANT_NODE : & FALSE_CONSTANT_NODE );
+            return s;
         } else {
-            invalid_code_path();
+            struct ast_node_stack s = ast_node_stack_create();
+            ast_node_stack_push(&s, node);
+            return s;
         }
+    } else if ( node->type == AST_NODE_TYPE_CONSTANT) {
+        struct ast_node_stack s = ast_node_stack_create();
+        ast_node_stack_push(&s, node);
+        return s;
+        
+    } else {
+        invalid_code_path();
     }
-    
-
-    return keep_calling;
+    // In case where the CNF is empty
+    invalid_code_path();
+    return (struct ast_node_stack) { 0 };
 }
 
+
+
+struct ast_node_stack
+dpll_unit_propagate( struct ast *cnf,
+                     struct ast_node *id,
+                     bool value)
+{
+    return dpll_unit_propagate_recurse(cnf, id, value, ast_end(cnf) - 1 );
+}
 
 bool
 dpll_solve_recurse(struct ast *cnf)
@@ -352,23 +438,20 @@ dpll_solve_recurse(struct ast *cnf)
     //    AST Has been reduced to 0 nodes
     /*    if Φ contains an empty clause */
     /*        then return false; */
-    if (dpll_is_empty_clause(cnf))
+    if (dpll_is_empty_or_false_clause(cnf))
         return false;
 
 
     struct ast_node *unit_clause = NULL;
-    struct ast_node_stack stack = ast_node_stack_create();
     bool is_negated = false;
     while ((unit_clause = dpll_next_unit_clause( cnf, &is_negated ))) {
         bool value = ! is_negated;
         // Assign value to it and generate a new ast and propagate
         dpll_identifier_assign_value(unit_clause, value);
 
-        while (dpll_unit_propagate(cnf, &stack, unit_clause, value)) {
-            ast_node_stack_dump_reversed( &stack, cnf);
-            ast_node_stack_reset(&stack);
-        }
-        
+        struct ast_node_stack stack = dpll_unit_propagate(cnf, unit_clause, value);
+        ast_node_stack_dump_reversed( &stack, cnf);
+        ast_node_stack_reset(&stack);
     }
 
     
@@ -397,11 +480,9 @@ dpll_solve(struct ast *ast)
     dpll_preprocess(ast);
     struct ast cnf = dpll_convert_cnf( ast );
 
-    assert_msg(0, "The preprocess Stage should start with a unit-propagation stage");
+    fprintf(stderr, "@TODO: The preprocess Stage should start with a unit-propagation stage");
     dpll_solve_recurse(& cnf);
 
-
-CLEANUP:
     ast_clear(& cnf);
 }
 
@@ -412,7 +493,9 @@ void
 dpll_test(struct ast *ast)
 {
     // dpll_preprocess(ast);
-   
+
+    dpll_solve(ast);
+#if 0 
     struct ast cnf = dpll_convert_cnf(ast);
     bool is_consistent = dpll_is_consistent( &cnf );
     bool is_negated = false;
@@ -422,8 +505,10 @@ dpll_test(struct ast *ast)
         dpll_next_unit_clause( & cnf,
                                & is_negated );
 
+
 CLEANUP:
     ast_clear(& cnf);
+#endif
 }
 
 
@@ -466,10 +551,6 @@ __old__dpll_solve_recurse(struct ast *cnf)
     if ( dpll_is_empty_clause(cnf))
         return false;
 
-# if 0
-    // Substitute with a straight solve request if every identifier is assigned
-    // watchout for meta-constant operators like `in` and alikes.
-#endif
     
     /* Optimization possibility:
        ===================================

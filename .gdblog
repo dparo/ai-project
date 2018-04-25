@@ -1,8 +1,0 @@
-Temporary breakpoint 1 at 0x42a4ba: file sat/main.c, line 92.
-warning: GDB: Failed to set controlling terminal: Operation not permitted
-[Thread debugging using libthread_db enabled]
-Using host libthread_db library "/lib64/libthread_db.so.1".
-
-Temporary breakpoint 1, main (argc=1, argv=0x7fffffffd8e8) at sat/main.c:92
-Missing separate debuginfos, use: dnf debuginfo-install glibc-2.26-27.fc27.x86_64 ncurses-libs-6.0-13.20170722.fc27.x86_64 readline-7.0-7.fc27.x86_64
-$1 = 0x0
