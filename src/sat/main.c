@@ -99,7 +99,8 @@ main( int argc, char **argv)
     interpreter_init();
    
 #if 1
-    EVAL_COMMANDLINE_INPLACE ("(a ~| b)");
+    EVAL_COMMANDLINE_INPLACE ("a == b");
+    // EVAL_COMMANDLINE_INPLACE ("(a ~| b)");
     //EVAL_COMMANDLINE_INPLACE ("(a <-> b) == (a == b)");
     //EVAL_COMMANDLINE_INPLACE ("a = {b, c & d, e}");
     //EVAL_COMMANDLINE_INPLACE ("(#x a) & b");

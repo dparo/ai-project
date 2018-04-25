@@ -8,10 +8,13 @@
 #define DPLL_CNF_TEST_C_IMPLEMENTED
 //#######################################################
 
+
+#define TEST_CNF_WITH_BRUTEFORCE_EVALUATION 1
+
+#if __DEBUG
 bool
 eval_ast(struct ast *ast);
 
-#if __DEBUG
 
 void
 ast_dump_over(struct ast *dumper,
@@ -23,10 +26,12 @@ ast_dump_over(struct ast *dumper,
         ast_push(dumpee, node);
     }
 }
+
 void
 test_bruteforce_formula_equality( struct ast *raw_ast,
                                   struct ast *generated_ast)
 {
+#if TEST_CNF_WITH_BRUTEFORCE_EVALUATION
     static struct ast_node EQ_EQ_NODE =
         { "==", 2, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_EQUAL_EQUAL, DELIMITER_NONE };
 
@@ -38,7 +43,9 @@ test_bruteforce_formula_equality( struct ast *raw_ast,
 
     interpreter_log("\n\n");
     ast_free(&temp);
+#endif
 }
+
 
 #endif
 
@@ -47,6 +54,8 @@ test_dpll_operator_conversion_invariant(struct ast *raw_ast,
                                         struct ast* generated_ast)
 {
 #if __DEBUG
+    test_bruteforce_formula_equality( raw_ast, generated_ast);
+        
     for (struct ast_node *node = ast_end(generated_ast) - 1;
          node >= ast_begin(generated_ast);
          node -- ) {
@@ -60,8 +69,6 @@ test_dpll_operator_conversion_invariant(struct ast *raw_ast,
             assert(0);
         }
     }
-
-    test_bruteforce_formula_equality( raw_ast, generated_ast);
 #endif
 }
 
@@ -69,6 +76,7 @@ void
 test_dpll_demorgan_invariant(struct ast* raw_ast,
                              struct ast* generated_ast)
 {
+    test_bruteforce_formula_equality( raw_ast, generated_ast);
 #if __DEBUG
     for (struct ast_node *node = ast_end(generated_ast) - 1;
          node >= ast_begin(generated_ast);
@@ -87,7 +95,6 @@ test_dpll_demorgan_invariant(struct ast* raw_ast,
             }
         }
     }
-    test_bruteforce_formula_equality( raw_ast, generated_ast);
 #endif
 }
 
@@ -95,6 +102,7 @@ void
 test_dpll_double_negation_elimination_invariant(struct ast *raw_ast,
                                                 struct ast *generated_ast)
 {
+    test_bruteforce_formula_equality( raw_ast, generated_ast);
 #if __DEBUG
     for (struct ast_node *node = ast_end(generated_ast) - 1;
          node >= ast_begin(generated_ast);
@@ -117,9 +125,6 @@ test_dpll_double_negation_elimination_invariant(struct ast *raw_ast,
             }
         }
     }
-
-    test_bruteforce_formula_equality(raw_ast, generated_ast);
-        
 #endif
 }
 
@@ -129,6 +134,8 @@ test_dpll_or_distribution_invariant( struct ast* raw_ast,
                                      struct ast *generated_ast)
 {
 #if __DEBUG
+    test_bruteforce_formula_equality( raw_ast, generated_ast);
+
     test_dpll_demorgan_invariant(raw_ast, generated_ast);
     test_dpll_double_negation_elimination_invariant(raw_ast, generated_ast);
 
@@ -155,7 +162,6 @@ test_dpll_or_distribution_invariant( struct ast* raw_ast,
             }
         }
     }
-    test_bruteforce_formula_equality(raw_ast, generated_ast);
 #endif
 }
 

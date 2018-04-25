@@ -97,7 +97,6 @@ dpll_operator_conversion_aux ( struct ast_node *expr_node,
             struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
             
             dpll_operator_conversion_aux(op1_node, in, out);
-            ast_node_stack_push(out, & NEGATE_NODE);
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & OR_NODE);
             ast_node_stack_push(out, & NEGATE_NODE);
@@ -106,7 +105,6 @@ dpll_operator_conversion_aux ( struct ast_node *expr_node,
             struct ast_node *op2_node = ast_get_operand_node (in, node, 2);
 
             dpll_operator_conversion_aux(op1_node, in, out);
-            ast_node_stack_push(out, & NEGATE_NODE);
             dpll_operator_conversion_aux(op2_node, in, out);
             ast_node_stack_push(out, & AND_NODE);
             ast_node_stack_push(out, & NEGATE_NODE);

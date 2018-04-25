@@ -8,6 +8,7 @@
 # konsole -e tail -F "$STDOUT" &
 # konsole -e tail -F "$GDBLOG" &
 
+export EDITOR="emacsclient"
 
 gdb \
     -tty="/dev/null" \
