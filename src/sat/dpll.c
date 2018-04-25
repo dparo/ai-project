@@ -343,9 +343,9 @@ dpll_unit_propagate_recurse( struct ast *cnf,
             assert(! ast_node_stack_is_empty(& op2_stack));
             
             struct ast_node *op1 = ast_node_stack_peek_addr(& op1_stack);
-            struct ast_node *op2 = ast_node_stack_peek_addr(& op1_stack);
+            struct ast_node *op2 = ast_node_stack_peek_addr(& op2_stack);
 
-            if ( (op1->type == AST_NODE_TYPE_CONSTANT || op2->type == AST_NODE_TYPE_CONSTANT)
+            if ( (op1->type == AST_NODE_TYPE_CONSTANT && op2->type == AST_NODE_TYPE_CONSTANT)
                  || (node->op == OPERATOR_AND && (ast_node_is_false_constant(op1) || ast_node_is_false_constant(op2)))
                  || (node->op == OPERATOR_OR && (ast_node_is_true_constant(op1) || ast_node_is_true_constant(op2)))) {
                 // Discard both subtree's
@@ -364,7 +364,7 @@ dpll_unit_propagate_recurse( struct ast *cnf,
                 ast_node_stack_push( &s, pushed);
                 return s;
             } else if (op1->type == AST_NODE_TYPE_CONSTANT || op2->type == AST_NODE_TYPE_CONSTANT) {
-                assert(op1->type == AST_NODE_TYPE_CONSTANT && op2->type == AST_NODE_TYPE_CONSTANT);
+                assert(!(op1->type == AST_NODE_TYPE_CONSTANT && op2->type == AST_NODE_TYPE_CONSTANT));
                 if (op1->type == AST_NODE_TYPE_CONSTANT) {
                     ast_node_stack_free(& op1_stack);
                     return op2_stack;

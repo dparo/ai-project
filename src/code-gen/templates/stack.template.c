@@ -103,7 +103,7 @@ static inline bool
 $(S)_is_empty(struct $(S) *s)
 {
     assert(s);
-    return $(S)_$(num_elems)(s);
+    return $(S)_$(num_elems)(s) == 0;
 }
 
 

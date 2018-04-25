@@ -103,7 +103,7 @@ static inline bool
 ast_is_empty(struct ast *s)
 {
     assert(s);
-    return ast_num_nodes(s);
+    return ast_num_nodes(s) == 0;
 }
 
 
