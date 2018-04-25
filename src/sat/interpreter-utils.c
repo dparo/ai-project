@@ -260,6 +260,15 @@ symtable_get_syminfo( struct symtable *symtable,
     return info;
 }
 
+struct symbol_info *
+symtable_syminfo_from_node( struct symtable *symtable,
+                            struct ast_node *node )
+{
+    assert(node);
+    assert(node->type == AST_NODE_TYPE_IDENTIFIER);
+    return symtable_get_syminfo(symtable, node->text, node->text_len);
+}
+
 static inline bool
 symtable_is_sym(struct symtable *symtable,
                 char *sym_name, size_t sym_name_len)
@@ -312,16 +321,11 @@ ast_node_value_assigned(struct symtable *symtable,
                         bool *value)
 {
     assert(node->type == AST_NODE_TYPE_IDENTIFIER);
-    
-    char temp = node->text[node->text_len];
-    node->text[node->text_len] = 0;
-
+        
     struct symbol_info *info =
         symtable_get_syminfo( symtable,
                               node->text, node->text_len);
-    // restore null termination
-    node->text[node->text_len] = temp;
-
+    
     bool result;
     if ( info ) {
         result = true;

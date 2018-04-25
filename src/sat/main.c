@@ -78,8 +78,8 @@ user_interact(char **commandline, size_t *commandline_len)
 }
 
 
-#define EVAL_COMMANDLINE_INPLACE(command)                 \
-    printf("\n\nformula: %s\n\n", command);                      \
+#define EVAL_COMMANDLINE_INPLACE(command)              \
+    printf("\n\nformula: %s\n\n", command);            \
     eval_commandline(strdup(command), strlen(command))
         
 
@@ -98,7 +98,7 @@ main( int argc, char **argv)
 
    
 #if 1
-    EVAL_COMMANDLINE_INPLACE ("!1");
+    EVAL_COMMANDLINE_INPLACE ("1");
     //EVAL_COMMANDLINE_INPLACE ("a = {b, c & d, e}");
     //EVAL_COMMANDLINE_INPLACE ("(#x a) & b");
     //EVAL_COMMANDLINE_INPLACE ("a & (#x b)");

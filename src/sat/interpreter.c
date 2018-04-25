@@ -282,7 +282,7 @@ eval_entire_expr( void )
             if ( node->type == AST_NODE_TYPE_IDENTIFIER  || node->type == AST_NODE_TYPE_CONSTANT) {
                 bool value;
                 if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
-                    struct symbol_info *syminfo = symtable_get_syminfo(symtable, node->text, node->text_len);
+                    struct symbol_info *syminfo = symtable_syminfo_from_node( symtable, node );
                     assert_msg(syminfo, "This may fail ? ? ?\n Technically no, if there's the preprocess phase");
                     size_t vmi_index = syminfo->vmi_index;
 

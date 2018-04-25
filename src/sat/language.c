@@ -158,6 +158,40 @@ static struct ast_node NEGATE_NODE =
 { "~", 1, 1, AST_NODE_TYPE_OPERATOR, OPERATOR_NOT, DELIMITER_NONE };
 
 
+
+static struct ast_node FALSE_CONSTANT_NODE =
+{ "0", 1, 0, AST_NODE_TYPE_CONSTANT, OPERATOR_NONE, DELIMITER_NONE };
+
+
+static struct ast_node TRUE_CONSTANT_NODE =
+{ "1", 1, 0, AST_NODE_TYPE_CONSTANT, OPERATOR_NONE, DELIMITER_NONE };
+
+
+bool
+ast_node_is_true_constant( struct ast_node *node)
+{
+    assert(node);
+    if (node->type == AST_NODE_TYPE_CONSTANT && *(node->text) == '1') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+bool
+ast_node_is_false_constant( struct ast_node *node)
+{
+    assert(node);
+    if (node->type == AST_NODE_TYPE_CONSTANT && *(node->text) == '0') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+    
+
 void
 ast_node_convert_to_constant (struct ast_node *node,
                               bool value)

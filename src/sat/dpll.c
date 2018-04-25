@@ -12,6 +12,19 @@
 #include "dpll-cnf.c"
 
 
+void
+dpll_identifier_assign_value(struct ast_node *node,
+                             bool value)
+{
+    assert(node);
+    assert(node->type == AST_NODE_TYPE_IDENTIFIER);
+    struct symtable *symtable = & global_interpreter.symtable;
+    struct symbol_info *syminfo = symtable_syminfo_from_node(symtable, node);
+    assert(! syminfo->has_value_assigned);
+    syminfo->has_value_assigned = true;
+    syminfo->value = value;
+}
+
 
 bool
 dpll_eval(struct ast *cnf)
@@ -26,7 +39,7 @@ dpll_eval(struct ast *cnf)
         if ( node->type == AST_NODE_TYPE_IDENTIFIER  || node->type == AST_NODE_TYPE_CONSTANT) {
             bool value;
             if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
-                struct symbol_info *syminfo = symtable_get_syminfo(symtable, node->text, node->text_len);
+                struct symbol_info *syminfo = symtable_syminfo_from_node(symtable, node);
                 assert(syminfo->has_value_assigned);
                 value = syminfo->value;
             } else if ( node->type == AST_NODE_TYPE_CONSTANT ) {
@@ -77,9 +90,8 @@ dpll_is_consistent( struct ast *cnf )
                 // Negation Followed by Negation should be deleted
                 // from the double negation elimination step
                 assert(child_node->type == AST_NODE_TYPE_IDENTIFIER);
-                struct symbol_info *syminfo = symtable_get_syminfo( symtable,
-                                                                    child_node->text,
-                                                                    child_node->text_len);
+                struct symbol_info *syminfo = symtable_syminfo_from_node( symtable,
+                                                                          child_node);
                 if ( syminfo->has_value_assigned ) {
                     result = !(syminfo->value);
                 } else {
@@ -92,9 +104,7 @@ dpll_is_consistent( struct ast *cnf )
             result = false;
         }
     } else if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
-        struct symbol_info *syminfo = symtable_get_syminfo( symtable,
-                                                            node->text,
-                                                            node->text_len);
+        struct symbol_info *syminfo = symtable_syminfo_from_node( symtable, node);
         if ( syminfo->has_value_assigned ) {
             result = !(syminfo->value);
         } else {
@@ -251,27 +261,79 @@ dpll_preprocess ( struct ast         *cnf)
 
 }
 
-struct ast_node_stack
+
+bool
 dpll_unit_propagate( struct ast *cnf,
+                     struct ast_node_stack *result,
                      struct ast_node *id,
-                     bool value )
+                     bool value)
 {
-    struct ast_node_stack result = ast_node_stack_create();
+    bool keep_calling = false;
     assert(id);
     assert(id->type == AST_NODE_TYPE_IDENTIFIER);
     assert(cnf->num_nodes > 0);
 
 
-    struct ast_node *father = (ast_end(cnf) - 1);
-    for ( struct ast_node *node = ast_end(cnf) - 1;
-          node >= ast_begin(cnf);
-          node -- ) {
-        assert_msg(0, "Needs recursive implementation propagating upward");
+    for ( struct ast_node *node = ast_begin(cnf);
+          node < ast_end(cnf);
+          node ++ ) {
+        if ( node->type == AST_NODE_TYPE_OPERATOR ) {
+            assert(node->op == OPERATOR_NOT
+                   || node->op == OPERATOR_OR
+                   || node->op == OPERATOR_AND);
+
+            switch(node->op) {
+
+            case OPERATOR_NOT: {
+                struct ast_node *child_node = ast_get_operand_node( cnf, node, 1);
+                if (child_node->type == AST_NODE_TYPE_CONSTANT) {
+                    ast_node_stack_push(result, (ast_node_is_true_constant(child_node)
+                                                 ? & FALSE_CONSTANT_NODE
+                                                 : & TRUE_CONSTANT_NODE));
+                } else {
+                    ast_node_stack_push(result, child_node);
+                    ast_node_stack_push(result, node);
+                }
+            } break;
+
+            case OPERATOR_AND: {
+                
+            } break;
+
+            case OPERATOR_OR: {
+
+            } break;
+                
+                
+            default:{
+                invalid_code_path();
+            } break;
+            }
+
+            
+        } else if ( node->type == AST_NODE_TYPE_IDENTIFIER ) {
+            if ( ast_node_cmp(node, id) ) {
+                ast_node_stack_push(result, & TRUE_CONSTANT_NODE);
+                keep_calling = true;
+                break;
+            } else {
+                ast_node_stack_push(result, node);
+            }
+        } else if ( node->type == AST_NODE_TYPE_CONSTANT) {
+            // Constant can only should only found as top level
+            assert(node == ast_end(cnf) - 1);
+            ast_node_stack_push(result, node);
+            keep_calling = false;
+            break;
+        } else {
+            invalid_code_path();
+        }
     }
     
 
-    return result;
+    return keep_calling;
 }
+
 
 bool
 dpll_solve_recurse(struct ast *cnf)
@@ -295,9 +357,18 @@ dpll_solve_recurse(struct ast *cnf)
 
 
     struct ast_node *unit_clause = NULL;
+    struct ast_node_stack stack = ast_node_stack_create();
     bool is_negated = false;
     while ((unit_clause = dpll_next_unit_clause( cnf, &is_negated ))) {
+        bool value = ! is_negated;
         // Assign value to it and generate a new ast and propagate
+        dpll_identifier_assign_value(unit_clause, value);
+
+        while (dpll_unit_propagate(cnf, &stack, unit_clause, value)) {
+            ast_node_stack_dump_reversed( &stack, cnf);
+            ast_node_stack_reset(&stack);
+        }
+        
     }
 
     
@@ -319,6 +390,7 @@ dpll_solve_recurse(struct ast *cnf)
 }
 
 
+
 void
 dpll_solve(struct ast *ast)
 {
@@ -336,7 +408,6 @@ CLEANUP:
 
 
 
-
 void
 dpll_test(struct ast *ast)
 {
@@ -344,6 +415,13 @@ dpll_test(struct ast *ast)
    
     struct ast cnf = dpll_convert_cnf(ast);
     bool is_consistent = dpll_is_consistent( &cnf );
+    bool is_negated = false;
+
+    
+    struct ast_node *node = 
+        dpll_next_unit_clause( & cnf,
+                               & is_negated );
+
 CLEANUP:
     ast_clear(& cnf);
 }
