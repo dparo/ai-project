@@ -999,7 +999,7 @@ tokenizer_init_from_memory( Tokenizer *tknzr,
 {
     (void) tknzr;
     assert(buffer);
-    assert(buffersize);
+    //assert(buffersize);
     tknzr->base = buffer;
     tknzr->base_len = buffersize;
     strncpy (tknzr->file, filename, TOKENIZER_FILENAME_LEN);

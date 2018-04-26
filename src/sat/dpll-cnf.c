@@ -265,7 +265,7 @@ void
 dpll_demorgan_aux ( struct ast_node *expr_node,
                     struct ast *in,
                     struct ast_node_stack *out,
-                    bool negation_propag) // In the first call set this to false
+                    bool negation_propag ) // In the first call set this to false
 {
     struct ast_node *node = expr_node;
     if ( node->type == AST_NODE_TYPE_OPERATOR ) {

@@ -707,9 +707,13 @@ ast_build_from_command ( char *commandline, size_t commandline_len )
     printf("Final: \n");
     SHUNT_DBG();
 #endif
-    
+
     ast_node_stack_clear(&stack);
-    return true;
+    if ( ast_is_empty(ast)) {
+        return false;
+    } else {
+        return true;
+    }
     
 parse_failed: {
         ast_node_stack_clear(&stack);
