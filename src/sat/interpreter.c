@@ -557,9 +557,9 @@ bruteforce_solve( struct ast *ast )
 // This function is pretty self-contained. The interpreter
 // cares only about the AST which is pretty stable at this point.
 bool
-ast_build_from_command ( char *commandline, size_t commandline_len )
+ast_build_from_command ( struct ast *ast,
+                         char *commandline, size_t commandline_len )
 {
-    struct ast *ast = & global_interpreter.ast;
     ast_clear(ast);
 
     // Ensure null-termination, It is not strictly necessary
@@ -782,19 +782,20 @@ void
 intpt_end_frame( void )
 {
     struct symtable *symtable =  & global_interpreter.symtable;
+    struct ast *ast = & global_interpreter.ast;
+    ast_clear(ast);
     symtable_clear(symtable);
 }
 
 
 bool
-preprocess_command ( void )
+preprocess_command ( struct ast *ast )
 {
     bool alloc_result = true;
-    struct ast *ast = & global_interpreter.ast;
     struct symtable *symtable = & global_interpreter.symtable;
 
-    for (struct ast_node *node = ast_end(ast);
-         node != ast_begin(ast);
+    for (struct ast_node *node = ast_end(ast) - 1;
+         node >= ast_begin(ast);
          node -- ) {
         if ( node->type == AST_NODE_TYPE_CONSTANT ) {
             bool valid = valid_constant(node);
@@ -882,7 +883,7 @@ eval_ast( struct ast *ast,
     struct vm_inputs *vmi = & global_interpreter.vmi;
 
     
-    if (preprocess_command ()) {
+    if ( preprocess_command(ast)) {
         if (solver == BRUTEFORCE_SOLVER) {
             bruteforce_solve(ast);
             result = true;
@@ -947,7 +948,7 @@ eval_commandline ( char *commandline,
     enum interpreter_solver solver = global_interpreter.solver;
     
     if ( intpt_begin_frame()) {
-        if ( ast_build_from_command( commandline, commandline_len ) ) {
+        if ( ast_build_from_command( ast, commandline, commandline_len ) ) {
 #if __DEBUG && LOG_AST_AFTER_GENERATION
             printf("########## After Parsing AST:\n");
             ast_dbglog(ast);
