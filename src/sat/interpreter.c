@@ -38,7 +38,18 @@ interpreter_set_solver(enum interpreter_solver solver)
     global_interpreter.solver = solver;
 }
 
+static inline FILE *
+interpreter_log_stream(void)
+{
+    return global_interpreter.stream_out ? global_interpreter.stream_out : stdout;
+}
 
+
+static inline FILE *
+interpreter_logi_stream(void)
+{
+    return global_interpreter.stream_info ? global_interpreter.stream_info : stdout;
+}
 
 
 PRINTF_STYLE(1, 2)
@@ -46,7 +57,7 @@ static inline int
 interpreter_log ( char *format,
                   ... )
 {
-    FILE *f = global_interpreter.stream_out ? global_interpreter.stream_out : stdout;
+    FILE *f = interpreter_log_stream();
     va_list ap;
     
     va_start(ap, format);
@@ -63,7 +74,7 @@ interpreter_logi ( char *format,
                    ... )
 
 {
-    FILE *f = global_interpreter.stream_info ? global_interpreter.stream_info : stdout;
+    FILE *f = interpreter_logi_stream();
     va_list ap;
     
     va_start(ap, format);
@@ -787,22 +798,44 @@ preprocess_command ( void )
         if ( node->type == AST_NODE_TYPE_CONSTANT ) {
             bool valid = valid_constant(node);
             if ( ! valid ) {
-                interpreter_logi(" ### %.*s is not a valid constant: valid constants are {`0`, `1`}\n", node->text_len, node->text);
+                interpreter_logi(" ### ");
+                ast_node_print(interpreter_logi_stream(), node);
+                interpreter_logi(" is not a valid constant: valid constants are {`0`, `1`}\n");
                 goto INVALID_EXPR;
             }
         } else if (node->type == AST_NODE_TYPE_DELIMITER) {
-            interpreter_logi(" ### %.*s is not currently a supported delimiter\n", node->text_len, node->text);
+            interpreter_logi(" ### ");
+            ast_node_print(interpreter_logi_stream(), node);
+            interpreter_logi(" is not currently a supported delimiter\n");
             goto INVALID_EXPR;
         } else if (node->type == AST_NODE_TYPE_OPERATOR) {
             switch(node->op) {
-            default: {} break;
-            case OPERATOR_ASSIGN: case OPERATOR_CONCAT_ASSIGN:
-            case OPERATOR_CONCAT: case OPERATOR_DEREF:
-            case OPERATOR_FNCALL: case OPERATOR_INDEX:
-            case OPERATOR_COMPOUND: case OPERATOR_ENUMERATE:
-            case OPERATOR_EXIST: case OPERATOR_ON:
-            case OPERATOR_IN: case OPERATOR_TERNARY: {
-                interpreter_logi(" ### %.*s is not currently a supported operator\n", node->text_len, node->text);
+            case OPERATOR_NONE:
+            case OPERATOR_NOT:
+            case OPERATOR_AND:
+            case OPERATOR_NAND:
+            case OPERATOR_NOR:
+            case OPERATOR_OR:
+            case OPERATOR_XOR:
+            case OPERATOR_IMPLY:
+            case OPERATOR_DOUBLE_IMPLY:
+                    
+            case OPERATOR_EQUAL_EQUAL:
+            case OPERATOR_NOT_EQUAL:
+            case OPERATOR_GREATER:
+            case OPERATOR_GREATER_EQUAL:
+            case OPERATOR_LESS:
+            case OPERATOR_LESS_EQUAL: {
+                /* Supported ops */
+            } break;
+                
+
+
+                    
+            default: {
+                interpreter_logi(" ### ");
+                ast_node_print(interpreter_logi_stream(), node);
+                interpreter_logi(" is not currently a supported operator\n");
                 goto INVALID_EXPR;
 
             } break;
