@@ -437,7 +437,6 @@ dpll_or_distribution_aux ( struct ast_node *expr_node,
 
 
 
-                /* /LEZZO/ */
                 dpll_or_distribution_aux(or_op1_node, in, out, did_work);
                 dpll_or_distribution_aux(or_op2_node, in, out, did_work);
                 ast_node_stack_push(out, node);
@@ -454,7 +453,7 @@ dpll_or_distribution_aux ( struct ast_node *expr_node,
             ast_node_stack_push(out, node);
         }
     } else {
-        // Top `NODE` is an identifier
+        // Top `NODE` is an identifier or constant
         ast_node_stack_push(out, node);                
     }
 }

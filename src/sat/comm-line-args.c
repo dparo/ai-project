@@ -49,12 +49,19 @@ commline_set_solver(char *solver)
         } else if (0 == strcasecmp("dpll", solver)) {
             interpreter_set_solver(DPLL_SOLVER);
             solver_was_set = true;
+        } else if ((0 == strcasecmp("th", solver))
+                   ||0 == strcasecmp("dpll-th", solver)) {
+            interpreter_set_solver(THEOREM_SOLVER);
+            solver_was_set = true;
         } else {
             interpreter_logi("INTERPRETER: Cannot understand `solver`\n   > Defaulting to DPLL\n");
             interpreter_set_solver(DPLL_SOLVER);
             solver_was_set = true;
         }
+    } else {
+        solver_was_set = false;
     }
+    
 }
 
 

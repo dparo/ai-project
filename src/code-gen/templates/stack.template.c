@@ -69,14 +69,13 @@ $(S)_reset(struct $(S) *s)
 
 static inline void
 $(S)_grow_to( struct $(S) *s,
-              size_t new_$(max_elems)) /* Size in BYTES !!! */
+              size_t new_$(max_elems))
 {
     assert(s);
     if ( new_$(max_elems) == 0 ) {
         new_$(max_elems) = 64;
     }
     size_t new_size = new_$(max_elems) * sizeof($(T)) * 2;
-    new_size = 64 * sizeof($(T));
     void *temp = xrealloc(s->$(base), new_size);
     assert(temp);
     s->$(base) = temp;
@@ -152,7 +151,8 @@ $(S)_enough_size_to_hold_n(struct $(S) *s,
                            size_t n)
 {
     assert(s);
-    return (& s->$(base)[s->$(num_elems) + n]) < & (s->$(base)[s->$(max_elems)]);
+    assert(n);
+    return ((s->$(num_elems) + n) <= (s->$(max_elems)));
 }
                  
 

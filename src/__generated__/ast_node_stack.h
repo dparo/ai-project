@@ -69,14 +69,13 @@ ast_node_stack_reset(struct ast_node_stack *s)
 
 static inline void
 ast_node_stack_grow_to( struct ast_node_stack *s,
-              size_t new_max_nodes) /* Size in BYTES !!! */
+              size_t new_max_nodes)
 {
     assert(s);
     if ( new_max_nodes == 0 ) {
         new_max_nodes = 64;
     }
     size_t new_size = new_max_nodes * sizeof(struct ast_node) * 2;
-    new_size = 64 * sizeof(struct ast_node);
     void *temp = xrealloc(s->nodes, new_size);
     assert(temp);
     s->nodes = temp;
@@ -152,7 +151,8 @@ ast_node_stack_enough_size_to_hold_n(struct ast_node_stack *s,
                            size_t n)
 {
     assert(s);
-    return (& s->nodes[s->num_nodes + n]) < & (s->nodes[s->max_nodes]);
+    assert(n);
+    return ((s->num_nodes + n) <= (s->max_nodes));
 }
                  
 

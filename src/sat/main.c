@@ -115,9 +115,8 @@ main( int argc, char **argv)
 
 
    
-#if 0
-
-    EVAL_COMMANDLINE_INPLACE ("a & b");
+#if 1
+    EVAL_COMMANDLINE_INPLACE ("a & b & 0");
     //EVAL_COMMANDLINE_INPLACE ("a = f | (b, c)");
 
     //EVAL_COMMANDLINE_INPLACE ("a = f(b, c)");

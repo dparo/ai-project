@@ -167,6 +167,9 @@ static struct ast_node TRUE_CONSTANT_NODE =
 { "1", 1, 0, AST_NODE_TYPE_CONSTANT, OPERATOR_NONE, DELIMITER_NONE };
 
 
+static struct ast_node EQ_EQ_NODE =
+{ "==", 2, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_EQUAL_EQUAL, DELIMITER_NONE };
+
 bool
 ast_node_is_true_constant( struct ast_node *node)
 {

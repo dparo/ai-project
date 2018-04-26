@@ -7,6 +7,7 @@
 
 enum interpreter_solver {
     DPLL_SOLVER = 0,
+    THEOREM_SOLVER = 0,
     BRUTEFORCE_SOLVER = 1,
 };
 
@@ -885,7 +886,13 @@ eval_ast( struct ast *ast,
         if (solver == BRUTEFORCE_SOLVER) {
             bruteforce_solve(ast);
             result = true;
-        } else if (solver == DPLL_SOLVER) {
+        } else if (solver == DPLL_SOLVER || solver == THEOREM_SOLVER) {
+            if ( solver == THEOREM_SOLVER ) {
+                ast_push(ast, & NEGATE_NODE);
+                ast_push(ast, & FALSE_CONSTANT_NODE);
+                ast_push(ast, & EQ_EQ_NODE);
+            }
+
             dpll_solve(ast);
             result = true;
         } else {

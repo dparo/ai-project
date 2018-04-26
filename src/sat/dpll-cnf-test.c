@@ -33,14 +33,10 @@ test_bruteforce_formula_equality( struct ast *raw_ast,
     // Checks equality between the generated_ast and the original raw_ast
     // You should see all `1`s in the last column in every stage
     // of the conversion
-    static struct ast_node EQ_EQ_NODE =
-        { "==", 2, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_EQUAL_EQUAL, DELIMITER_NONE };
-
     struct ast temp = ast_dup(generated_ast);
     ast_dump_into( raw_ast, &temp);
     ast_push( & temp, & EQ_EQ_NODE); 
     eval_ast( & temp, BRUTEFORCE_SOLVER);
-
 
     interpreter_log("\n\n");
     ast_free(&temp);
