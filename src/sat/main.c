@@ -53,6 +53,14 @@
 #include <readline/history.h>
 
 
+#define ANSI_COLOR_RED     "\x1b[31m"
+#define ANSI_COLOR_GREEN   "\x1b[32m"
+#define ANSI_COLOR_YELLOW  "\x1b[33m"
+#define ANSI_COLOR_BLUE    "\x1b[34m"
+#define ANSI_COLOR_MAGENTA "\x1b[35m"
+#define ANSI_COLOR_CYAN    "\x1b[36m"
+#define ANSI_COLOR_RESET   "\x1b[0m"
+
 // the formula is null terminated with necessary space for null termination
 void
 user_interact(char **commandline, size_t *commandline_len)
@@ -61,7 +69,8 @@ user_interact(char **commandline, size_t *commandline_len)
     assert(commandline_len);
     // Maybe continue asking for more input if last character is like `\`
     // in a loop and concatenate to previous string
-    char *string = readline("\001\033[1;32m\002Input Interpreter Command:\n    [>]\001\033[0m\002 ");
+    char *string = readline( ANSI_COLOR_CYAN "Input Interpreter Command:" ANSI_COLOR_RESET
+                             "\n   " ANSI_COLOR_CYAN "[>]" ANSI_COLOR_RESET " ");
     size_t len = 0;
     if ( string ) {
         len = strlen(string);

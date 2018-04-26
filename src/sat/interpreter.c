@@ -930,7 +930,7 @@ test_dpll_preprocess_print(void)
 
 
 
-
+#define LOG_AST_AFTER_GENERATION 0
 
 void
 eval_commandline ( char *commandline,
@@ -941,8 +941,8 @@ eval_commandline ( char *commandline,
     
     if ( intpt_begin_frame()) {
         if ( ast_build_from_command( commandline, commandline_len ) ) {
-#if __DEBUG
-            printf("##########After Parsing AST:\n");
+#if __DEBUG && LOG_AST_AFTER_GENERATION
+            printf("########## After Parsing AST:\n");
             ast_dbglog(ast);
             printf("##############################\n\n\n\n");
 #endif
