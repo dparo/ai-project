@@ -16,7 +16,7 @@ export EDITOR="emacsclient"
 
 gdb \
     -tty="/dev/null" \
-    bin/pci \
+    ../bin/pci \
     -ex "start"
 
 
