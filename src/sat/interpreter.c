@@ -4,6 +4,12 @@
 #define INTERPRETER_UTILS_C_IMPL
 #include "interpreter-utils.c"
 
+
+enum interpreter_solver {
+    DPLL_SOLVER = 0,
+    BRUTEFORCE_SOLVER = 1,
+};
+
 struct interpreter {
     FILE *stream_info;
     FILE *stream_out;
@@ -12,7 +18,9 @@ struct interpreter {
     struct ast ast;
     struct symtable symtable;
     struct vm_inputs vmi;
+    enum interpreter_solver solver;
 };
+
 
 
 //#######################################################
@@ -23,6 +31,14 @@ struct interpreter {
 
 
 struct interpreter global_interpreter = {0};
+
+static inline void
+interpreter_set_solver(enum interpreter_solver solver)
+{
+    global_interpreter.solver = solver;
+}
+
+
 
 
 PRINTF_STYLE(1, 2)
@@ -486,8 +502,6 @@ ast_representation_dbglog( void )
 }
 
 
-#define DPLL_C_IMPL
-#include "dpll.c"
 
 void
 bruteforce_solve( struct ast *ast )
@@ -776,6 +790,23 @@ preprocess_command ( void )
                 interpreter_logi(" ### %.*s is not a valid constant: valid constants are {`0`, `1`}\n", node->text_len, node->text);
                 goto INVALID_EXPR;
             }
+        } else if (node->type == AST_NODE_TYPE_DELIMITER) {
+            interpreter_logi(" ### %.*s is not currently a supported delimiter\n", node->text_len, node->text);
+            goto INVALID_EXPR;
+        } else if (node->type == AST_NODE_TYPE_OPERATOR) {
+            switch(node->op) {
+            default: {} break;
+            case OPERATOR_ASSIGN: case OPERATOR_CONCAT_ASSIGN:
+            case OPERATOR_CONCAT: case OPERATOR_DEREF:
+            case OPERATOR_FNCALL: case OPERATOR_INDEX:
+            case OPERATOR_COMPOUND: case OPERATOR_ENUMERATE:
+            case OPERATOR_EXIST: case OPERATOR_ON:
+            case OPERATOR_IN: case OPERATOR_TERNARY: {
+                interpreter_logi(" ### %.*s is not currently a supported operator\n", node->text_len, node->text);
+                goto INVALID_EXPR;
+
+            } break;
+            }
         }
     }
 
@@ -799,22 +830,43 @@ INVALID_EXPR: {
 
 
 
+bool
+eval_ast( struct ast *ast,
+          enum interpreter_solver solver);
+
+
+#define DPLL_C_IMPL
+#include "dpll.c"
+
+
 
 bool
-eval_ast( struct ast *ast )
+eval_ast( struct ast *ast,
+          enum interpreter_solver solver)
 {
     bool result = false;
     struct vm_inputs *vmi = & global_interpreter.vmi;
 
     
     if (preprocess_command ()) {
-        bruteforce_solve(ast);
-        result = true;
+        if (solver == BRUTEFORCE_SOLVER) {
+            bruteforce_solve(ast);
+            result = true;
+        } else if (solver == DPLL_SOLVER) {
+            dpll_solve(ast);
+            result = true;
+        } else {
+            interpreter_logi("INTERPRETER: Cannot determine solver\n");
+            result = false;
+        }
     } else {
         result = false;
     }
     return result;
 }
+
+
+
 
 
 void
@@ -846,25 +898,24 @@ test_dpll_preprocess_print(void)
 
 
 
+
 void
 eval_commandline ( char *commandline,
                    size_t commandline_len )
 {
     struct ast *ast = & global_interpreter.ast;
+    enum interpreter_solver solver = global_interpreter.solver;
     
     if ( intpt_begin_frame()) {
         if ( ast_build_from_command( commandline, commandline_len ) ) {
+#if __DEBUG
             printf("##########After Parsing AST:\n");
             ast_dbglog(ast);
             printf("##############################\n\n\n\n");
-#if 1
-        dpll_test(ast);
-        //intpt_print_header();
-#else
-            if ( eval_ast(ast) ) {
+#endif
+            if ( eval_ast(ast, solver) ) {
                 
             }
-#endif
         }
         intpt_end_frame();
     } else {
@@ -884,6 +935,7 @@ interpreter_terminate(void)
     struct symtable *symtable = & global_interpreter.symtable;
     symtable_delete(symtable);    
 }
+
 
 
 

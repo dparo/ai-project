@@ -27,7 +27,6 @@ enum Token_Type {
      // -----------------------
      // VERY IMPORTANT: Order does matter: it should align with the order
      // of the c11 keywords inside the tokenizer.c
-     // Good note: crap like this is fixed in languages like Nim
      // ------------------------
      TT_KEYWORD_alignof,
      TT_KEYWORD_auto,
@@ -545,7 +544,6 @@ parse_comment ( Tokenizer *tknzr,
 // -----------------------
 // VERY IMPORTANT: Order does matter: it should align with the order
 // of the enum defined in tokenizer.h
-// Good note: crap like this is fixed in languages like Nim
 // ------------------------
 static char *c11_keywords[] = {
      "alignof", "auto", "break", "case", "char", "const", "continue", "default",

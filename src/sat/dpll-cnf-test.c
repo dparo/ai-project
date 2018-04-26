@@ -12,8 +12,6 @@
 #define TEST_CNF_WITH_BRUTEFORCE_EVALUATION 1
 
 #if __DEBUG
-bool
-eval_ast(struct ast *ast);
 
 
 void
@@ -41,7 +39,7 @@ test_bruteforce_formula_equality( struct ast *raw_ast,
     struct ast temp = ast_dup(generated_ast);
     ast_dump_into( raw_ast, &temp);
     ast_push( & temp, & EQ_EQ_NODE); 
-    eval_ast( & temp );
+    eval_ast( & temp, BRUTEFORCE_SOLVER);
 
 
     interpreter_log("\n\n");

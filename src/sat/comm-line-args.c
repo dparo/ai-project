@@ -28,11 +28,35 @@ static const struct argp_option opts[] = {
 static inline void
 commline_dbglog(const char *fmt, ...)
 {
+#if 0
     va_list args;
     va_start(args, fmt);
     vfprintf(stderr, fmt, args);
     va_end(args);
+#endif
 }
+
+static bool solver_was_set = false;
+
+void
+commline_set_solver(char *solver)
+{
+    if ( solver ) {
+        if ((0 == strcasecmp("bf", solver))
+            || (0 == strcasecmp("bruteforce", solver))) {
+            interpreter_set_solver(BRUTEFORCE_SOLVER);
+            solver_was_set = true;
+        } else if (0 == strcasecmp("dpll", solver)) {
+            interpreter_set_solver(DPLL_SOLVER);
+            solver_was_set = true;
+        } else {
+            interpreter_logi("INTERPRETER: Cannot understand `solver`\n   > Defaulting to DPLL\n");
+            interpreter_set_solver(DPLL_SOLVER);
+            solver_was_set = true;
+        }
+    }
+}
+
 
 error_t
 argp_parser (int key, char *arg, struct argp_state *state)
@@ -47,6 +71,10 @@ argp_parser (int key, char *arg, struct argp_state *state)
     } else if ( key == ARGP_KEY_END ) {
         // End of parsing
         commline_dbglog("ARGP_KEY_END\n");
+        if (! solver_was_set ) {
+            interpreter_logi("INTERPRETER: Solver was not set\n  > Defaulting to DPLL\n");
+            interpreter_set_solver(DPLL_SOLVER);
+        }
     } else if ( key == ARGP_KEY_SUCCESS ) {
         // Command line reading was successfull
         commline_dbglog("ARGP_KEY_SUCCESS\n");
@@ -59,6 +87,7 @@ argp_parser (int key, char *arg, struct argp_state *state)
 
         case 's': {
             printf("Setting the solver to: %s\n", arg);
+            commline_set_solver(arg);
         } break;
             
         default: {

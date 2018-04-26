@@ -46,7 +46,7 @@
 #include "mem-layout.c"
 
 #define INTERPRETER_C_IMPL
-#include "interpreter.c"
+     #include "interpreter.c"
 
 
 #include <readline/readline.h>
@@ -78,10 +78,14 @@ user_interact(char **commandline, size_t *commandline_len)
 }
 
 
-#define EVAL_COMMANDLINE_INPLACE(command)              \
-    printf("\n\nformula: %s\n\n", command);            \
-    eval_commandline(strdup(command), strlen(command))
-        
+#define EVAL_COMMANDLINE_INPLACE(command)                   \
+    do {                                                    \
+        printf("\n\nformula: %s\n\n", command);             \
+        char *string = strdup(command);                     \
+        eval_commandline(string, strlen(command));          \
+        free(string);                                       \
+    } while(0)
+
 
 #define COMM_LINE_ARGS_C_IMPL
 #include "comm-line-args.c"
@@ -89,18 +93,27 @@ user_interact(char **commandline, size_t *commandline_len)
 int
 main( int argc, char **argv)
 {
-    comm_line_args(argc, argv);
-    platform_init();
     UNUSED(argc), UNUSED(argv);
+
+    platform_init();
+    interpreter_init();
+    comm_line_args(argc, argv);
+
+
 
     char * commandline = NULL;
     size_t commandline_len = 0;
 
-    interpreter_init();
+
    
-#if 1
-    EVAL_COMMANDLINE_INPLACE ("");
-    EVAL_COMMANDLINE_INPLACE ("~~a == ~b");
+#if 0
+
+    EVAL_COMMANDLINE_INPLACE ("a & b");
+    //EVAL_COMMANDLINE_INPLACE ("a = f | (b, c)");
+
+    //EVAL_COMMANDLINE_INPLACE ("a = f(b, c)");
+
+
     // EVAL_COMMANDLINE_INPLACE ("(a ~| b)");
     //EVAL_COMMANDLINE_INPLACE ("(a <-> b) == (a == b)");
     //EVAL_COMMANDLINE_INPLACE ("a = {b, c & d, e}");
