@@ -464,11 +464,11 @@ dpll_print_solution(bool result, enum interpreter_solver solver)
     if ( (solver == DPLL_SOLVER && result == true)
          || (solver == THEOREM_SOLVER && result == true)) {
         if (solver == DPLL_SOLVER)
-            interpreter_log("DPLL: Found satisfiable solution:\n");
+            interpreter_log(ANSI_COLOR_GREEN "DPLL: Found satisfiable solution:" ANSI_COLOR_RESET "\n");
         else if (solver == THEOREM_SOLVER )
-            interpreter_log("THEOREM: Found UN-satisfiable solution:\n");
+            interpreter_log(ANSI_COLOR_RED "THEOREM: Found UN-satisfiable solution:" ANSI_COLOR_RESET "\n");
         else invalid_code_path();
-        interpreter_log("   ( Assigned literals: ");
+        interpreter_log(ANSI_COLOR_YELLOW "   ( Assigned literals: ");
 
         {
             int it = 0;
@@ -480,18 +480,18 @@ dpll_print_solution(bool result, enum interpreter_solver solver)
                     interpreter_log(" [\"%s\"] = %d, ",  k, syminfo->value);
                 }
             }
-            interpreter_log( ")\n");
+            interpreter_log( ")" ANSI_COLOR_RESET "\n");
         }
     } else if ( (solver == DPLL_SOLVER && result == false) ||
                 (solver == THEOREM_SOLVER && result == false)) {
         if (solver == DPLL_SOLVER) {
-            interpreter_log("DPLL: NO satisfiable solution found\n");
+            interpreter_log( ANSI_COLOR_RED "DPLL: NO satisfiable solution found" ANSI_COLOR_RESET "\n");
         } else if (solver == THEOREM_SOLVER ) {
-            interpreter_log("THOREM: Theorem was proven successfully\n");
+            interpreter_log( ANSI_COLOR_GREEN "THOREM: Theorem was proven successfully" ANSI_COLOR_RESET "\n");
         } else {
             invalid_code_path();
         }
-        interpreter_log("   ( UN-assigned literals: ");
+        interpreter_log(ANSI_COLOR_YELLOW"   ( UN-assigned literals: ");
 
         {
             int it = 0;
@@ -503,7 +503,7 @@ dpll_print_solution(bool result, enum interpreter_solver solver)
                     interpreter_log(" [\"%s\"], ",  k);
                 }
             }
-            interpreter_log( ")\n");
+            interpreter_log( ")" ANSI_COLOR_RESET "\n");
         }
     } else {
         invalid_code_path();

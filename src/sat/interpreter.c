@@ -359,14 +359,34 @@ intpt_print_node( struct ast_node *node )
 
 
 
+static bool
+is_malformed_formula(struct ast* ast)
+{
+    uint it = 1;
+    struct ast_node *node = ast_end(ast) - 1;
+    for ( ;
+          node >= ast_begin(ast);
+          node --, it--) {
+        if (it == 0) {
+            break;
+        }
+        if (ast_node_is_operator(node)) {
+            it += operator_num_operands(node);
+        }
+    }
+    
+    if ( (node != ast->nodes - 1) || it != 0) {
+        return true;
+    }
+    return false;
+}
+
+
+
 // Fixes order of the operands on the queue, A & B, in the queue
 // becomes { [0] = A, [2] = B, [3] = &} Which means that to know
-// the position of the first operand i need to process recursively
-// the second operand. This do { } while fixes this problem but
-// introduces more iteration loops. To make it more efficient
-// Since we probably will always have operators up to 3 operands
-// while looping for the first operand we can store the postion
-// of the first 2 to cut down on the number of iterations
+// the position of the first operand we need to process recursively
+// the second operand
 struct ast_node *
 ast_get_operand_node ( struct ast *ast,
                        struct ast_node *op_node,
@@ -390,7 +410,9 @@ ast_get_operand_node ( struct ast *ast,
         }
     }
 
-    assert(node >= ast->nodes);
+#if __DEBUG
+    assert(! is_malformed_formula(ast));
+#endif
     return node;
 }
 
@@ -795,28 +817,6 @@ intpt_end_frame( void )
 }
 
 
-static bool
-preprocess_is_malformed_formula(struct ast* ast)
-{
-    uint it = 1;
-    struct ast_node *node = ast_end(ast) - 1;
-    for ( ;
-          node >= ast_begin(ast);
-          node --, it--) {
-        if (it == 0) {
-            break;
-        }
-        if (ast_node_is_operator(node)) {
-            it += operator_num_operands(node);
-        }
-    }
-    
-    if ( (node != ast->nodes - 1) || it != 0) {
-        return true;
-    }
-    return false;
-}
-
 bool
 preprocess_command ( struct ast *ast )
 {
@@ -879,7 +879,7 @@ preprocess_command ( struct ast *ast )
 
 
 
-    if (preprocess_is_malformed_formula(ast)) {
+    if (is_malformed_formula(ast)) {
         interpreter_logi(" ### Formula is malformed\n");
         goto INVALID_EXPR;
     }
@@ -901,7 +901,6 @@ INVALID_EXPR: {
         return 0;
     }
 }
-
 
 
 bool
