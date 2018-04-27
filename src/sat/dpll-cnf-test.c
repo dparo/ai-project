@@ -9,7 +9,7 @@
 //#######################################################
 
 
-#define TEST_CNF_WITH_BRUTEFORCE_EVALUATION 0
+#define TEST_CNF_WITH_BRUTEFORCE_EVALUATION 1
 
 #if __DEBUG
 

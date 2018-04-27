@@ -44,13 +44,17 @@ commline_set_solver(char *solver)
     if ( solver ) {
         if ((0 == strcasecmp("bf", solver))
             || (0 == strcasecmp("bruteforce", solver))) {
+            interpreter_logi("Setting the solver to: `BRUTEFORCE`\n");
             interpreter_set_solver(BRUTEFORCE_SOLVER);
             solver_was_set = true;
         } else if (0 == strcasecmp("dpll", solver)) {
+            interpreter_logi("Setting the solver to: `DPLL`\n");
             interpreter_set_solver(DPLL_SOLVER);
             solver_was_set = true;
         } else if ((0 == strcasecmp("th", solver))
+                   || (0 == strcasecmp("tp", solver))
                    ||0 == strcasecmp("dpll-th", solver)) {
+            interpreter_logi("Setting the solver to: `THEOREM-SOLVER`\n");
             interpreter_set_solver(THEOREM_SOLVER);
             solver_was_set = true;
         } else {
@@ -93,7 +97,6 @@ argp_parser (int key, char *arg, struct argp_state *state)
         switch (key) {
 
         case 's': {
-            printf("Setting the solver to: %s\n", arg);
             commline_set_solver(arg);
         } break;
             

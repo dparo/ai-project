@@ -372,7 +372,7 @@ dpll_unit_propagate_recurse( struct ast *cnf,
                 struct ast_node *pushed;
                 const bool and_condition = ast_node_is_true_constant(op1) && ast_node_is_true_constant(op2);
                 const bool or_condition = ast_node_is_true_constant(op1) || ast_node_is_true_constant(op2);
-                if (and_condition || or_condition ) {
+                if ( (and_condition && node->op == OPERATOR_AND) || (or_condition && node->op == OPERATOR_OR) ) {
                     pushed = & TRUE_CONSTANT_NODE;
                 } else {
                     pushed = & FALSE_CONSTANT_NODE;

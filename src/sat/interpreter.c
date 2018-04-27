@@ -7,8 +7,8 @@
 
 enum interpreter_solver {
     DPLL_SOLVER = 0,
-    THEOREM_SOLVER = 0,
-    BRUTEFORCE_SOLVER = 1,
+    THEOREM_SOLVER = 1,
+    BRUTEFORCE_SOLVER = 2,
 };
 
 struct interpreter {
