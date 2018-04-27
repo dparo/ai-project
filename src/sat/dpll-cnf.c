@@ -502,31 +502,31 @@ ast_node_stack_dump(struct ast_node_stack *stack,
 struct ast
 dpll_convert_cnf( struct ast *raw_ast )
 {
-    printf("DPLL Convert CNF Debug: ### \n");
+    //printf("DPLL Convert CNF Debug: ### \n");
 
     struct ast_node_stack stack = ast_node_stack_create();
     struct ast result = ast_dup(raw_ast);
 
-    printf("#  Starting Operators Conversion #########\n");
+    //printf("#  Starting Operators Conversion #########\n");
     dpll_operator_conversion(& result, & stack);
     ast_node_stack_dump_reversed( &stack, & result);
-    ast_dbglog(& result);
+    //ast_dbglog(& result);
     test_dpll_operator_conversion_invariant(raw_ast, & result);
     
-    printf("#  Starting demorgan   ##########\n");
+    //printf("#  Starting demorgan   ##########\n");
     ast_node_stack_reset(& stack);
     dpll_demorgan(& result, & stack );
     ast_node_stack_dump_reversed( &stack, & result);
-    ast_dbglog(& result);
+    //ast_dbglog(& result);
     test_dpll_demorgan_invariant(raw_ast, & result);
 
 
 
-    printf("#  Starting double negation elimination   ##########\n");
+    //printf("#  Starting double negation elimination   ##########\n");
     ast_node_stack_reset(& stack);
     dpll_double_negation_elimination(& result, & stack );
     ast_node_stack_dump_reversed( &stack, & result);
-    ast_dbglog(& result);
+    //ast_dbglog(& result);
     test_dpll_double_negation_elimination_invariant(raw_ast, & result);
         
 
@@ -538,19 +538,19 @@ dpll_convert_cnf( struct ast *raw_ast )
     // .......... IMPLEMENTATION FOR PROPOSITIONAL CALCULUS HERE .........................
 
     // Distribute ORs inwards over ANDs: repeatedly replace P ∨ ( Q ∧ R ) with ( P ∨ Q ) ∧ ( P ∨ R ).
-    printf("#  Starting Or Distribution   ##########\n");
+    //printf("#  Starting Or Distribution   ##########\n");
     ast_node_stack_reset(& stack);
     while (dpll_or_distribution(& result, & stack )) {
         ast_node_stack_dump_reversed( &stack, & result);
         ast_node_stack_reset(& stack);
     }
     ast_node_stack_dump_reversed( &stack, & result);
-    ast_dbglog(& result);
+    //ast_dbglog(& result);
     test_dpll_or_distribution_invariant(raw_ast, & result);
     
     
     ast_node_stack_free(& stack);
-    printf("DPLL Convert CNF Debug: ### END ### \n");
+    //printf("DPLL Convert CNF Debug: ### END ### \n");
     
     return result;
 }

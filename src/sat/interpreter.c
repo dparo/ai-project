@@ -888,13 +888,7 @@ eval_ast( struct ast *ast,
             bruteforce_solve(ast);
             result = true;
         } else if (solver == DPLL_SOLVER || solver == THEOREM_SOLVER) {
-            if ( solver == THEOREM_SOLVER ) {
-                ast_push(ast, & NEGATE_NODE);
-                //ast_push(ast, & TRUE_CONSTANT_NODE);
-                //ast_push(ast, & EQ_EQ_NODE);
-            }
-
-            dpll_solve(ast);
+            dpll_solve(ast, solver);
             result = true;
         } else {
             interpreter_logi("INTERPRETER: Cannot determine solver\n");

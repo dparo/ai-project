@@ -469,23 +469,59 @@ dpll_pick_random_unassigned_literal (struct ast *cnf)
 }
 
 void
-dpll_print_solution(bool result)
+dpll_print_solution(bool result, enum interpreter_solver solver)
 {
+    assert(solver == DPLL_SOLVER || solver == THEOREM_SOLVER);
+    
     struct symtable *symtable = & global_interpreter.symtable;
-    interpreter_log("DPLL: Found solution ");
-    interpreter_log( result ? "`TRUE`" : "`FALSE`");
-    interpreter_log(" for input with assigned values \n\t");
 
+    if ( (solver == DPLL_SOLVER && result == true)
+         || (solver == THEOREM_SOLVER && result == true)) {
+        if (solver == DPLL_SOLVER)
+            interpreter_log("DPLL: Found satisfiable solution:\n");
+        else if (solver == THEOREM_SOLVER )
+            interpreter_log("THEOREM: Found UN-satisfiable solution:\n");
+        else invalid_code_path();
+        interpreter_log(" > Assigned literals:\n\t");
 
-    int it = 0;
-    char *k;
-    void *v;
-    ast_symtable_for(it, symtable, k, v) {
-        struct symbol_info *syminfo = (struct symbol_info*) v;
-        interpreter_log(" [\"%s\"]{ a: %d, v: %d }, ",  k, syminfo->has_value_assigned, syminfo->value );
-        log_tabulator();
+        {
+            int it = 0;
+            char *k;
+            void *v;
+            ast_symtable_for(it, symtable, k, v) {
+                struct symbol_info *syminfo = (struct symbol_info*) v;
+                if (syminfo->has_value_assigned) {
+                    interpreter_log(" [\"%s\"] = %d, ",  k, syminfo->value);
+                }
+            }
+            interpreter_log( "\n");
+        }
+    } else if ( (solver == DPLL_SOLVER && result == false) ||
+                (solver == THEOREM_SOLVER && result == false)) {
+        if (solver == DPLL_SOLVER) {
+            interpreter_log("DPLL: NO satisfiable solution found\n");
+        } else if (solver == THEOREM_SOLVER ) {
+            interpreter_log("THOREM: Theorem was proven successfully\n");
+        } else {
+            invalid_code_path();
+        }
+        interpreter_log(" > UN-assigned literals:\n\t");
+
+        {
+            int it = 0;
+            char *k;
+            void *v;
+            ast_symtable_for(it, symtable, k, v) {
+                struct symbol_info *syminfo = (struct symbol_info*) v;
+                if ( !syminfo->has_value_assigned) {
+                    interpreter_log(" [\"%s\"], ",  k);
+                }
+            }
+            interpreter_log( "\n");
+        }
+    } else {
+        invalid_code_path();
     }
-    interpreter_log( "\n");
 }
 
 // @NOTE: The same `cnf` get's reused across recursive calls
@@ -501,7 +537,6 @@ dpll_solve_recurse(struct ast *cnf)
     /*    if Φ is a consistent set of literals */
     /*        then return true; */
     if ( dpll_is_consistent(cnf)) {
-        dpll_print_solution(true);
         return true;
     }
 
@@ -509,7 +544,6 @@ dpll_solve_recurse(struct ast *cnf)
     /*    if Φ contains an empty clause */
     /*        then return false; */
     if (dpll_is_empty_or_false_clause(cnf)) {
-        dpll_print_solution(false);
         return false;
     }
 
@@ -517,7 +551,9 @@ dpll_solve_recurse(struct ast *cnf)
     struct ast_node *unit_clause = NULL;
     bool is_negated = false;
     while ((unit_clause = dpll_next_unit_clause( cnf, &is_negated ))) {
+#if 0
         printf("\n# Got unit clause: `%.*s`\n", unit_clause->text_len, unit_clause->text);
+#endif
         bool value = ! is_negated;
         dpll_test_invariant_no_value_assigned(unit_clause);
         // Assign value to it and generate a new ast and propagate
@@ -527,9 +563,11 @@ dpll_solve_recurse(struct ast *cnf)
         // @NOTE: `cnf` get's cleared inside `ast_node_stack_dump_xxx`
         ast_node_stack_dump_reversed( &stack, cnf);
         ast_node_stack_free(&stack);
-        printf("\n### Getting the propagated result ##### \n");
+#if 0
+        dpll_dbglog("\n### Getting the propagated result ##### \n", cnf);
         ast_dbglog(cnf);
         printf("\n");
+#endif
     
     }
 
@@ -593,8 +631,13 @@ dpll_solve_recurse(struct ast *cnf)
 
 
 void
-dpll_solve(struct ast *raw_ast)
+dpll_solve(struct ast *raw_ast,
+    enum interpreter_solver solver)
 {
+    if ( solver == THEOREM_SOLVER ) {
+        ast_push(raw_ast, & NEGATE_NODE);
+    }
+
     dpll_preprocess(raw_ast);
     struct ast cnf = dpll_convert_cnf( raw_ast );
 
@@ -602,12 +645,14 @@ dpll_solve(struct ast *raw_ast)
     ast_node_stack_dump_reversed( &stack, & cnf);
     ast_node_stack_free(&stack);
 
+#if 0
     printf("\n### Getting the preprocess propagated result ##### \n");
     ast_dbglog(& cnf);
     printf("\n");
-        
+#endif
 
-    dpll_solve_recurse(& cnf);
+    bool result = dpll_solve_recurse(& cnf);
+    dpll_print_solution(result, solver);
 
     ast_free(& cnf);
 }
