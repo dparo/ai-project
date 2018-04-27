@@ -795,12 +795,33 @@ intpt_end_frame( void )
 }
 
 
+static bool
+preprocess_is_malformed_formula(struct ast* ast)
+{
+    uint it = 1;
+    struct ast_node *node = ast_end(ast) - 1;
+    for ( ;
+          node >= ast_begin(ast);
+          node --, it--) {
+        if (ast_node_is_operator(node)) {
+            it += operator_num_operands(node);
+        }
+    }
+    
+    if (node < ast->nodes) {
+        return true;
+    }
+    return false;
+}
+
 bool
 preprocess_command ( struct ast *ast )
 {
     bool alloc_result = true;
     struct symtable *symtable = & global_interpreter.symtable;
 
+    
+    
     for (struct ast_node *node = ast_end(ast) - 1;
          node >= ast_begin(ast);
          node -- ) {
@@ -852,6 +873,14 @@ preprocess_command ( struct ast *ast )
         }
     }
 
+
+
+
+    if (preprocess_is_malformed_formula(ast)) {
+        interpreter_logi(" ### Formula is malformed\n");
+        goto INVALID_EXPR;
+    }
+    
     symtable_build_from_ast(symtable, ast);
     symtable_preprocess_expr(symtable);
     

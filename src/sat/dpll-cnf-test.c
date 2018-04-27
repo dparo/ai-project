@@ -73,8 +73,8 @@ void
 test_dpll_demorgan_invariant(struct ast* raw_ast,
                              struct ast* generated_ast)
 {
-    test_bruteforce_formula_equality( raw_ast, generated_ast);
 #if __DEBUG
+    test_bruteforce_formula_equality( raw_ast, generated_ast);
     for (struct ast_node *node = ast_end(generated_ast) - 1;
          node >= ast_begin(generated_ast);
          node -- ) {
@@ -99,8 +99,8 @@ void
 test_dpll_double_negation_elimination_invariant(struct ast *raw_ast,
                                                 struct ast *generated_ast)
 {
-    test_bruteforce_formula_equality( raw_ast, generated_ast);
 #if __DEBUG
+    test_bruteforce_formula_equality( raw_ast, generated_ast);
     for (struct ast_node *node = ast_end(generated_ast) - 1;
          node >= ast_begin(generated_ast);
          node -- ) {

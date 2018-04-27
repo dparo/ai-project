@@ -218,10 +218,6 @@ compare_next_token_to (Tokenizer *tknzr, char * token_text );
 #include <stddef.h>
 #include <memory.h>
 
-int vsnprintf(char *str, size_t size, const char *format, va_list ap);
-int strcmp(const char *s1, const char *s2);
-
-
 
 static inline char
 tokenizer_deref_at ( Tokenizer *tknzr,

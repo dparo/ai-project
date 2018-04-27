@@ -151,7 +151,7 @@ __inline__ static void __debug_break(char* file, i32 line)
 #endif
 
 
-#ifdef __DEBUG
+#if defined __DEBUG
 #    define assert_msg(X, ...)                  \
     do {                                        \
         if (!(X)) {                             \
@@ -171,8 +171,6 @@ __inline__ static void __debug_break(char* file, i32 line)
 
 #    define assert(X) do { } while(0)
 #endif
-
-
 
 
 

@@ -17,6 +17,12 @@
 #include <string.h>
 
 
+#define     UTILS_C_IMPL
+#include   "utils.c"
+
+
+
+
 static void
 fatal(char *fmt, ...)
 {
@@ -27,9 +33,6 @@ fatal(char *fmt, ...)
     exit(-1);
 }
 
-
-#define     UTILS_C_IMPL
-#include   "utils.c"
 
 #define     PLATFORM_C_IMPL
 #include   "platform.c"
@@ -127,6 +130,9 @@ user_interact(char **commandline, size_t *commandline_len)
 int
 main( int argc, char **argv)
 {
+#if defined __DEBUG
+    printf("This is a motherfucking debug build\n");
+#endif
     UNUSED(argc), UNUSED(argv);
 
     platform_init();
@@ -139,15 +145,14 @@ main( int argc, char **argv)
     size_t commandline_len = 0;
 
 
-
     // @NOTE: This theorem prover: ~(a & b) == (~a | ~b) works
     //        This does not  --->  ~(a | b) == (~a & ~b)
    
-#if 0
+#if 1
 
 
+    EVAL_COMMANDLINE_INPLACE("a -> b -> x -> <-> z <->");
     
-    EVAL_COMMANDLINE_INPLACE("(a <-> b) == ~(a ^ b)");
 
     //EVAL_COMMANDLINE_INPLACE("~(a | b) == (~a & ~b)");
     //EVAL_COMMANDLINE_INPLACE("~(a & b) == (~a | ~b)");
