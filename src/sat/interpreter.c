@@ -803,12 +803,15 @@ preprocess_is_malformed_formula(struct ast* ast)
     for ( ;
           node >= ast_begin(ast);
           node --, it--) {
+        if (it == 0) {
+            break;
+        }
         if (ast_node_is_operator(node)) {
             it += operator_num_operands(node);
         }
     }
     
-    if (node < ast->nodes) {
+    if ( (node != ast->nodes - 1) || it != 0) {
         return true;
     }
     return false;
