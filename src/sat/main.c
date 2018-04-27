@@ -8,11 +8,6 @@
 #define MAIN_C_IMPLEMENTED
 //#######################################################
 
-#define     UTILS_C_IMPL
-#include   "utils.c"
-
-#define     PLATFORM_C_IMPL
-#include   "platform.c"
 
 
 #include <stdio.h>
@@ -20,6 +15,28 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <string.h>
+
+
+static void
+fatal(char *fmt, ...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+    exit(-1);
+}
+
+
+#define     UTILS_C_IMPL
+#include   "utils.c"
+
+#define     PLATFORM_C_IMPL
+#include   "platform.c"
+
+
+
+
 #include <math.h>
 #include <limits.h>
 #include <time.h>
@@ -51,6 +68,9 @@
 
 #include <readline/readline.h>
 #include <readline/history.h>
+
+#define TIMING_C_IMPL
+#include "timing.c"
 
 
 #define ANSI_COLOR_RED     "\x1b[31m"
