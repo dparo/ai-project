@@ -23,7 +23,7 @@
 
 
 #if 0
-int clock_gettime(clockid_t clk_id, struct timespec *tp);
+int clock_gettime(clockid_t clk_id, struct timespec *ts);
 
 struct timespec {
     time_t   tv_sec;        /* seconds */
@@ -33,7 +33,7 @@ struct timespec {
 #endif
 
 struct timing {
-    struct timespec tp;
+    struct timespec ts;
 };
 
 
@@ -42,12 +42,12 @@ timing_diff(struct timing *start, struct timing *stop)
 {
     struct timing result;
     
-    if ((stop->tp.tv_nsec - start->tp.tv_nsec) < 0) {
-        result.tp.tv_sec = stop->tp.tv_sec - start->tp.tv_sec - 1;
-        result.tp.tv_nsec = stop->tp.tv_nsec - start->tp.tv_nsec + 1000000000UL;
+    if (stop->ts.tv_nsec < start->ts.tv_nsec) {
+        result.ts.tv_sec = stop->ts.tv_sec - start->ts.tv_sec - 1;
+        result.ts.tv_nsec = stop->ts.tv_nsec - start->ts.tv_nsec + 1000000000UL;
     } else {
-        result.tp.tv_sec = stop->tp.tv_sec - start->tp.tv_sec;
-        result.tp.tv_nsec = stop->tp.tv_nsec - start->tp.tv_nsec;
+        result.ts.tv_sec = stop->ts.tv_sec - start->ts.tv_sec;
+        result.ts.tv_nsec = stop->ts.tv_nsec - start->ts.tv_nsec;
     }
 
     return result;
@@ -57,7 +57,7 @@ struct timing
 get_timing(void)
 {
     struct timing t;
-    int result = clock_gettime(CLOCK_MONOTONIC, &(t.tp));
+    int result = clock_gettime(CLOCK_MONOTONIC, &(t.ts));
     if (result != 0 ) {
         fatal("FATAL: Could not access the platform monotic timer");
     }
@@ -69,7 +69,7 @@ get_timing(void)
 void
 timing_fprintf(FILE *f, struct timing *t)
 {
-    fprintf(f, "{ seconds: %zu, milli-seconds: %zu }", t->tp.tv_sec, t->tp.tv_nsec / 1000);
+    fprintf(f, "{ seconds: %zu, milli-seconds: %zu }", t->ts.tv_sec, t->ts.tv_nsec / 1000 / 1000);
 }
 
 

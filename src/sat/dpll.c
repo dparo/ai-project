@@ -281,15 +281,6 @@ dpll_next_unit_clause( struct ast *cnf,
 
 
 
-
-void
-dpll_preprocess ( struct ast *raw_ast)
-{
-
-}
-
-
-
 void
 dpll_stack_dump_into_stack ( struct ast_node_stack *dumper,
                              struct ast_node_stack *dumpee)
@@ -368,10 +359,11 @@ dpll_unit_propagate_recurse( struct ast *cnf,
             if ( (op1->type == AST_NODE_TYPE_CONSTANT && op2->type == AST_NODE_TYPE_CONSTANT)
                  || (node->op == OPERATOR_AND && (ast_node_is_false_constant(op1) || ast_node_is_false_constant(op2)))
                  || (node->op == OPERATOR_OR && (ast_node_is_true_constant(op1) || ast_node_is_true_constant(op2)))) {
-                struct ast_node *pushed;
                 const bool and_condition = ast_node_is_true_constant(op1) && ast_node_is_true_constant(op2);
                 const bool or_condition = ast_node_is_true_constant(op1) || ast_node_is_true_constant(op2);
-                if ( (and_condition && node->op == OPERATOR_AND) || (or_condition && node->op == OPERATOR_OR) ) {
+                struct ast_node *pushed;
+                                
+                if ( (and_condition && (node->op == OPERATOR_AND)) || (or_condition && (node->op == OPERATOR_OR)) ) {
                     pushed = & TRUE_CONSTANT_NODE;
                 } else {
                     pushed = & FALSE_CONSTANT_NODE;
@@ -482,7 +474,7 @@ dpll_print_solution(bool result, enum interpreter_solver solver)
         else if (solver == THEOREM_SOLVER )
             interpreter_log("THEOREM: Found UN-satisfiable solution:\n");
         else invalid_code_path();
-        interpreter_log(" > Assigned literals:\n\t");
+        interpreter_log("   ( Assigned literals: ");
 
         {
             int it = 0;
@@ -494,7 +486,7 @@ dpll_print_solution(bool result, enum interpreter_solver solver)
                     interpreter_log(" [\"%s\"] = %d, ",  k, syminfo->value);
                 }
             }
-            interpreter_log( "\n");
+            interpreter_log( ")\n");
         }
     } else if ( (solver == DPLL_SOLVER && result == false) ||
                 (solver == THEOREM_SOLVER && result == false)) {
@@ -505,7 +497,7 @@ dpll_print_solution(bool result, enum interpreter_solver solver)
         } else {
             invalid_code_path();
         }
-        interpreter_log(" > UN-assigned literals:\n\t");
+        interpreter_log("   ( UN-assigned literals: ");
 
         {
             int it = 0;
@@ -517,7 +509,7 @@ dpll_print_solution(bool result, enum interpreter_solver solver)
                     interpreter_log(" [\"%s\"], ",  k);
                 }
             }
-            interpreter_log( "\n");
+            interpreter_log( ")\n");
         }
     } else {
         invalid_code_path();
@@ -611,7 +603,7 @@ dpll_solve_recurse(struct ast *cnf)
             dpll_identifier_assign_value(random, assigned_value);
             struct ast_node_stack s2 = dpll_unit_propagate(cnf, random, assigned_value);
             struct ast cnf2 = ast_create();
-            ast_node_stack_dump_reversed( & s1, &cnf2);
+            ast_node_stack_dump_reversed( & s2, &cnf2);
             ast_node_stack_free(& s2);
             
             result |= dpll_solve_recurse(& cnf2);
@@ -634,11 +626,11 @@ void
 dpll_solve(struct ast *raw_ast,
     enum interpreter_solver solver)
 {
+    struct timing start = get_timing();
     if ( solver == THEOREM_SOLVER ) {
         ast_push(raw_ast, & NEGATE_NODE);
     }
 
-    dpll_preprocess(raw_ast);
     struct ast cnf = dpll_convert_cnf( raw_ast );
 
     struct ast_node_stack stack = dpll_unit_propagate(& cnf, NULL, 0);
@@ -655,6 +647,19 @@ dpll_solve(struct ast *raw_ast,
     dpll_print_solution(result, solver);
 
     ast_free(& cnf);
+
+    struct timing end = get_timing();
+    struct timing diff = timing_diff(&start, & end);
+    if (solver == DPLL_SOLVER ) {
+        interpreter_logi("\n\n$ INFOS: DPLL evaluation completed after ");
+    } else if ( solver == THEOREM_SOLVER ) {
+        interpreter_logi("\n\n$ INFOS: Theorem-Proving evaluation completed after ");
+    } else {
+        invalid_code_path();
+    }
+
+    timing_fprintf(interpreter_logi_stream(), & diff);
+    interpreter_logi("\n");
 }
 
 

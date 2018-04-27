@@ -518,6 +518,8 @@ ast_representation_dbglog( void )
 void
 bruteforce_solve( struct ast *ast )
 {
+    struct timing start = get_timing();
+    
     struct symtable *symtable =  & global_interpreter.symtable;
     struct vm_inputs *vmi = & global_interpreter.vmi;
     struct vm_stack *vms = & global_interpreter.vms;
@@ -542,6 +544,11 @@ bruteforce_solve( struct ast *ast )
 
         vm_inputs_increment(vmi);
     }
+    struct timing end = get_timing();
+    struct timing diff = timing_diff(&start, & end);
+    interpreter_logi("\n\n$ INFOS: Bruteforce evaluation completed after ");
+    timing_fprintf(interpreter_logi_stream(), & diff);
+    interpreter_logi("\n");
 }
 
 
@@ -884,6 +891,9 @@ eval_ast( struct ast *ast,
 
     
     if ( preprocess_command(ast)) {
+
+
+        
         if (solver == BRUTEFORCE_SOLVER) {
             bruteforce_solve(ast);
             result = true;
@@ -893,7 +903,7 @@ eval_ast( struct ast *ast,
         } else {
             interpreter_logi("INTERPRETER: Cannot determine solver\n");
             result = false;
-        }
+        }        
     } else {
         result = false;
     }

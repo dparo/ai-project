@@ -499,7 +499,7 @@ parse_identifier_or_keyword ( Tokenizer *tknzr,
     u32 i = 0;
     
     for ( i = 0; i < sizeof(keywords) / sizeof(keywords[0]); ++i ) {
-        if ( strncmp (keywords[i], token->text, token->text_len) == 0 ) {
+        if ( sized_string_match (keywords[i], token->text, token->text_len) ) {
             token->type = TT_KEYWORD;
         }
     }

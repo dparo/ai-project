@@ -48,8 +48,16 @@ fatal(char *fmt, ...)
 #define MAX(a,b)     ((a) < (b) ? (b) : (a))
 
 
+
+
+
 #define MEMORY_C_IMPL
 #include "memory.c"
+
+
+#define TIMING_C_IMPL
+#include "timing.c"
+
 
 #define PARSER_C_IMPL
 #include "parser.c"
@@ -63,14 +71,11 @@ fatal(char *fmt, ...)
 #include "mem-layout.c"
 
 #define INTERPRETER_C_IMPL
-     #include "interpreter.c"
+#include "interpreter.c"
 
 
 #include <readline/readline.h>
 #include <readline/history.h>
-
-#define TIMING_C_IMPL
-#include "timing.c"
 
 
 #define ANSI_COLOR_RED     "\x1b[31m"
@@ -134,11 +139,17 @@ main( int argc, char **argv)
     size_t commandline_len = 0;
 
 
+
+    // @NOTE: This theorem prover: ~(a & b) == (~a | ~b) works
+    //        This does not  --->  ~(a | b) == (~a & ~b)
    
 #if 0
-    EVAL_COMMANDLINE_INPLACE("(a == b) == (a <-> b)");
-    // EVAL_COMMANDLINE_INPLACE("(~(a | b) == (~a & ~b))");
-    //EVAL_COMMANDLINE_INPLACE ("a & 0");
+
+    EVAL_COMMANDLINE_INPLACE("~(a | b) == (~a & ~b)");
+    EVAL_COMMANDLINE_INPLACE("~(a & b) == (~a | ~b)");
+
+
+//EVAL_COMMANDLINE_INPLACE ("a & 0");
     //EVAL_COMMANDLINE_INPLACE ("0 & 0");
     //EVAL_COMMANDLINE_INPLACE ("(~(a | b)) == (~a & ~b)");
     //EVAL_COMMANDLINE_INPLACE ("0 | 0");

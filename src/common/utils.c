@@ -259,4 +259,24 @@ safe_snprintf(char *str, size_t size, const char *format, ...)
 }
 
 
+
+bool
+sized_string_match(char *match,
+                   char *string,
+                   size_t string_len)
+{
+    size_t i = 0;
+    for ( ; i < string_len; i ++ ) {
+        if (match[i] != string[i])
+            return false;
+    }
+    if ( i == string_len && match[i] == '\0') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+
 #endif /* UTILS_C_IMPL */

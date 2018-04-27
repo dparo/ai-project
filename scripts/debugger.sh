@@ -17,6 +17,7 @@ export EDITOR="emacsclient"
 gdb \
     -tty="/dev/null" \
     ../bin/pci \
+    -ex "set args --solver=tp"\
     -ex "start"
 
 

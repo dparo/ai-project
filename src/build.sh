@@ -1,6 +1,6 @@
 #!/bin/bash
 
-BUILD_DEFS="-DMAIN_C_IMPL -D_GNU_SOURCE -D_POSIX_C_SOURCE=199309L"
+BUILD_DEFS="-DMAIN_C_IMPL -D_GNU_SOURCE"
 WARNINGS="-Wall -Wextra -Wno-unused-function -Wno-unused-parameter -Wno-unused-variable"
 INCLUDES="-I./ -I./ext-deps/stb -I./__generated__ -I./common"
 LIBRARIES="-lm -lrt -lreadline -ldl -pthread"

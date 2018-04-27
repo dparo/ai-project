@@ -580,7 +580,7 @@ parse_identifier_or_keyword ( Tokenizer *tknzr,
      token->text_len = counter;
      u32 i = 0;
      for ( i = 0; i < sizeof(c11_keywords) / sizeof(c11_keywords[0]); ++i ) {
-          if ( strncmp (c11_keywords[i], token->text, token->text_len) == 0 ) {
+          if ( sized_string_match (c11_keywords[i], token->text, token->text_len) ) {
                token->type = TT_KEYWORD_alignof + i;
           }
      }

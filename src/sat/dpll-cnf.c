@@ -502,6 +502,8 @@ ast_node_stack_dump(struct ast_node_stack *stack,
 struct ast
 dpll_convert_cnf( struct ast *raw_ast )
 {
+    struct timing start = get_timing();
+    
     //printf("DPLL Convert CNF Debug: ### \n");
 
     struct ast_node_stack stack = ast_node_stack_create();
@@ -551,7 +553,12 @@ dpll_convert_cnf( struct ast *raw_ast )
     
     ast_node_stack_free(& stack);
     //printf("DPLL Convert CNF Debug: ### END ### \n");
-    
+
+    struct timing end = get_timing();
+    struct timing diff = timing_diff(&start, & end);
+    interpreter_logi("\n\n$ INFOS: Conversion to CNF formula completed after ");
+    timing_fprintf(interpreter_logi_stream(), & diff);
+    interpreter_logi("\n\n\n");
     return result;
 }
 
