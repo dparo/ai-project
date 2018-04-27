@@ -451,13 +451,7 @@ dpll_pick_random_unassigned_literal (struct ast *cnf)
         }
     }
           
-#if __DEBUG
-    if ( picked ) {
-        dpll_test_invariant_no_value_assigned(picked);
-    }
-#endif
     return picked;
-
 }
 
 void
@@ -580,7 +574,6 @@ dpll_solve_recurse(struct ast *cnf)
         bool result = false;
         bool assigned_value = true;
 
-        dpll_test_invariant_no_value_assigned(random);
         dpll_identifier_assign_value(random, assigned_value);
 
         // @NOTE: Need to create a new AST because unit propagation is destructive

@@ -145,11 +145,15 @@ main( int argc, char **argv)
    
 #if 0
 
-    EVAL_COMMANDLINE_INPLACE("~(a | b) == (~a & ~b)");
-    EVAL_COMMANDLINE_INPLACE("~(a & b) == (~a | ~b)");
+
+    
+    EVAL_COMMANDLINE_INPLACE("(a <-> b) == ~(a ^ b)");
+
+    //EVAL_COMMANDLINE_INPLACE("~(a | b) == (~a & ~b)");
+    //EVAL_COMMANDLINE_INPLACE("~(a & b) == (~a | ~b)");
 
 
-//EVAL_COMMANDLINE_INPLACE ("a & 0");
+    //EVAL_COMMANDLINE_INPLACE ("a & 0");
     //EVAL_COMMANDLINE_INPLACE ("0 & 0");
     //EVAL_COMMANDLINE_INPLACE ("(~(a | b)) == (~a & ~b)");
     //EVAL_COMMANDLINE_INPLACE ("0 | 0");
