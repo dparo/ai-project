@@ -890,8 +890,8 @@ eval_ast( struct ast *ast,
         } else if (solver == DPLL_SOLVER || solver == THEOREM_SOLVER) {
             if ( solver == THEOREM_SOLVER ) {
                 ast_push(ast, & NEGATE_NODE);
-                ast_push(ast, & FALSE_CONSTANT_NODE);
-                ast_push(ast, & EQ_EQ_NODE);
+                //ast_push(ast, & TRUE_CONSTANT_NODE);
+                //ast_push(ast, & EQ_EQ_NODE);
             }
 
             dpll_solve(ast);

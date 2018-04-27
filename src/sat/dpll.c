@@ -31,7 +31,6 @@ dpll_identifier_assign_value(struct ast_node *node,
     assert(node->type == AST_NODE_TYPE_IDENTIFIER);
     struct symtable *symtable = & global_interpreter.symtable;
     struct symbol_info *syminfo = symtable_syminfo_from_node(symtable, node);
-    assert(! syminfo->has_value_assigned);
     syminfo->has_value_assigned = true;
     syminfo->value = value;
 }
@@ -462,8 +461,7 @@ dpll_pick_random_unassigned_literal (struct ast *cnf)
           
 #if __DEBUG
     if ( picked ) {
-        struct symbol_info *syminfo = symtable_syminfo_from_node(symtable, picked);
-        assert(!(syminfo->has_value_assigned));
+        dpll_test_invariant_no_value_assigned(picked);
     }
 #endif
     return picked;
@@ -529,7 +527,7 @@ dpll_solve_recurse(struct ast *cnf)
         // @NOTE: `cnf` get's cleared inside `ast_node_stack_dump_xxx`
         ast_node_stack_dump_reversed( &stack, cnf);
         ast_node_stack_free(&stack);
-        printf("\n### Getting the propageted result ##### \n");
+        printf("\n### Getting the propagated result ##### \n");
         ast_dbglog(cnf);
         printf("\n");
     
@@ -551,24 +549,33 @@ dpll_solve_recurse(struct ast *cnf)
     if ( random ) {
         bool result = false;
         bool assigned_value = true;
+
+        dpll_test_invariant_no_value_assigned(random);
         dpll_identifier_assign_value(random, assigned_value);
+
+        // @NOTE: Need to create a new AST because unit propagation is destructive
+        // and we will need to refer to the argument passed `cnf` later
+        // to propagate again with a new value assigned
         struct ast_node_stack s1 = dpll_unit_propagate(cnf, random, assigned_value);
-        ast_node_stack_dump_reversed( & s1, cnf);
+        struct ast cnf1 = ast_create();
+        ast_node_stack_dump_reversed( & s1, &cnf1);
         ast_node_stack_free(& s1);
 
-        struct ast cnf1 = ast_dup(cnf);
         result |= dpll_solve_recurse(& cnf1);
         ast_free(& cnf1);
-        
+
+        // @NOTE: No need to `dup` the `cnf` ast. This is the last call
+        // and we can let recursive calls modify the destructively the same AST
+        // passed from the arguments
         if ( !result ) {
             // Continue evaluation
             assigned_value = false;
             dpll_identifier_assign_value(random, assigned_value);
             struct ast_node_stack s2 = dpll_unit_propagate(cnf, random, assigned_value);
-            ast_node_stack_dump_reversed( & s2, cnf);
+            struct ast cnf2 = ast_create();
+            ast_node_stack_dump_reversed( & s1, &cnf2);
             ast_node_stack_free(& s2);
-
-            struct ast cnf2 = ast_dup(cnf);
+            
             result |= dpll_solve_recurse(& cnf2);
             ast_free(& cnf2);
         
@@ -579,10 +586,6 @@ dpll_solve_recurse(struct ast *cnf)
         // No assignment -> last recursive call to determine the result
         return dpll_solve_recurse(cnf);
     }
-
-    
-    
-    
     
     return result;
 }
