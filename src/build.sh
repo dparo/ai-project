@@ -18,4 +18,7 @@ elif [ "$1" = "debug" ]; then
 elif [ "$1" = "release" ]; then
     set -x
     gcc $BUILD_DEFS -std=gnu11 -O3 $WARNINGS $INCLUDES sat/main.c $LIBRARIES -o $OUTPUT_PATH/pci
+elif [ "$1" = "release-debuginfo" ]; then
+    set -x
+    gcc $BUILD_DEFS -std=gnu11 -g -O3 $WARNINGS $INCLUDES sat/main.c $LIBRARIES -o $OUTPUT_PATH/pci
 fi

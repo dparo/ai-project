@@ -150,10 +150,11 @@ main( int argc, char **argv)
     // @NOTE: This theorem prover: ~(a & b) == (~a | ~b) works
     //        This does not  --->  ~(a | b) == (~a & ~b)
    
-#if 0
+#if 1
 
+    EVAL_COMMANDLINE_INPLACE("a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n");
 
-    EVAL_COMMANDLINE_INPLACE("a & b");
+    //EVAL_COMMANDLINE_INPLACE("a & b");
     
 
     //EVAL_COMMANDLINE_INPLACE("~(a | b) == (~a & ~b)");
