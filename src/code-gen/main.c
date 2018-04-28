@@ -208,6 +208,20 @@ struct meta_generate_infos mgi[] =
 
     { {.type = META_REPLACEMENT_RULE_STACK,
        .fn_replacement_rule = & stack_template_replace,
+
+       .stack_name = "ast_node_ref_stack",
+       .stack_node_type_name = "struct ast_node *",
+       .stack_push_pointer = true,
+       .stack_base_pointer_name = "nodes",
+       .stack_num_elems_name = "num_nodes",
+       .stack_max_elems_name = "max_nodes"},
+      "code-gen/templates/stack.template.c", "__generated__/ast_node_stack_ref.h",
+      {0}
+    },
+    
+    
+    { {.type = META_REPLACEMENT_RULE_STACK,
+       .fn_replacement_rule = & stack_template_replace,
        .stack_name = "uint32_stack",
        .stack_push_pointer = false,
        .stack_node_type_name = "uint32_t",
@@ -220,13 +234,13 @@ struct meta_generate_infos mgi[] =
 
     { {.type = META_REPLACEMENT_RULE_STACK,
        .fn_replacement_rule = & stack_template_replace,
-       .stack_name = "ast_node_parent_child_pair_stack",
+       .stack_name = "ast_node_child_parent_pair_stack",
        .stack_push_pointer = true,
        .stack_node_type_name = "struct ast_node_child_parent_pair",
        .stack_base_pointer_name = "pairs",
        .stack_num_elems_name = "num_pairs",
        .stack_max_elems_name = "max_pairs"},
-      "code-gen/templates/stack.template.c", "__generated__/ast-node-parent-child-pair-stack.h",
+      "code-gen/templates/stack.template.c", "__generated__/ast-node-child-parent-pair-stack.h",
       {0}
     },
     

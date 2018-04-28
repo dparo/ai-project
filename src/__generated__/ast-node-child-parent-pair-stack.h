@@ -1,15 +1,15 @@
-struct ast_node_parent_child_pair_stack {
+struct ast_node_child_parent_pair_stack {
     struct ast_node_child_parent_pair *pairs;
     size_t num_pairs;
     size_t max_pairs;
 };
 
 
-struct ast_node_parent_child_pair_stack
-ast_node_parent_child_pair_stack_create_sized(size_t num_pairs)
+struct ast_node_child_parent_pair_stack
+ast_node_child_parent_pair_stack_create_sized(size_t num_pairs)
 {
     assert(num_pairs);
-    struct ast_node_parent_child_pair_stack result;
+    struct ast_node_child_parent_pair_stack result;
     size_t buf_size = num_pairs * sizeof(struct ast_node_child_parent_pair);
     result.pairs = xmalloc(buf_size);
     assert(result.pairs);
@@ -19,17 +19,17 @@ ast_node_parent_child_pair_stack_create_sized(size_t num_pairs)
 }
 
 
-struct ast_node_parent_child_pair_stack
-ast_node_parent_child_pair_stack_create(void)
+struct ast_node_child_parent_pair_stack
+ast_node_child_parent_pair_stack_create(void)
 {
-    return ast_node_parent_child_pair_stack_create_sized(64);
+    return ast_node_child_parent_pair_stack_create_sized(64);
 }
 
 
-struct ast_node_parent_child_pair_stack
-ast_node_parent_child_pair_stack_dup(struct ast_node_parent_child_pair_stack *s)
+struct ast_node_child_parent_pair_stack
+ast_node_child_parent_pair_stack_dup(struct ast_node_child_parent_pair_stack *s)
 {
-    struct ast_node_parent_child_pair_stack result;
+    struct ast_node_child_parent_pair_stack result;
     const size_t size = s->max_pairs * sizeof(struct ast_node_child_parent_pair);
     result.pairs = xmalloc(size);
     assert(result.pairs);
@@ -42,7 +42,7 @@ ast_node_parent_child_pair_stack_dup(struct ast_node_parent_child_pair_stack *s)
 }
 
 void
-ast_node_parent_child_pair_stack_free(struct ast_node_parent_child_pair_stack *s)
+ast_node_child_parent_pair_stack_free(struct ast_node_child_parent_pair_stack *s)
 {
     if ( s->pairs ) {
         free(s->pairs);
@@ -53,14 +53,14 @@ ast_node_parent_child_pair_stack_free(struct ast_node_parent_child_pair_stack *s
 }
 
 void
-ast_node_parent_child_pair_stack_clear(struct ast_node_parent_child_pair_stack *s)
+ast_node_child_parent_pair_stack_clear(struct ast_node_child_parent_pair_stack *s)
 {
-    ast_node_parent_child_pair_stack_free(s);
+    ast_node_child_parent_pair_stack_free(s);
 }
 
 
 void
-ast_node_parent_child_pair_stack_reset(struct ast_node_parent_child_pair_stack *s)
+ast_node_child_parent_pair_stack_reset(struct ast_node_child_parent_pair_stack *s)
 {
     s->num_pairs = 0;
 }
@@ -68,7 +68,7 @@ ast_node_parent_child_pair_stack_reset(struct ast_node_parent_child_pair_stack *
 
 
 static inline void
-ast_node_parent_child_pair_stack_grow_to( struct ast_node_parent_child_pair_stack *s,
+ast_node_child_parent_pair_stack_grow_to( struct ast_node_child_parent_pair_stack *s,
               size_t new_max_pairs)
 {
     assert(s);
@@ -83,31 +83,31 @@ ast_node_parent_child_pair_stack_grow_to( struct ast_node_parent_child_pair_stac
 }
 
 static inline void
-ast_node_parent_child_pair_stack_grow(struct ast_node_parent_child_pair_stack *s)
+ast_node_child_parent_pair_stack_grow(struct ast_node_child_parent_pair_stack *s)
 {
     assert(s);
     const size_t new_max_pairs = s->max_pairs * 2;
-    ast_node_parent_child_pair_stack_grow_to(s, new_max_pairs);
+    ast_node_child_parent_pair_stack_grow_to(s, new_max_pairs);
 }
 
 
 static inline size_t
-ast_node_parent_child_pair_stack_num_pairs(struct ast_node_parent_child_pair_stack *s)
+ast_node_child_parent_pair_stack_num_pairs(struct ast_node_child_parent_pair_stack *s)
 {
     assert(s);
     return s->num_pairs;
 }
 
 static inline bool
-ast_node_parent_child_pair_stack_is_empty(struct ast_node_parent_child_pair_stack *s)
+ast_node_child_parent_pair_stack_is_empty(struct ast_node_child_parent_pair_stack *s)
 {
     assert(s);
-    return ast_node_parent_child_pair_stack_num_pairs(s) == 0;
+    return ast_node_child_parent_pair_stack_num_pairs(s) == 0;
 }
 
 
 static inline struct ast_node_child_parent_pair *
-ast_node_parent_child_pair_stack_peek_addr (struct ast_node_parent_child_pair_stack *s)
+ast_node_child_parent_pair_stack_peek_addr (struct ast_node_child_parent_pair_stack *s)
 {
     assert(s);
     if (!(s->num_pairs)) {
@@ -119,10 +119,10 @@ ast_node_parent_child_pair_stack_peek_addr (struct ast_node_parent_child_pair_st
 
 // UNSAFE !!!!!
 static inline struct ast_node_child_parent_pair *
-ast_node_parent_child_pair_stack_pop_addr (struct ast_node_parent_child_pair_stack *s)
+ast_node_child_parent_pair_stack_pop_addr (struct ast_node_child_parent_pair_stack *s)
 {
     assert(s);
-    struct ast_node_child_parent_pair *result = ast_node_parent_child_pair_stack_peek_addr(s);
+    struct ast_node_child_parent_pair *result = ast_node_child_parent_pair_stack_peek_addr(s);
     if ( result ) {
         (s->num_pairs)--;
     }
@@ -130,7 +130,7 @@ ast_node_parent_child_pair_stack_pop_addr (struct ast_node_parent_child_pair_sta
 }
 
 static inline struct ast_node_child_parent_pair
-ast_node_parent_child_pair_stack_pop (struct ast_node_parent_child_pair_stack *s)
+ast_node_child_parent_pair_stack_pop (struct ast_node_child_parent_pair_stack *s)
 {
     assert(s);
     assert((s->num_pairs));
@@ -138,7 +138,7 @@ ast_node_parent_child_pair_stack_pop (struct ast_node_parent_child_pair_stack *s
 }
 
 static inline void
-ast_node_parent_child_pair_stack_pop_discard (struct ast_node_parent_child_pair_stack *s)
+ast_node_child_parent_pair_stack_pop_discard (struct ast_node_child_parent_pair_stack *s)
 {
     assert(s);
     assert(s->num_pairs);
@@ -147,7 +147,7 @@ ast_node_parent_child_pair_stack_pop_discard (struct ast_node_parent_child_pair_
 
 
 static inline bool
-ast_node_parent_child_pair_stack_enough_size_to_hold_n(struct ast_node_parent_child_pair_stack *s,
+ast_node_child_parent_pair_stack_enough_size_to_hold_n(struct ast_node_child_parent_pair_stack *s,
                            size_t n)
 {
     assert(s);
@@ -157,20 +157,20 @@ ast_node_parent_child_pair_stack_enough_size_to_hold_n(struct ast_node_parent_ch
                  
 
 void
-ast_node_parent_child_pair_stack_push( struct ast_node_parent_child_pair_stack *s,
+ast_node_child_parent_pair_stack_push( struct ast_node_child_parent_pair_stack *s,
            struct ast_node_child_parent_pair * elem )
 {
     assert(elem);
     assert(s);
-    if ( ! ast_node_parent_child_pair_stack_enough_size_to_hold_n(s, 1)) {
-        ast_node_parent_child_pair_stack_grow(s);
+    if ( ! ast_node_child_parent_pair_stack_enough_size_to_hold_n(s, 1)) {
+        ast_node_child_parent_pair_stack_grow(s);
     }
     s->pairs[s->num_pairs] = * elem;
     s->num_pairs ++;
 }
 
 static inline struct ast_node_child_parent_pair *
-ast_node_parent_child_pair_stack_begin(struct ast_node_parent_child_pair_stack *s)
+ast_node_child_parent_pair_stack_begin(struct ast_node_child_parent_pair_stack *s)
 {
     assert(s);
     return s->pairs;
@@ -178,7 +178,7 @@ ast_node_parent_child_pair_stack_begin(struct ast_node_parent_child_pair_stack *
 
 
 static inline struct ast_node_child_parent_pair *
-ast_node_parent_child_pair_stack_end(struct ast_node_parent_child_pair_stack *s)
+ast_node_child_parent_pair_stack_end(struct ast_node_child_parent_pair_stack *s)
 {
     assert(s);
     return & (s->pairs[s->num_pairs]);
@@ -188,7 +188,7 @@ ast_node_parent_child_pair_stack_end(struct ast_node_parent_child_pair_stack *s)
 
 
 static inline struct ast_node_child_parent_pair *
-ast_node_parent_child_pair_stack_next(struct ast_node_child_parent_pair *prev)
+ast_node_child_parent_pair_stack_next(struct ast_node_child_parent_pair *prev)
 {
     assert(prev);
     return (struct ast_node_child_parent_pair*) ((uint8_t*) prev - sizeof(prev));
@@ -197,7 +197,7 @@ ast_node_parent_child_pair_stack_next(struct ast_node_child_parent_pair *prev)
 
 
 static inline struct ast_node_child_parent_pair *
-ast_node_parent_child_pair_stack_prev(struct ast_node_child_parent_pair *prev)
+ast_node_child_parent_pair_stack_prev(struct ast_node_child_parent_pair *prev)
 {
     assert(prev);
     return (struct ast_node_child_parent_pair*) ((uint8_t*) prev + sizeof(prev));

@@ -14,11 +14,13 @@ export EDITOR="emacsclient"
 # tty
 # do: while true; do sleep 1000; done
 
-gdb \
-    -tty="/dev/null" \
-    ../bin/pci \
-    -ex "set args --solver=tp"\
-    -ex "start"
+while true; do
+    gdb \
+        -tty="/dev/null" \
+        ../bin/pci \
+        -ex "set args --solver=tp"\
+        -ex "start"
+done
 
 
 #-ex "set logging file $GDBLOG" \

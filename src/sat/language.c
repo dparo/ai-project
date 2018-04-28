@@ -124,8 +124,10 @@ enum delimiter {
 
 
 struct ast_node {
-    uint32_t uid;   // Unique for every node in the ast even if same literal
-                    // 0 Should be a reserved uid, for checking if it was assigned or not
+    uint32_t uid;
+# warning @TODO: Implement me
+    // Parent index in the ast
+    size_t parent;
     char *text;
     i32 text_len;
     uint32_t num_operands;
@@ -155,25 +157,25 @@ bool ast_node_cmp( struct ast_node *n1,
     other function that uses these constants"
          
 static struct ast_node AND_NODE =
-{ 0, "&", 1, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_AND, DELIMITER_NONE };
+{ 0, 0, "&", 1, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_AND, DELIMITER_NONE };
 
 static struct ast_node OR_NODE =
-{ 0, "|", 1, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_OR, DELIMITER_NONE };
+{ 0, 0, "|", 1, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_OR, DELIMITER_NONE };
 
 static struct ast_node NEGATE_NODE =
-{ 0, "~", 1, 1, AST_NODE_TYPE_OPERATOR, OPERATOR_NOT, DELIMITER_NONE };
+{ 0, 0, "~", 1, 1, AST_NODE_TYPE_OPERATOR, OPERATOR_NOT, DELIMITER_NONE };
 
 
 static struct ast_node FALSE_CONSTANT_NODE =
-{ 0, "0", 1, 0, AST_NODE_TYPE_CONSTANT, OPERATOR_NONE, DELIMITER_NONE };
+{ 0, 0, "0", 1, 0, AST_NODE_TYPE_CONSTANT, OPERATOR_NONE, DELIMITER_NONE };
 
 
 static struct ast_node TRUE_CONSTANT_NODE =
-{ 0, "1", 1, 0, AST_NODE_TYPE_CONSTANT, OPERATOR_NONE, DELIMITER_NONE };
+{ 0, 0, "1", 1, 0, AST_NODE_TYPE_CONSTANT, OPERATOR_NONE, DELIMITER_NONE };
 
 
 static struct ast_node EQ_EQ_NODE =
-{ 0, "==", 2, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_EQUAL_EQUAL, DELIMITER_NONE };
+{ 0, 0, "==", 2, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_EQUAL_EQUAL, DELIMITER_NONE };
 
 bool
 ast_node_is_true_constant( struct ast_node *node)

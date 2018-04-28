@@ -164,7 +164,8 @@ main( int argc, char **argv)
    
 #if 1
 
-    EVAL_COMMANDLINE_INPLACE("a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n");
+    EVAL_COMMANDLINE_INPLACE("a & b");
+    //EVAL_COMMANDLINE_INPLACE("a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n");
 
     //EVAL_COMMANDLINE_INPLACE("a & b");
     
