@@ -137,7 +137,7 @@ $(S)_pop (struct $(S) *s)
     return s->$(base)[--(s->$(num_elems))];
 }
 
-static inline $(T)
+static inline void
 $(S)_pop_discard (struct $(S) *s)
 {
     assert(s);
@@ -158,14 +158,14 @@ $(S)_enough_size_to_hold_n(struct $(S) *s,
 
 void
 $(S)_push( struct $(S) *s,
-           $(T) *elem )
+           $(T) $(ref) elem )
 {
     assert(elem);
     assert(s);
     if ( ! $(S)_enough_size_to_hold_n(s, 1)) {
         $(S)_grow(s);
     }
-    s->$(base)[s->$(num_elems)] = *elem;
+    s->$(base)[s->$(num_elems)] = $(deref) elem;
     s->$(num_elems) ++;
 }
 
@@ -187,7 +187,7 @@ $(S)_end(struct $(S) *s)
 
 
 
-inline $(T) *
+static inline $(T) *
 $(S)_next($(T) *prev)
 {
     assert(prev);
@@ -196,7 +196,7 @@ $(S)_next($(T) *prev)
 
 
 
-inline $(T) *
+static inline $(T) *
 $(S)_prev($(T) *prev)
 {
     assert(prev);

@@ -88,6 +88,7 @@ struct meta_replacement_rule {
         struct {
             char *stack_name;
             char *stack_node_type_name;
+            bool stack_push_pointer;
             char *stack_base_pointer_name;
             char *stack_num_elems_name;
             char *stack_max_elems_name;
@@ -158,6 +159,13 @@ void stack_template_replace( FILE *f,
         print_replaced_param(f, token, rule->stack_name, "`MISSING NAME`");
     } else if (match_meta_token(token, "T")) {
         print_replaced_param(f, token, rule->stack_node_type_name, "`MISSING TYPE`");
+    } else if (match_meta_token(token, "ref")
+               || match_meta_token(token, "deref")) {
+        if (rule->stack_push_pointer == true ) {
+            print_replaced_param(f, token, "*", "`CODE GEN: ERROR`");
+        } else {
+            print_replaced_param(f, token, "", "`CODE GEN: ERROR`");
+        }
     } else if (match_meta_token(token, "base")) {
         print_replaced_param(f, token, rule->stack_base_pointer_name, "base");
     } else if (match_meta_token(token, "num_elems")) {
@@ -177,6 +185,7 @@ struct meta_generate_infos mgi[] =
        .fn_replacement_rule = & stack_template_replace,
        .stack_name = "ast",
        .stack_node_type_name = "struct ast_node",
+       .stack_push_pointer = true,
        .stack_base_pointer_name = "nodes",
        .stack_num_elems_name = "num_nodes",
        .stack_max_elems_name = "max_nodes"},
@@ -186,8 +195,10 @@ struct meta_generate_infos mgi[] =
 
     { {.type = META_REPLACEMENT_RULE_STACK,
        .fn_replacement_rule = & stack_template_replace,
+
        .stack_name = "ast_node_stack",
        .stack_node_type_name = "struct ast_node",
+       .stack_push_pointer = true,
        .stack_base_pointer_name = "nodes",
        .stack_num_elems_name = "num_nodes",
        .stack_max_elems_name = "max_nodes"},
@@ -195,7 +206,29 @@ struct meta_generate_infos mgi[] =
       {0}
     },
 
-    
+    { {.type = META_REPLACEMENT_RULE_STACK,
+       .fn_replacement_rule = & stack_template_replace,
+       .stack_name = "uint32_stack",
+       .stack_push_pointer = false,
+       .stack_node_type_name = "uint32_t",
+       .stack_base_pointer_name = "data",
+       .stack_num_elems_name = "num_elems",
+       .stack_max_elems_name = "max_elems"},
+      "code-gen/templates/stack.template.c", "__generated__/uint32-stack.h",
+      {0}
+    },
+
+    { {.type = META_REPLACEMENT_RULE_STACK,
+       .fn_replacement_rule = & stack_template_replace,
+       .stack_name = "ast_search",
+       .stack_push_pointer = true,
+       .stack_node_type_name = "struct ast_node_child_parent_pair",
+       .stack_base_pointer_name = "pairs",
+       .stack_num_elems_name = "num_pairs",
+       .stack_max_elems_name = "max_pairs"},
+      "code-gen/templates/stack.template.c", "__generated__/ast-search.h",
+      {0}
+    },
     
     {0}
 };

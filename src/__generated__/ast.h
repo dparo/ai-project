@@ -137,7 +137,7 @@ ast_pop (struct ast *s)
     return s->nodes[--(s->num_nodes)];
 }
 
-static inline struct ast_node
+static inline void
 ast_pop_discard (struct ast *s)
 {
     assert(s);
@@ -158,14 +158,14 @@ ast_enough_size_to_hold_n(struct ast *s,
 
 void
 ast_push( struct ast *s,
-           struct ast_node *elem )
+           struct ast_node * elem )
 {
     assert(elem);
     assert(s);
     if ( ! ast_enough_size_to_hold_n(s, 1)) {
         ast_grow(s);
     }
-    s->nodes[s->num_nodes] = *elem;
+    s->nodes[s->num_nodes] = * elem;
     s->num_nodes ++;
 }
 
@@ -187,7 +187,7 @@ ast_end(struct ast *s)
 
 
 
-inline struct ast_node *
+static inline struct ast_node *
 ast_next(struct ast_node *prev)
 {
     assert(prev);
@@ -196,7 +196,7 @@ ast_next(struct ast_node *prev)
 
 
 
-inline struct ast_node *
+static inline struct ast_node *
 ast_prev(struct ast_node *prev)
 {
     assert(prev);

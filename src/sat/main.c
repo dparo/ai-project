@@ -77,12 +77,24 @@ fatal(char *fmt, ...)
 #include "parser.c"
 
 
-
 #define LANGUAGE_C_IMPL
 #include "language.c"
 
 #define MEM_LAYOUT_C_IMPL
 #include "mem-layout.c"
+
+
+#include "ast.h"
+#include "ast_node_stack.h"
+
+#define INTERPRETER_UTILS_C_IMPL
+#include "interpreter-utils.c"
+
+
+
+#define AST_SEARCH_C_IMPL
+#include "ast-search.c"
+
 
 #define INTERPRETER_C_IMPL
 #include "interpreter.c"

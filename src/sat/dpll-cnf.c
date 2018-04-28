@@ -165,7 +165,7 @@ dpll_operator_conversion_aux ( struct ast_node *expr_node,
             
 # if 0 
             uint numofoperands = operator_num_operands(node);
-            for( size_t operand_num = 1;
+            for( uint32_t operand_num = 1;
                  operand_num <= numofoperands;
                  operand_num++ ) {
                 struct ast_node *child = ast_get_operand_node(in, node, operand_num);
@@ -242,7 +242,7 @@ __old_bugged_dpll_demorgan_aux ( struct ast_node *expr_node,
                     "Before Demogan applies every operator should be converted to NOTS ORS ANDS");
             }
             uint numofoperands = operator_num_operands(node);
-            for( size_t operand_num = 1;
+            for( uint32_t operand_num = 1;
                  operand_num <= numofoperands;
                  operand_num++ ) {
                 struct ast_node *child = ast_get_operand_node(in, node, operand_num);
@@ -321,7 +321,7 @@ dpll_demorgan_aux ( struct ast_node *expr_node,
             }
             fprintf(stderr, "@TODO: Handle the De-Morgan negation propagation for those operators if any");
             uint numofoperands = operator_num_operands(node);
-            for( size_t operand_num = 1;
+            for( uint32_t operand_num = 1;
                  operand_num <= numofoperands;
                  operand_num++ ) {
                 struct ast_node *child = ast_get_operand_node(in, node, operand_num);
@@ -374,7 +374,7 @@ dpll_double_negation_elimination_aux ( struct ast_node *expr_node,
         } else {
             // Top Level operator is not a negation
             uint numofoperands = operator_num_operands(node);
-            for( size_t operand_num = 1;
+            for( uint32_t operand_num = 1;
                  operand_num <= numofoperands;
                       operand_num++ ) {
                 struct ast_node *child = ast_get_operand_node(in, node, operand_num);
@@ -444,7 +444,7 @@ dpll_or_distribution_aux ( struct ast_node *expr_node,
         } else {
             // Top Level operator is not an OR `operator`
             uint numofoperands = operator_num_operands(node);
-            for( size_t operand_num = 1;
+            for( uint32_t operand_num = 1;
                  operand_num <= numofoperands;
                  operand_num++ ) {
                 struct ast_node *child = ast_get_operand_node(in, node, operand_num);

@@ -137,7 +137,7 @@ ast_node_stack_pop (struct ast_node_stack *s)
     return s->nodes[--(s->num_nodes)];
 }
 
-static inline struct ast_node
+static inline void
 ast_node_stack_pop_discard (struct ast_node_stack *s)
 {
     assert(s);
@@ -158,14 +158,14 @@ ast_node_stack_enough_size_to_hold_n(struct ast_node_stack *s,
 
 void
 ast_node_stack_push( struct ast_node_stack *s,
-           struct ast_node *elem )
+           struct ast_node * elem )
 {
     assert(elem);
     assert(s);
     if ( ! ast_node_stack_enough_size_to_hold_n(s, 1)) {
         ast_node_stack_grow(s);
     }
-    s->nodes[s->num_nodes] = *elem;
+    s->nodes[s->num_nodes] = * elem;
     s->num_nodes ++;
 }
 
@@ -187,7 +187,7 @@ ast_node_stack_end(struct ast_node_stack *s)
 
 
 
-inline struct ast_node *
+static inline struct ast_node *
 ast_node_stack_next(struct ast_node *prev)
 {
     assert(prev);
@@ -196,7 +196,7 @@ ast_node_stack_next(struct ast_node *prev)
 
 
 
-inline struct ast_node *
+static inline struct ast_node *
 ast_node_stack_prev(struct ast_node *prev)
 {
     assert(prev);

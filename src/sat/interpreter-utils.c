@@ -15,9 +15,6 @@
 #pragma GCC diagnostic pop
 
 
-#include "ast.h"
-#include "ast_node_stack.h"
-
 struct symbol_info {
     bool has_value_assigned;
     bool value;

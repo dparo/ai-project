@@ -152,48 +152,13 @@ dpll_is_consistent( struct ast *cnf )
 
 
 
-// Slow n^2 algorithm
-struct ast_node *
-dpll_search_parent_node__slow( struct ast *cnf,
-                               struct ast_node *child)
-{
-    assert(child >= ast_begin(cnf));
-    struct ast_node *result = NULL;
-
-    for( struct ast_node *node = ast_end(cnf) - 1;
-         node > child;
-         node -- ) {
-        uint numofoperands = operator_num_operands(node);
-        for( size_t operand_num = 1;
-             operand_num <= numofoperands;
-             operand_num++ ) {
-            if (ast_get_operand_node(cnf, node, operand_num) == child) {
-                // Found the father
-                return node;
-            }
-        }
-
-    }
-    return NULL;
-}
-
-
-
-struct ast_node *
-dpll_search_parent_node( struct ast *cnf,
-                         struct ast_node *child)
-{
-    return dpll_search_parent_node__slow(cnf, child);
-}
-
-
 bool
 dpll_is_identifier_unit_clause( struct ast *cnf,
                                 struct ast_node *identifier,
                                 bool *is_negated)
 {
     assert(identifier->type == AST_NODE_TYPE_IDENTIFIER);
-    struct ast_node *parent = dpll_search_parent_node(cnf, identifier);
+    struct ast_node *parent = ast_search_parent_node(cnf, identifier);
     if (!parent) {
         *is_negated = false;
         return true;
@@ -204,7 +169,7 @@ dpll_is_identifier_unit_clause( struct ast *cnf,
     switch (parent->op) {
     case OPERATOR_AND: {
 #    if __DEBUG
-        struct ast_node *new_parent = dpll_search_parent_node(cnf, parent);
+        struct ast_node *new_parent = ast_search_parent_node(cnf, parent);
         assert(!new_parent || (new_parent->type == AST_NODE_TYPE_OPERATOR
                               && new_parent->op == OPERATOR_AND));
 #    endif
@@ -213,7 +178,7 @@ dpll_is_identifier_unit_clause( struct ast *cnf,
     } break;
 
     case OPERATOR_NOT: {
-        struct ast_node *new_parent = dpll_search_parent_node(cnf, parent);
+        struct ast_node *new_parent = ast_search_parent_node(cnf, parent);
         if ( new_parent ) {
             if (new_parent->type == AST_NODE_TYPE_OPERATOR
                 && new_parent->op == OPERATOR_OR) {
@@ -647,6 +612,11 @@ dpll_solve(struct ast *raw_ast,
     ast_dbglog(& cnf);
     printf("\n");
 #endif
+
+
+    #warning Calling function here
+
+    struct ast_search search = ast_search_create_from_ast(&cnf);
 
     bool result = dpll_solve_recurse(& cnf);
     dpll_print_solution(result, solver);

@@ -92,7 +92,7 @@ eval_operator( struct ast_node *node,
 
     assert(node->type == AST_NODE_TYPE_OPERATOR);
     bool result = 0;
-    uint numofoperands = operator_num_operands(node);
+    uint32_t numofoperands = operator_num_operands(node);
     if (! ((vms->num_bits) >= (operator_num_operands(node)) )) {
         goto not_enough_operands;                                 
     }
@@ -101,7 +101,7 @@ eval_operator( struct ast_node *node,
     assert_msg( numofoperands <= ARRAY_LEN(v),
                 "STATIC ASSERT: Language will support at most 3 operands for operators");
     
-    for ( uint i = 0; i < numofoperands; i ++ ) {
+    for ( uint32_t i = 0; i < numofoperands; i ++ ) {
         v[i] = vm_stack_pop_value(vms);
     }
 
@@ -358,64 +358,6 @@ intpt_print_node( struct ast_node *node )
 }
 
 
-
-static bool
-is_malformed_formula(struct ast* ast)
-{
-    uint it = 1;
-    struct ast_node *node = ast_end(ast) - 1;
-    for ( ;
-          node >= ast_begin(ast);
-          node --, it--) {
-        if (it == 0) {
-            break;
-        }
-        if (ast_node_is_operator(node)) {
-            it += operator_num_operands(node);
-        }
-    }
-    
-    if ( (node != ast->nodes - 1) || it != 0) {
-        return true;
-    }
-    return false;
-}
-
-
-
-// Fixes order of the operands on the queue, A & B, in the queue
-// becomes { [0] = A, [2] = B, [3] = &} Which means that to know
-// the position of the first operand we need to process recursively
-// the second operand
-struct ast_node *
-ast_get_operand_node ( struct ast *ast,
-                       struct ast_node *op_node,
-                       size_t operand_num )
-{
-    assert(op_node >= ast->nodes);
-    assert(op_node < ast_end(ast));
-    
-    assert( ast_node_is_operator(op_node));
-    uint it = 1;
-    struct ast_node *node = op_node;
-    for ( ;
-         node >= ast_begin(ast);
-         node --, it--) {
-        if ( operand_num == (it) &&
-             node != op_node) {
-            break;
-        }
-        if (ast_node_is_operator(node)) {
-            it += operator_num_operands(node);
-        }
-    }
-
-#if __DEBUG
-    assert(! is_malformed_formula(ast));
-#endif
-    return node;
-}
-
 void
 ast_print_expr ( struct ast* ast,
                  struct ast_node *expr_node )
@@ -432,7 +374,7 @@ ast_print_expr ( struct ast* ast,
         intpt_print_node(expr_node);
         
 
-        for( size_t operand_num = 1;
+        for( uint32_t operand_num = 1;
              operand_num <= numofoperands;
              operand_num++ ) {
             interpreter_log(" ");
