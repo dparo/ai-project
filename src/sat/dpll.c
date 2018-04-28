@@ -151,9 +151,11 @@ dpll_is_consistent( struct ast *cnf )
 }
 
 
+
+// Slow n^2 algorithm
 struct ast_node *
-dpll_search_parent_node( struct ast *cnf,
-                         struct ast_node *child)
+dpll_search_parent_node__slow( struct ast *cnf,
+                               struct ast_node *child)
 {
     assert(child >= ast_begin(cnf));
     struct ast_node *result = NULL;
@@ -174,6 +176,16 @@ dpll_search_parent_node( struct ast *cnf,
     }
     return NULL;
 }
+
+
+
+struct ast_node *
+dpll_search_parent_node( struct ast *cnf,
+                         struct ast_node *child)
+{
+    return dpll_search_parent_node__slow(cnf, child);
+}
+
 
 bool
 dpll_is_identifier_unit_clause( struct ast *cnf,
@@ -457,15 +469,15 @@ dpll_pick_random_unassigned_literal (struct ast *cnf)
 void
 dpll_print_solution(bool result, enum interpreter_solver solver)
 {
-    assert(solver == DPLL_SOLVER || solver == THEOREM_SOLVER);
+    assert(solver == DPLL_SOLVER || solver == THEOREM_PROVER);
     
     struct symtable *symtable = & global_interpreter.symtable;
 
     if ( (solver == DPLL_SOLVER && result == true)
-         || (solver == THEOREM_SOLVER && result == true)) {
+         || (solver == THEOREM_PROVER && result == true)) {
         if (solver == DPLL_SOLVER)
             interpreter_log(ANSI_COLOR_GREEN "DPLL: Found satisfiable solution:" ANSI_COLOR_RESET "\n");
-        else if (solver == THEOREM_SOLVER )
+        else if (solver == THEOREM_PROVER )
             interpreter_log(ANSI_COLOR_RED "THEOREM: Found UN-satisfiable solution:" ANSI_COLOR_RESET "\n");
         else invalid_code_path();
         interpreter_log(ANSI_COLOR_YELLOW "   ( Assigned literals: ");
@@ -483,10 +495,10 @@ dpll_print_solution(bool result, enum interpreter_solver solver)
             interpreter_log( ")" ANSI_COLOR_RESET "\n");
         }
     } else if ( (solver == DPLL_SOLVER && result == false) ||
-                (solver == THEOREM_SOLVER && result == false)) {
+                (solver == THEOREM_PROVER && result == false)) {
         if (solver == DPLL_SOLVER) {
             interpreter_log( ANSI_COLOR_RED "DPLL: NO satisfiable solution found" ANSI_COLOR_RESET "\n");
-        } else if (solver == THEOREM_SOLVER ) {
+        } else if (solver == THEOREM_PROVER ) {
             interpreter_log( ANSI_COLOR_GREEN "THOREM: Theorem was proven successfully" ANSI_COLOR_RESET "\n");
         } else {
             invalid_code_path();
@@ -620,7 +632,7 @@ dpll_solve(struct ast *raw_ast,
     enum interpreter_solver solver)
 {
     struct timing start = get_timing();
-    if ( solver == THEOREM_SOLVER ) {
+    if ( solver == THEOREM_PROVER ) {
         ast_push(raw_ast, & NEGATE_NODE);
     }
 
@@ -645,7 +657,7 @@ dpll_solve(struct ast *raw_ast,
     struct timing diff = timing_diff(&start, & end);
     if (solver == DPLL_SOLVER ) {
         interpreter_logi("\n\n$ INFOS: DPLL evaluation completed after ");
-    } else if ( solver == THEOREM_SOLVER ) {
+    } else if ( solver == THEOREM_PROVER ) {
         interpreter_logi("\n\n$ INFOS: Theorem-Proving evaluation completed after ");
     } else {
         invalid_code_path();

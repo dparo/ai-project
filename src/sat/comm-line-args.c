@@ -21,7 +21,7 @@ static const struct argp_option opts[] = {
 
     // @NOTE: the group is used to sort and show near options of the same group
     // when requesting the --help option
-    { "solver", 's', "SOLVER", OPTION_ARG_OPTIONAL | 0, "Specify the solver to use: {bruteforce | SLD}", 1},
+    { "solver", 's', "SOLVER", OPTION_ARG_OPTIONAL | 0, "Specify the solver to use: {bruteforce | dpll | tp}", 1},
     {0}
 };
 
@@ -53,9 +53,10 @@ commline_set_solver(char *solver)
             solver_was_set = true;
         } else if ((0 == strcasecmp("th", solver))
                    || (0 == strcasecmp("tp", solver))
-                   ||0 == strcasecmp("dpll-th", solver)) {
-            interpreter_logi("Setting the solver to: `THEOREM-SOLVER`\n");
-            interpreter_set_solver(THEOREM_SOLVER);
+                   || 0 == strcasecmp("dpll-th", solver)
+                   || 0 == strcasecmp("dpll-tp", solver)) {
+            interpreter_logi("Setting the solver to: `THEOREM-PROVER`\n");
+            interpreter_set_solver(THEOREM_PROVER);
             solver_was_set = true;
         } else {
             interpreter_logi("INTERPRETER: Cannot understand `solver`\n   > Defaulting to DPLL\n");
