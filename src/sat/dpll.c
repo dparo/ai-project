@@ -616,7 +616,7 @@ dpll_solve(struct ast *raw_ast,
 
     #warning Calling function here
 
-    struct ast_search search = ast_search_create_from_ast(&cnf);
+    struct ast_indexer indexer = ast_indexer_create_from_ast(&cnf);
 
     bool result = dpll_solve_recurse(& cnf);
     dpll_print_solution(result, solver);

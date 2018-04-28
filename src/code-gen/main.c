@@ -220,13 +220,13 @@ struct meta_generate_infos mgi[] =
 
     { {.type = META_REPLACEMENT_RULE_STACK,
        .fn_replacement_rule = & stack_template_replace,
-       .stack_name = "ast_search",
+       .stack_name = "ast_node_parent_child_pair_stack",
        .stack_push_pointer = true,
        .stack_node_type_name = "struct ast_node_child_parent_pair",
        .stack_base_pointer_name = "pairs",
        .stack_num_elems_name = "num_pairs",
        .stack_max_elems_name = "max_pairs"},
-      "code-gen/templates/stack.template.c", "__generated__/ast-search.h",
+      "code-gen/templates/stack.template.c", "__generated__/ast-node-parent-child-pair-stack.h",
       {0}
     },
     

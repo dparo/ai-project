@@ -1,11 +1,11 @@
-#ifndef AST_SEARCH_C_INCLUDE
-#define AST_SEARCH_C_INCLUDE
+#ifndef AST_INDEXER_C_INCLUDE
+#define AST_INDEXER_C_INCLUDE
 
 
 //#######################################################
-#endif /* AST_SEARCH_C_INCLUDE */
-#if !defined AST_SEARCH_C_IMPLEMENTED && defined AST_SEARCH_C_IMPL
-#define AST_SEARCH_C_IMPLEMENTED
+#endif /* AST_INDEXER_C_INCLUDE */
+#if !defined AST_INDEXER_C_IMPLEMENTED && defined AST_INDEXER_C_IMPL
+#define AST_INDEXER_C_IMPLEMENTED
 //#######################################################
 
 
@@ -15,6 +15,10 @@ struct ast_node_child_parent_pair  {
 };
 
 
+
+struct ast_indexer {
+    
+};
 
 
 static bool
@@ -120,7 +124,7 @@ ast_search_parent_node( struct ast *cnf,
 }
 
 
-#include "ast-search.h"
+#include "ast-node-parent-child-pair-stack.h"
 #include "uint32-stack.h"
 
 void
@@ -141,12 +145,12 @@ ast__assert_monotonicity( struct ast *ast)
 
 
 void
-ast_search__assert_monotonicity( struct ast_search *search)
+ast_node_parent_child_pair_stack__assert_monotonicity( struct ast_node_parent_child_pair_stack *pair_stack)
 {
 #if __DEBUG
     uint32_t monotonicity = 0;
-    for ( struct ast_node_child_parent_pair *pair = ast_search_begin(search);
-          pair < ast_search_end(search);
+    for ( struct ast_node_child_parent_pair *pair = ast_node_parent_child_pair_stack_begin(pair_stack);
+          pair < ast_node_parent_child_pair_stack_end(pair_stack);
           pair ++) {
         assert(pair->parent_uid != 0);
         assert(pair->child_uid != 0);
@@ -161,14 +165,14 @@ ast_search__assert_monotonicity( struct ast_search *search)
 
 
 uint32_t
-ast_search_find_child_from_parent(struct ast_search *search,
+ast_node_parent_child_pair_stack_find_child_from_parent(struct ast_node_parent_child_pair_stack *pair_stack,
                                   uint32_t parent_uid)
 {
 #if __DEBUG
-    ast_search__assert_monotonicity(search);
+    ast_node_parent_child_pair_stack__assert_monotonicity(pair_stack);
 #endif
-    for ( struct ast_node_child_parent_pair *pair = ast_search_begin(search);
-          pair < ast_search_end(search);
+    for ( struct ast_node_child_parent_pair *pair = ast_node_parent_child_pair_stack_begin(pair_stack);
+          pair < ast_node_parent_child_pair_stack_end(pair_stack);
           pair ++) {
 
         assert(pair->parent_uid != 0);
@@ -184,11 +188,11 @@ ast_search_find_child_from_parent(struct ast_search *search,
 
 
 uint32_t
-ast_search_find_parent_from_child(struct ast_search *search,
+ast_node_parent_child_pair_stack_find_parent_from_child(struct ast_node_parent_child_pair_stack *pair_stack,
                                   uint32_t child_uid)
 {
-    for ( struct ast_node_child_parent_pair *pair = ast_search_begin(search);
-          pair < ast_search_end(search);
+    for ( struct ast_node_child_parent_pair *pair = ast_node_parent_child_pair_stack_begin(pair_stack);
+          pair < ast_node_parent_child_pair_stack_end(pair_stack);
           pair ++) {
 
         assert(pair->parent_uid != 0);
@@ -208,11 +212,11 @@ ast_search_find_parent_from_child(struct ast_search *search,
 
 
 void
-ast_search_test_invariant_after_creation( struct ast_search *search,
+ast_node_parent_child_pair_stack_test_invariant_after_creation( struct ast_node_parent_child_pair_stack *pair_stack,
                                           struct ast *ast)
 {
     ast__assert_monotonicity(ast);
-    ast_search__assert_monotonicity(search);
+    ast_node_parent_child_pair_stack__assert_monotonicity(pair_stack);
     
 # if __DEBUG
     for( struct ast_node *node = ast_begin(ast);
@@ -220,7 +224,8 @@ ast_search_test_invariant_after_creation( struct ast_search *search,
          node ++ ) {
         
         if (node != (ast_end(ast) - 1)) {
-            // Node should be in the search space
+            // Node should be in the stack
+#warning @TODO: Node should be in the stack
         }
         
     }
@@ -229,10 +234,14 @@ ast_search_test_invariant_after_creation( struct ast_search *search,
  
 
 
+static struct ast_indexer
+ast_indexer_create_from_node_parent_child_pair_stack(struct ast_node_parent_child_pair_stack *pair_stack)
+{
+}
 
 
-struct ast_search
-ast_search_create_from_ast(struct ast *ast)
+struct ast_indexer
+ast_indexer_create_from_ast(struct ast *ast)
 {
 #if __DEBUG
     assert(! is_malformed_formula(ast));
@@ -241,7 +250,7 @@ ast_search_create_from_ast(struct ast *ast)
     assert(!ast_is_empty(ast));
 
     
-    struct ast_search result = {};
+    struct ast_node_parent_child_pair_stack pair_stack = {};
     
     uint32_t uid = 1;
     struct ast_node_stack stack = ast_node_stack_create();
@@ -260,7 +269,7 @@ ast_search_create_from_ast(struct ast *ast)
                 struct ast_node_child_parent_pair pair;
                 pair.parent_uid = node->uid;
                 pair.child_uid = child->uid;
-                ast_search_push(&result, &pair);
+                ast_node_parent_child_pair_stack_push(& pair_stack, &pair);
                 ast_node_stack_pop_discard(&stack);
             }
             ast_node_stack_push(&stack, node);
@@ -273,17 +282,20 @@ ast_search_create_from_ast(struct ast *ast)
     }
 
     assert(ast_node_stack_num_nodes(& stack) == 1);
-    ast_node_stack_free(& stack);
-    assert(ast->num_nodes - 1 == result.num_pairs);
+    
+    assert(ast->num_nodes - 1 == pair_stack.num_pairs);
 
 #if __DEBUG
-    ast_search_test_invariant_after_creation( &result, ast);
+    ast_node_parent_child_pair_stack_test_invariant_after_creation( &pair_stack, ast);
 #endif
-    
+
+    struct ast_indexer result = ast_indexer_create_from_node_parent_child_pair_stack(& pair_stack);
+    ast_node_stack_free(& stack);
+    ast_node_parent_child_pair_stack_free(& pair_stack);
     return result;
 }
 
 
 
 
-#endif /* AST_SEARCH_C_IMPL */
+#endif /* AST_INDEXER_C_IMPL */

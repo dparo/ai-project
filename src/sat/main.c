@@ -92,8 +92,8 @@ fatal(char *fmt, ...)
 
 
 
-#define AST_SEARCH_C_IMPL
-#include "ast-search.c"
+#define AST_INDEXER_C_IMPL
+#include "ast-indexer.c"
 
 
 #define INTERPRETER_C_IMPL
