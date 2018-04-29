@@ -405,12 +405,6 @@ is_preceded_by ( Tokenizer *tknzr, char c )
 static void
 eat_comment ( Tokenizer *tknzr )
 {
-    // NOTE clears the comment to whitespaces to allow
-    // Easier fetching back of the cache so we don't
-    // accidently end up in the middle of a comment
-
-    // Maybe change the cache to be smarter and follow the comments
-    // in a backward manner?
     if ( tokenizer_deref(tknzr) == '/' && tokenizer_deref_at(tknzr, 1) == '/' ) {
         while ( ! tokenizer_is_end ( tknzr )) {
             if ( is_newline(tknzr)
@@ -675,7 +669,6 @@ parse_punctuator ( Tokenizer *tknzr,
      token->type = TT_NONE;
      token->text_len = 1;
      int counter = 0;
-     // NOTE: this is safe because the content of the file is always zero terminated with 10 bytes
      char c1 = tokenizer_deref(tknzr);
      char c2 = tokenizer_deref_at(tknzr, 1);
      char c3 = tokenizer_deref_at(tknzr, 2);

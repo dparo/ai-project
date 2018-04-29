@@ -1,9 +1,9 @@
 ##############################################################################
 ##############################################################################
 ## stb        https://github.com/nothings/stb
-##  This 3-rd party library which is not distributed alongside this product,
-##  but it is simply used as a git-submodule, it is licensed under: PUBLIC DOMAIN, MIT.
-##  The latter (MIT) was choosen as the licensing alternative
+##   This 3-rd party library which is not distributed alongside this product,
+##   but it is simply used as a git-submodule, it is licensed under: PUBLIC DOMAIN, MIT.
+##   The latter (MIT) was choosen as the licensing alternative
 ------------------------------------------------------------------------------
 This software is available under 2 licenses -- choose whichever you prefer.
 ------------------------------------------------------------------------------
