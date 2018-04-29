@@ -125,7 +125,6 @@ enum delimiter {
 
 struct ast_node {
     uint32_t uid;
-# warning @TODO: Implement me
     // Parent index in the ast
     size_t parent;
     char *text;
@@ -151,10 +150,6 @@ bool ast_node_cmp( struct ast_node *n1,
         return false;
     }
 }
-
-
-# warning "@TODO: Inherit ids from the nodes they are replacing in dpll_unit_propagate or any \
-    other function that uses these constants"
          
 static struct ast_node AND_NODE =
 { 0, 0, "&", 1, 2, AST_NODE_TYPE_OPERATOR, OPERATOR_AND, DELIMITER_NONE };

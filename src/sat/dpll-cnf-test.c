@@ -1,4 +1,4 @@
-     #ifndef DPLL_CNF_TEST_C_INCLUDE
+#ifndef DPLL_CNF_TEST_C_INCLUDE
 #define DPLL_CNF_TEST_C_INCLUDE
 
 

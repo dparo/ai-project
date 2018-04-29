@@ -145,7 +145,7 @@ int
 main( int argc, char **argv)
 {
 #if defined __DEBUG
-    printf("This is a motherfucking debug build\n");
+    printf("@@@ NOTE: DEBUG BUILD @@@\n");
 #endif
     UNUSED(argc), UNUSED(argv);
 
@@ -162,12 +162,12 @@ main( int argc, char **argv)
     // @NOTE: This theorem prover: ~(a & b) == (~a | ~b) works
     //        This does not  --->  ~(a | b) == (~a & ~b)
    
-#if 0
-    //EVAL_COMMANDLINE_INPLACE("a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n");
+#if 1
+    EVAL_COMMANDLINE_INPLACE("a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n");
 
 
 
-    EVAL_COMMANDLINE_INPLACE("a | b");
+    //EVAL_COMMANDLINE_INPLACE("a | b");
     
 
     //EVAL_COMMANDLINE_INPLACE("a & b");

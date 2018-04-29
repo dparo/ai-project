@@ -248,7 +248,6 @@ dpll_stack_dump_into_stack ( struct ast_node_stack *dumper,
 // more agressive propagation
 
 
-# warning Parent index in the AST
 struct ast_node_stack
 dpll_unit_propagate_recurse( struct ast *cnf,
                              struct ast_node *id, /* Identifier to be merged */
@@ -324,7 +323,6 @@ dpll_unit_propagate_recurse( struct ast *cnf,
                 ast_node_stack_free(& op2_stack);
                 return s;
             } else if (op1->type == AST_NODE_TYPE_CONSTANT || op2->type == AST_NODE_TYPE_CONSTANT) {
-                # warning correct linking here
                 assert(!(op1->type == AST_NODE_TYPE_CONSTANT && op2->type == AST_NODE_TYPE_CONSTANT));
                 if (op1->type == AST_NODE_TYPE_CONSTANT) {
                     ast_node_stack_free(& op1_stack);
@@ -577,7 +575,6 @@ dpll_solve(struct ast *raw_ast,
 
     struct ast cnf = dpll_convert_cnf( raw_ast );
 
-    struct ast_indexer indexer = ast_indexer_create_from_ast(&cnf);
     dpll_unit_propagate(& cnf, &cnf, NULL, 0);
 
 #if 0
@@ -586,16 +583,10 @@ dpll_solve(struct ast *raw_ast,
     printf("\n");
 #endif
 
-
-    #warning Calling function here
-   
-
-
     bool result = dpll_solve_recurse(& cnf);
     dpll_print_solution(result, solver);
 
     ast_free(& cnf);
-    ast_indexer_free(& indexer);
 
     struct timing end = get_timing();
     struct timing diff = timing_diff(&start, & end);

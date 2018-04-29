@@ -864,7 +864,7 @@ eval_ast( struct ast *ast,
 
     
     if ( preprocess_command(ast)) {
-
+        ast_rebuild_uids(ast);
 
         
         if (solver == BRUTEFORCE_SOLVER) {
