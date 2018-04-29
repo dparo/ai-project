@@ -1,5 +1,3 @@
-sempre vera: ( P & ( P -> Q ) -> Q)
-
 sempre falsa: ((P -> Q) & P) & (~ Q)
 
 computazione implicazione
@@ -20,8 +18,8 @@ F == F                                   // identita'
 (G | 0 ) == G                            // legge dei neutri
 (G & ~G) == 0                            // esclusione
 (G | ~G) == 1                            // complementarieta'
-((F & G) & H) == ((F & (G & H))          // associativita'
-((F | G) | H) == ((F | (G | H)           // associativita'
+((F & G) & H) == (F & (G & H))          // associativita'
+((F | G) | H) == (F | (G | H))           // associativita'
 (F & G) == (G & F)                       // commutativita'
 (F | G) == (G | F)                       // commutativita'
 (F & (G | H)) == ((F & G) | (F & H))     // distributivita'
