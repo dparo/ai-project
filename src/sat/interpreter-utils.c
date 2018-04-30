@@ -599,6 +599,13 @@ string_compute_hash(char *str)
 }
 
 
+# if 0
+/*
+ ##################
+ ##  Incomplete  ##
+ ##################
+*/
+
 typedef long long int hash_node_val;
 
 struct hash_node {
@@ -655,7 +662,7 @@ hash_map_add( struct hash_map *hm,
     
     return result;
 }
-              
+#endif              
 
 
 

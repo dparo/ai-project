@@ -115,6 +115,8 @@ fatal(char *fmt, ...)
 #define AST_INDEXING_C_IMPL
 #include "ast-indexing.c"
 
+#define LISTS_C_IMPL
+#include "lists.c"
 
 #define INTERPRETER_C_IMPL
 #include "interpreter.c"
