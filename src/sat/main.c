@@ -175,8 +175,6 @@ main( int argc, char **argv)
     interpreter_init();
     comm_line_args(argc, argv);
 
-
-
     char * commandline = NULL;
     size_t commandline_len = 0;
 

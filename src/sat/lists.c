@@ -30,17 +30,18 @@
 
 
 /* 
-   // list definition
-   l = [a, b, c, e];
-   l = ;
+list definition
+===============
+l = [a, b, c, e];
+l = ;
 
-   what is a list?
-   it's a hashmap of symbols
+what is a list?
+it's a hashmap of symbols
 
-   list-table
-   it's a hashmap of list-names/symbols which gives
-   the hash-map for that symbol
- */
+list-table
+it's a hashmap of list-names/symbols which gives
+the hash-map for that symbol
+*/
 
 
 #define LIST_T_MAX_NAME_LEN 256
@@ -52,9 +53,10 @@ typedef struct list_t {
 
 
 list_t
-list_create(char *name, size_t name_len)
+list_create( char *name,
+             size_t name_len )
 {
-
+    
     // @TODO: Add this list to the list talbe, push into some stack, and make it indexed with a hashmap
     
     list_t list;
@@ -62,6 +64,7 @@ list_create(char *name, size_t name_len)
     strncpy(list.name, name, MIN(name_len, LIST_T_MAX_NAME_LEN));
     return list;
 }
+
 
 void
 list_free(list_t *list)
@@ -73,8 +76,8 @@ list_free(list_t *list)
 
 
 void
-list_add_literal(list_t *list,
-                 struct ast_node *node)
+list_add_literal( list_t *list,
+                  struct ast_node *node )
 {
     assert(list);
     assert(list->dict);
@@ -91,6 +94,7 @@ list_add_literal(list_t *list,
     char temp = string[string_len];
     string[string_len] = 0;
 
+    // Maybe not, we can just print some warning infos back
 #warning @TODO: Need to check presence of same literal inside the list
 
     void *value = (void*) 0x1;
