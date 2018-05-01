@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <meta http-equiv="Content-Style-Type" content="text/css" />
+  <meta name="generator" content="pandoc" />
+  <meta name="author" content="Davide Paro" />
+  <title>A SAT Solver Implementation</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+div.sourceCode { overflow-x: auto; }
+table.sourceCode, tr.sourceCode, td.lineNumbers, td.sourceCode {
+  margin: 0; padding: 0; vertical-align: baseline; border: none; }
+table.sourceCode { width: 100%; line-height: 100%; }
+td.lineNumbers { text-align: right; padding-right: 4px; padding-left: 4px; color: #aaaaaa; border-right: 1px solid #aaaaaa; }
+td.sourceCode { padding-left: 5px; }
+code > span.kw { color: #007020; font-weight: bold; } /* Keyword */
+code > span.dt { color: #902000; } /* DataType */
+code > span.dv { color: #40a070; } /* DecVal */
+code > span.bn { color: #40a070; } /* BaseN */
+code > span.fl { color: #40a070; } /* Float */
+code > span.ch { color: #4070a0; } /* Char */
+code > span.st { color: #4070a0; } /* String */
+code > span.co { color: #60a0b0; font-style: italic; } /* Comment */
+code > span.ot { color: #007020; } /* Other */
+code > span.al { color: #ff0000; font-weight: bold; } /* Alert */
+code > span.fu { color: #06287e; } /* Function */
+code > span.er { color: #ff0000; font-weight: bold; } /* Error */
+code > span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+code > span.cn { color: #880000; } /* Constant */
+code > span.sc { color: #4070a0; } /* SpecialChar */
+code > span.vs { color: #4070a0; } /* VerbatimString */
+code > span.ss { color: #bb6688; } /* SpecialString */
+code > span.im { } /* Import */
+code > span.va { color: #19177c; } /* Variable */
+code > span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+code > span.op { color: #666666; } /* Operator */
+code > span.bu { } /* BuiltIn */
+code > span.ex { } /* Extension */
+code > span.pp { color: #bc7a00; } /* Preprocessor */
+code > span.at { color: #7d9029; } /* Attribute */
+code > span.do { color: #ba2121; font-style: italic; } /* Documentation */
+code > span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+code > span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+  </style>
+  <link rel="stylesheet" type="text/css" media="screen, projection, print"
+    href="./Slidy2/styles/slidy.css" />
+  <script src="./Slidy2/scripts/slidy.js"
+    charset="utf-8" type="text/javascript"></script>
+</head>
+<body>
+<div class="slide titlepage">
+  <h1 class="title">A SAT Solver Implementation</h1>
+  <p class="author">
+Davide Paro
+  </p>
+  <p class="date">May 2018</p>
+</div>
+<div id="parsing" class="slide section level1">
+<h1>Parsing</h1>
+<ol style="list-style-type: decimal">
+<li>Il primo passo consiste nella tokenizzazione della formula ogni singolo carattere viene raggrupato in &quot;tokens&quot; secondo le regole sintattiche definite dal linguaggio. Il linguaggio mette a disposizione la possibilita' di definire commenti.</li>
+<li><p>Una volta generati i &quot;tokens&quot;, si procede alla conversione della formula dalla forma <strong>infissa</strong> (piu' comoda agli umani) in una forma <strong>prefissa</strong> (LISP Notation).</p>
+<pre><code>  (A &amp; B) | C     --&gt;    (| (&amp; A B) C)</code></pre></li>
+<li><p>Si fa uso dell'algoritmo Shunting-Yard fortemente customizzato con estensioni per risolvere il problema in questione. In base a regole di precedenza degli operatori e alle regole sintattiche defininte per il linguaggio verra' generata la notazione prefissa appropriata</p></li>
+</ol>
+</div>
+<div id="ast-generation" class="slide section level1">
+<h1>AST Generation</h1>
+<ol style="list-style-type: decimal">
+<li>Una volta &quot;parsata&quot; la formula in forma prefissa si genera l'albero di sintassi &lt;<strong>AST</strong>&gt;. L'albero di sintassi verra' implementato semplicemente con un semplice STACK.</li>
+<li><p>Segue un analisi semantica e di validita' della formula presente nell'AST. Se erronea, viene rifiutata.</p>
+<p>A &amp; | B e' una formula mal formata -&gt; errore</p></li>
+</ol>
+<p>{{ PICTURES }}</p>
+</div>
+<div id="bruteforce-solver" class="slide section level1">
+<h1>Bruteforce solver</h1>
+<blockquote>
+<p>Genera una truth table</p>
+</blockquote>
+<ol style="list-style-type: decimal">
+<li>In base al numero di letterali trovati all'interno della formula si procede alla generazione di 2^n possibili combinazioni (dove n e' il numero di letterali)</li>
+<li>Grazie al fatto di aver rappresentato l'AST con un semplice stack ci permette di implementare un risolutore che sostanzialmente lavora come una <strong>stack-virtual-machine</strong>. Si procede dal fondo dello stack per ogni letterale/costante si &quot;pusha&quot; il valore in un altro stack <strong>(Virtual Machine Stack)</strong> e per ogni operatore si fa il &quot;pop&quot; del numero necessario di operandi e si &quot;ripusha&quot; il risultato. Alla fine della &quot;evaluation&quot; dell'intero AST in caso di formula ben formata sullo stack delle computazioni rimane solamente un elemento: il risultato della computazione dell'intera formula.</li>
+</ol>
+<p>{{ PICTURES }}</p>
+<p>{{ DEMO }}</p>
+</div>
+<div id="performance-analysis" class="slide section level1">
+<h1>Performance Analysis</h1>
+<ul>
+<li><p>Un risolutore basato su bruteforce comincia a diventare impraticabile gia' con 16 letterali.</p>
+<pre><code>  Esempio: &quot;a1 | a2 | ... | an&quot;</code></pre></li>
+</ul>
+<table>
+<thead>
+<tr class="header">
+<th align="left">N: Numero letterali</th>
+<th align="left">Tempo di computazione</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">15</td>
+<td align="left">6 secondi</td>
+</tr>
+<tr class="even">
+<td align="left">16</td>
+<td align="left">12 secondi</td>
+</tr>
+<tr class="odd">
+<td align="left">17</td>
+<td align="left">27 secondi</td>
+</tr>
+<tr class="even">
+<td align="left">18</td>
+<td align="left">57 secondi</td>
+</tr>
+<tr class="odd">
+<td align="left">19</td>
+<td align="left">121 secondi</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Il tempo di computazione diventa piu' del doppio per ogni letterale</li>
+<li>Il tempo di computazione peggiora ulteriormente se sono presenti sotto-formule coincidenti. Esse vengono valutate piu' volte dal risolutore</li>
+</ul>
+</div>
+<div id="a-better-approach" class="slide section level1">
+<h1>A Better Approach</h1>
+<ul>
+<li>Se ci interessa solamente dimostrare la soddisfacibilita' di una formula logica si puo' utilizzare un algoritmo che fa uso di backtracking.</li>
+<li><strong>SODDISFACIBILITA'</strong>: Si vuole dimostrare se la formula risulta sempre vera indipendentemente dall'assegnamento dei valori di input.</li>
+</ul>
+</div>
+<div id="algoritmo-dpll" class="slide section level1">
+<h1>Algoritmo DPLL</h1>
+<ul>
+<li>Introdotto nel 1962 da Martin Davis, George Logemann, Donald W. Loveland</li>
+<li><p>Algoritmo classico, e usato come base per algoritmi migliori che si sono evoluti da DPLL. Esempio:</p>
+<pre><code>Chaff, zChaff, GRASP</code></pre></li>
+</ul>
+<p>Sono delle implemntazioni piu' performanti e raffinate di <strong>DPLL</strong></p>
+<p><a href="https://en.wikipedia.org/wiki/DPLL_algorithm"><strong>Wikipedia Link</strong></a></p>
+<div class="sourceCode"><pre class="sourceCode ruby"><code class="sourceCode ruby">     <span class="dt">Algorithm</span> <span class="dt">DPLL</span>
+       <span class="dt">Input</span>: A set of clauses K.
+       <span class="dt">Output</span>: A <span class="dt">Truth</span> <span class="dt">Value</span>.
+     ----------------------------------------------
+     function <span class="dt">DPLL</span>(K) {
+        <span class="kw">if</span> K is a consistent set of literals
+            <span class="kw">then</span> <span class="kw">return</span> <span class="dv">true</span>;
+        <span class="kw">if</span> K contains an empty clause
+            <span class="kw">then</span> <span class="kw">return</span> <span class="dv">false</span>;
+        <span class="kw">for</span> every unit clause {l} <span class="kw">in</span> K
+           K ← unit-propagate(l, K);
+        <span class="kw">for</span> every literal l that occurs pure <span class="kw">in</span> K
+           K ← pure-literal-assign(l, K);
+        l ← choose-literal(K);
+        <span class="kw">return</span> <span class="dt">DPLL</span>(K <span class="kw">and</span> {l}) <span class="kw">or</span> <span class="dt">DPLL</span>(K <span class="kw">and</span> {<span class="kw">not</span>(l)});
+     }</code></pre></div>
+</div>
+<div id="cnf-conversion" class="slide section level1">
+<h1>CNF Conversion</h1>
+<ol style="list-style-type: decimal">
+<li><p>Si trasformano tutti gli operatori come funzioni di solamente <strong>AND, OR, NOT</strong></p>
+<pre><code>a ^ b     =   (!a | !b) &amp; (a | b)
+a -&gt; b    =   !a | b
+a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
+</ol>
+<p>Dalla teoria sappiamo che qualsiasi circuito/formula-logica puo' essere sintetizzata solamente con la combinazione di AND, OR, NOT.</p>
+<ol start="2" style="list-style-type: decimal">
+<li><p>Si applica De-Morgan ricorsivamente in modo da &quot;spingere le negazioni in basso&quot;. Alla fine dell'applicazione di De-Morgan si avra' una formula dipendentemente da</p>
+<pre><code>a1, a2, ..., an, !a1, !a2, ...., !an</code></pre>
+<p>In cui le negazioni compaiono solamente precedendo gli input e non &quot;in mezzo alla formula&quot;</p>
+<p>{ IMMAGINE DI ESEMPIO }</p></li>
+<li><p>Si applica una eliminazione di doppia negazione.</p>
+<pre><code>    !!  a  =  a
+    !!! a  = !a</code></pre></li>
+<li><p>Si distribuisce rispetto rispetto all'operatore <strong>OR</strong>:</p>
+<pre><code>P | ( Q &amp; R )   ---&gt;   ( P | Q ) &amp; ( P | R )</code></pre></li>
+<li><p>Alla fine si ottiene una formula a clausole, formate dall'ultimo strato da AND, il secondo strato da OR, e il terzo stato da NOTs. {{ IMMAGINE DI ESEMPIO }} I nodi ORs rappresentano idecisione sul valore di input, mentre le AND affermano decidibilita sull'input.</p>
+<p>Esempio: A &amp; B e' reversibile L'unico modo per avere <strong>true</strong> in output e che in input sia <strong>A</strong> che <strong>B</strong> siano posti ad <strong>true</strong></p></li>
+</ol>
+<p>{{IMMAGINE DI ESEMPIO}}</p>
+</div>
+<div id="dpll-explanation" class="slide section level1">
+<h1>DPLL Explanation</h1>
+<p>DPLL Procede nel seguente modo:</p>
+<ol style="list-style-type: decimal">
+<li><p>Analizza la formula e verifica la presenza di clausole unitarie, ovvero clausole il cui assegnamento e' forzato per fare in modo che la formula sia vera. Esempio:</p>
+<pre><code>   A &amp; !B &amp; (C | D)   A deve necessariamente essere vera
+                      B deve necessariamente essere falsa</code></pre></li>
+<li><p>Trovate tutte le clausole unitarie si forza loro l'assegnamento corretto e si riduce l'albero di sintassi (UNIT PROPAGATION)</p>
+<pre><code>   A &amp; !B &amp; (C | D)  --&gt;   C | D   con assegnamento A = 1, B = 0
+   F &amp; 1             --&gt;   F
+   G | 1             --&gt;   1</code></pre></li>
+</ol>
+<blockquote>
+<p>Lo unit propagation costituisce la parte piu' complessa e il cuore di tutto l'algoritmo DPLL</p>
+</blockquote>
+<ol start="3" style="list-style-type: decimal">
+<li><p>Gli operatori <strong>OR</strong> denotano indecisione sul valore dell'input. DPLL continua prendendo un letterale a caso, assegnando ad esso rispettivamente il valore <strong>true</strong> riduce l'AST e chiama ricorsivamente di nuovo DPLL. Se la chiamata ricorsiva porta ad insoddisfacimento alla formula, DPLL riassegna al letterale il valore <strong>false</strong> e riprova. (BACKTRACKING).</p></li>
+<li><p>Prima o poi l'albero si sara' ridotto banalmente a:</p>
+<pre><code>  1) true     sicuramente la formula e&#39; soddisfacibile
+  2) false    sicuramente la formula e&#39; insoddisfacibile
+  3) [-]      (formula vuota) insoddisfacibile</code></pre></li>
+<li><p>Le chiamate ricorsive terminano non appena si raggiunge il soddisfacimento. La insoddisfacibilita' della formula invece porta DPLL a ritentare di nuovo.</p></li>
+<li><p>Se DPLL termina tutti gli assegnamenti sui letterali possibili senza raggiungere il soddisfacimento della formula, allora la formula e' insoddisfacibile.</p></li>
+</ol>
+<p>{{ IMMAGINE }} {{ DEMO }}</p>
+</div>
+<div id="proving-theorems-with-dpll" class="slide section level1">
+<h1>Proving Theorems with DPLL</h1>
+<ul>
+<li>Con DPLL e' possibile verificare la tautologia di una formula e di conseguenza dimostrare teoremi.</li>
+<li>Il modo per dimostrare un teorema e' prendere la formula originale aggiungere un nodo <strong>NOT</strong> ovvero negarla e valutare DPLL su di essa.</li>
+</ul>
+<p><strong>(<em>DIMOSTRAZIONE PER ASSURDO</em>)</strong></p>
+<p>Se DPLL applicato su questa nuova formula porta sempre a insoddisfacimento, allora la formula e' sicuramente una tautologia, e quindi il teorema e' dimostrato. Se invece DPLL trova un soddisfacimento per questa formula allora sicuramente la tesi non e' valida. L'algoritmo in questo caso riporta l'assegnamento dei letterali cha hanno causato la non validita' della tesi.</p>
+<p>{{IMMAGINE}} {{DEMO}}</p>
+</div>
+<div id="performance-analysis-1" class="slide section level1">
+<h1>Performance Analysis</h1>
+</div>
+<div id="improving-performance" class="slide section level1">
+<h1>Improving Performance</h1>
+</div>
+</body>
+</html>

@@ -62,7 +62,7 @@ Performance Analysis
 * Un risolutore basato su bruteforce comincia a diventare impraticabile
   gia' con 16 letterali.
   
-          Esempio: "a1 | a2 | ... | an"
+          Esempio: "a1 | a2 | .... | an"
 
   N: Numero letterali        Tempo di computazione
   -------------------        ---------------------
@@ -73,7 +73,7 @@ Performance Analysis
                    19               121 secondi
 
 * Il tempo di computazione diventa piu' del doppio per ogni letterale
-* Il tempo di computazione peggiora drasticamente se sono presenti
+* Il tempo di computazione peggiora ulteriormente se sono presenti
   sotto-formule coincidenti. Esse vengono valutate piu' volte dal
   risolutore
 
@@ -87,8 +87,8 @@ A Better Approach
   di input.
 
 
-DPLL
-====
+Algoritmo DPLL
+==============
 * Introdotto nel 1962 da Martin Davis, George Logemann, Donald W. Loveland
 * Algoritmo classico, e usato come base per algoritmi migliori
   che si sono evoluti da DPLL. Esempio:
@@ -121,9 +121,122 @@ DPLL
 
 CNF Conversion
 ==============
-1. Si trasformano tutti gli operatori come __AND, OR, NOT__
+1. Si trasformano tutti gli operatori come funzioni di
+   solamente __AND, OR, NOT__
         
-        a ^ b   = 
-        a -> b  = 
-        a <-> b = ~(a ^ b) = 
+        a ^ b     =   (!a | !b) & (a | b)
+        a -> b    =   !a | b
+        a <-> b   =   !(a ^ b)  =  !((!a | !b) & (a | b))
+        
+   Dalla teoria sappiamo che qualsiasi circuito/formula-logica
+   puo' essere sintetizzata solamente con la combinazione di 
+   AND, OR, NOT.
+   
+
+2. Si applica De-Morgan ricorsivamente in modo da "spingere le negazioni in basso".
+   Alla fine dell'applicazione di De-Morgan si avra' una formula dipendentemente
+   da 
+
+        a1, a2, ...., an, !a1, !a2, ...., !an
+        
+    In cui le negazioni compaiono solamente precedendo gli input e non "in mezzo alla formula"
+    
+    { IMMAGINE DI ESEMPIO }
+
+3. Si applica una eliminazione di doppia negazione.
+   
+            !!  a  =  a
+            !!! a  = !a
+
+4. Si distribuisce rispetto rispetto all'operatore __OR__:
+
+        P | ( Q & R )   --->   ( P | Q ) & ( P | R )
+
+5. Alla fine si ottiene una formula a clausole, formate dall'ultimo strato
+   da AND, il secondo strato da OR, e il terzo stato da NOTs.
+   {{ IMMAGINE DI ESEMPIO }}
+   I nodi ORs rappresentano idecisione sul valore di input, mentre
+   le AND affermano decidibilita sull'input.
+   
+       Esempio: A & B  e' reversibile
+                L'unico modo per avere **true** in output e che in input 
+                sia **A** che **B** siano posti ad **true**
+   
+   {{IMMAGINE DI ESEMPIO}}
+   
+   
+DPLL Explanation
+================
+DPLL Procede nel seguente modo:
+
+1. Analizza la formula e verifica la presenza di clausole unitarie,
+   ovvero clausole il cui assegnamento e' forzato per fare in modo
+   che la formula sia vera. Esempio:
+       
+           A & !B & (C | D)   A deve necessariamente essere vera
+                              B deve necessariamente essere falsa
+
+2. Trovate tutte le clausole unitarie si forza loro l'assegnamento
+   corretto e si riduce l'albero di sintassi (UNIT PROPAGATION)
+       
+           A & !B & (C | D)  -->   C | D   con assegnamento A = 1, B = 0
+           F & 1             -->   F
+           G | 1             -->   1
+   
+   > Lo unit propagation costituisce la parte piu' complessa
+   > e il cuore di tutto l'algoritmo DPLL
+           
+3. Gli operatori **OR** denotano indecisione sul valore dell'input.
+   DPLL continua prendendo un letterale a caso, assegnando
+   ad esso rispettivamente il valore __true__ riduce l'AST
+   e chiama ricorsivamente di nuovo DPLL. Se la chiamata ricorsiva
+   porta ad insoddisfacimento alla formula, DPLL riassegna al
+   letterale il valore __false__ e riprova. (BACKTRACKING).
+       
+4. Prima o poi l'albero si sara' ridotto banalmente a:
+        
+          1) true     sicuramente la formula e' soddisfacibile
+          2) false    sicuramente la formula e' insoddisfacibile
+          3) [-]      (formula vuota) insoddisfacibile
+       
+5. Le chiamate ricorsive terminano non appena si raggiunge il soddisfacimento.
+   La insoddisfacibilita' della formula invece porta DPLL a ritentare di nuovo.
+   
+6. Se DPLL termina tutti gli assegnamenti sui letterali possibili senza raggiungere
+   il soddisfacimento della formula, allora la formula e' insoddisfacibile.
+
+
+{{ IMMAGINE }}
+{{ DEMO }}
+
+
+Proving Theorems with DPLL
+==========================
+* Con DPLL e' possibile verificare la tautologia di una formula
+  e di conseguenza dimostrare teoremi.
+* Il modo per dimostrare un teorema e' prendere la formula
+  originale aggiungere un nodo **NOT** ovvero negarla e valutare
+  DPLL su di essa. 
+  
+  **(*DIMOSTRAZIONE PER ASSURDO*)**
+  
+  Se DPLL applicato su questa nuova formula porta sempre a
+  insoddisfacimento, allora la formula e' sicuramente una tautologia,
+  e quindi il teorema e' dimostrato.
+  Se invece DPLL trova un soddisfacimento per questa formula
+  allora sicuramente la tesi non e' valida.
+  L'algoritmo in questo caso riporta l'assegnamento dei letterali
+  cha hanno causato la non validita' della tesi.
+  
+{{IMMAGINE}}
+{{DEMO}}
+
+Performance Analysis
+====================
+
+
+
+
+Improving Performance
+=====================
 
