@@ -87,7 +87,7 @@ A Better Approach
   di input.
 
 
-Algoritmo DPLL
+DPLL Algorithm
 ==============
 * Introdotto nel 1962 da Martin Davis, George Logemann, Donald W. Loveland
 * Algoritmo classico, e usato come base per algoritmi migliori
@@ -132,6 +132,9 @@ CNF Conversion
    puo' essere sintetizzata solamente con la combinazione di 
    AND, OR, NOT.
    
+        Esempio: A <-> B
+   ![](dot/formula_op_conv.png)
+        
 
 2. Si applica De-Morgan ricorsivamente in modo da "spingere le negazioni in basso".
    Alla fine dell'applicazione di De-Morgan si avra' una formula dipendentemente
@@ -141,14 +144,16 @@ CNF Conversion
         
     In cui le negazioni compaiono solamente precedendo gli input e non "in mezzo alla formula"
     
-    { IMMAGINE DI ESEMPIO }
+    ![](dot/formula_demorgan.png)
 
 3. Si applica una eliminazione di doppia negazione.
    
             !!  a  =  a
             !!! a  = !a
+            
+    ![](dot/formula_neg_elim.png)
 
-4. Si distribuisce rispetto rispetto all'operatore __OR__:
+4. Si distribuisce rispetto all'operatore __OR__:
 
         P | ( Q & R )   --->   ( P | Q ) & ( P | R )
 

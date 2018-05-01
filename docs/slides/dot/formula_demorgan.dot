@@ -1,0 +1,32 @@
+// Demorgan of the formula "A <-> B"
+graph G  {
+    graph [fontname = "Hack"];
+    node  [fontname = "Hack"];
+    edge  [fontname = "Hack"];
+    a1  [ label = "A", fillcolor = "#EEEEFF", style="filled", shape = "box"];
+    b1  [ label = "B", fillcolor = "#EEEEFF", style="filled", shape = "box"];
+    a2  [ label = "A", fillcolor = "#EEEEFF", style="filled", shape = "box"];
+    b2  [ label = "B", fillcolor = "#EEEEFF", style="filled", shape = "box"];
+
+    or0 [label = "|", fillcolor = "#EEEEFF", style="filled"];
+    and1 [label = "&", fillcolor = "#EEEEFF", style="filled"];
+    and2 [label = "&", fillcolor = "#EEEEFF", style="filled"];
+    not1 [label = "~", fillcolor = "#EEEEFF", style="filled"];
+    not2 [label = "~", fillcolor = "#EEEEFF", style="filled"];
+    not3 [label = "~", fillcolor = "#EEEEFF", style="filled"];
+    not4 [label = "~", fillcolor = "#EEEEFF", style="filled"];
+
+    not5 [label = "~", fillcolor = "#EEEEFF", style="filled"];
+    not6 [label = "~", fillcolor = "#EEEEFF", style="filled"];
+
+    or0 -- { and1 and2 };
+    and1 -- { not1 not2 };
+    not1 -- not3;
+    not3 -- a1;
+    not2 -- not4;
+    not4 -- b1;
+
+    and2 -- { not5 not6 };
+    not5 -- a2;
+    not6 -- b2;
+}

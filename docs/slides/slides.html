@@ -93,7 +93,7 @@ Davide Paro
 <h1>Performance Analysis</h1>
 <ul>
 <li><p>Un risolutore basato su bruteforce comincia a diventare impraticabile gia' con 16 letterali.</p>
-<pre><code>  Esempio: &quot;a1 | a2 | ... | an&quot;</code></pre></li>
+<pre><code>  Esempio: &quot;a1 | a2 | .... | an&quot;</code></pre></li>
 </ul>
 <table>
 <thead>
@@ -137,8 +137,8 @@ Davide Paro
 <li><strong>SODDISFACIBILITA'</strong>: Si vuole dimostrare se la formula risulta sempre vera indipendentemente dall'assegnamento dei valori di input.</li>
 </ul>
 </div>
-<div id="algoritmo-dpll" class="slide section level1">
-<h1>Algoritmo DPLL</h1>
+<div id="dpll-algorithm" class="slide section level1">
+<h1>DPLL Algorithm</h1>
 <ul>
 <li>Introdotto nel 1962 da Martin Davis, George Logemann, Donald W. Loveland</li>
 <li><p>Algoritmo classico, e usato come base per algoritmi migliori che si sono evoluti da DPLL. Esempio:</p>
@@ -172,15 +172,27 @@ a -&gt; b    =   !a | b
 a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 </ol>
 <p>Dalla teoria sappiamo che qualsiasi circuito/formula-logica puo' essere sintetizzata solamente con la combinazione di AND, OR, NOT.</p>
+<pre><code>    Esempio: A &lt;-&gt; B</code></pre>
+<div class="figure">
+<img src="dot/formula_op_conv.png" />
+
+</div>
 <ol start="2" style="list-style-type: decimal">
 <li><p>Si applica De-Morgan ricorsivamente in modo da &quot;spingere le negazioni in basso&quot;. Alla fine dell'applicazione di De-Morgan si avra' una formula dipendentemente da</p>
-<pre><code>a1, a2, ..., an, !a1, !a2, ...., !an</code></pre>
+<pre><code>a1, a2, ...., an, !a1, !a2, ...., !an</code></pre>
 <p>In cui le negazioni compaiono solamente precedendo gli input e non &quot;in mezzo alla formula&quot;</p>
-<p>{ IMMAGINE DI ESEMPIO }</p></li>
+<div class="figure">
+<img src="dot/formula_demorgan.png" />
+
+</div></li>
 <li><p>Si applica una eliminazione di doppia negazione.</p>
 <pre><code>    !!  a  =  a
-    !!! a  = !a</code></pre></li>
-<li><p>Si distribuisce rispetto rispetto all'operatore <strong>OR</strong>:</p>
+    !!! a  = !a</code></pre>
+<div class="figure">
+<img src="dot/formula_neg_elim.png" />
+
+</div></li>
+<li><p>Si distribuisce rispetto all'operatore <strong>OR</strong>:</p>
 <pre><code>P | ( Q &amp; R )   ---&gt;   ( P | Q ) &amp; ( P | R )</code></pre></li>
 <li><p>Alla fine si ottiene una formula a clausole, formate dall'ultimo strato da AND, il secondo strato da OR, e il terzo stato da NOTs. {{ IMMAGINE DI ESEMPIO }} I nodi ORs rappresentano idecisione sul valore di input, mentre le AND affermano decidibilita sull'input.</p>
 <p>Esempio: A &amp; B e' reversibile L'unico modo per avere <strong>true</strong> in output e che in input sia <strong>A</strong> che <strong>B</strong> siano posti ad <strong>true</strong></p></li>
@@ -190,6 +202,7 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <div id="dpll-explanation" class="slide section level1">
 <h1>DPLL Explanation</h1>
 <p>DPLL Procede nel seguente modo:</p>
+<h2 id="suca">Suca</h2>
 <ol style="list-style-type: decimal">
 <li><p>Analizza la formula e verifica la presenza di clausole unitarie, ovvero clausole il cui assegnamento e' forzato per fare in modo che la formula sia vera. Esempio:</p>
 <pre><code>   A &amp; !B &amp; (C | D)   A deve necessariamente essere vera
