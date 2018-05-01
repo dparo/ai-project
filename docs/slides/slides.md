@@ -132,8 +132,11 @@ CNF Conversion
    puo' essere sintetizzata solamente con la combinazione di 
    AND, OR, NOT.
    
-        Esempio: A <-> B
+       Esempio: A <-> B
+       
    ![](dot/formula_op_conv.png)
+   
+   Perfetto
         
 
 2. Si applica De-Morgan ricorsivamente in modo da "spingere le negazioni in basso".
@@ -142,25 +145,30 @@ CNF Conversion
 
         a1, a2, ...., an, !a1, !a2, ...., !an
         
-    In cui le negazioni compaiono solamente precedendo gli input e non "in mezzo alla formula"
+   In cui le negazioni compaiono solamente precedendo gli input e non "in mezzo alla formula"
     
-    ![](dot/formula_demorgan.png)
+   ![](dot/formula_demorgan.png)
 
-3. Si applica una eliminazione di doppia negazione.
+3. Si applica una eliminazione della doppia negazione.
    
             !!  a  =  a
             !!! a  = !a
             
-    ![](dot/formula_neg_elim.png)
+   ![](dot/formula_neg_elim.png)
 
 4. Si distribuisce rispetto all'operatore __OR__:
 
         P | ( Q & R )   --->   ( P | Q ) & ( P | R )
+   ![](dot/formula_or_distrib.png)
+   
+       Notare la ridondanza di molti di questi nodi.
 
 5. Alla fine si ottiene una formula a clausole, formate dall'ultimo strato
    da AND, il secondo strato da OR, e il terzo stato da NOTs.
+   
    {{ IMMAGINE DI ESEMPIO }}
-   I nodi ORs rappresentano idecisione sul valore di input, mentre
+   
+   I nodi ORs rappresentano indecisione sul valore di input, mentre
    le AND affermano decidibilita sull'input.
    
        Esempio: A & B  e' reversibile

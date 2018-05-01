@@ -1,0 +1,49 @@
+// Demorgan of the formula "A <-> B"
+graph G  {
+    graph [fontname = "Hack"];
+    node  [fontname = "Hack"];
+    edge  [fontname = "Hack"];
+
+    a1  [ label = "A", fillcolor = "#EEEEFF", style="filled", shape = "box"];
+    a2  [ label = "A", fillcolor = "#EEEEFF", style="filled", shape = "box"];
+    a3  [ label = "A", fillcolor = "#EEEEFF", style="filled", shape = "box"];
+    a4  [ label = "A", fillcolor = "#EEEEFF", style="filled", shape = "box"];
+
+    b1  [ label = "B", fillcolor = "#EEEEFF", style="filled", shape = "box"];
+    b2  [ label = "B", fillcolor = "#EEEEFF", style="filled", shape = "box"];
+    b3  [ label = "B", fillcolor = "#EEEEFF", style="filled", shape = "box"];
+    b4  [ label = "B", fillcolor = "#EEEEFF", style="filled", shape = "box"];
+
+
+
+    not1 [label = "~", fillcolor = "#EEEEFF", style="filled"];
+    not2 [label = "~", fillcolor = "#EEEEFF", style="filled"];
+    not3 [label = "~", fillcolor = "#EEEEFF", style="filled"];
+    not4 [label = "~", fillcolor = "#EEEEFF", style="filled"];
+
+    or1 [label = "|", fillcolor = "#EEEEFF", style="filled"];
+    or2 [label = "|", fillcolor = "#EEEEFF", style="filled"];
+    or3 [label = "|", fillcolor = "#EEEEFF", style="filled"];
+    or4 [label = "|", fillcolor = "#EEEEFF", style="filled"];
+    
+    and2 [label = "&", fillcolor = "#EEEEFF", style="filled"];
+    and3 [label = "&", fillcolor = "#EEEEFF", style="filled"];
+    and4 [label = "&", fillcolor = "#EEEEFF", style="filled"];
+
+
+    and2 -- { and3 and4 };
+    and3 -- { or1 or2 };
+
+    or1 -- { b1 not1 };
+    not1 -- b2;
+
+    or2 -- {a1 not2};
+    not2 -- b3;
+    
+    and4 -- { or3 or4 };
+    or3 -- { b4 not3 };
+    not3 -- a2;
+    
+    or4 -- { a3 not4 };
+    not4 -- a4;
+}
