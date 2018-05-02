@@ -1,14 +1,19 @@
-# Slides usage
-* The slides can just be opened with a web-browser;
-  Open with your favourite web-browser slides.html
+# Viewing the slides
+* The slides can just be opened with a web-browser.
+  Just open `slides.html` with your favourite web-browser.
   
   
 # Modifying and building the slides
+* The slides are simply constructed with simple markdown file: `slides.md`.
+  You will need pandoc to convert the markdown file `.md` to
+  a `.html` file used for viewing the slides.
+  (Yes exactly, no PowerPoint bullshit. Praise the Shell)
 * Download pandoc from (Pandoc Website)[https://pandoc.org/index.html]
   or if you're on any Debian based distro `sudo apt install pandoc`
-* run `build.sh`
+* run `build.sh` to compile the slides
 * **NOTE**: Graphviz `dot` program is required to compile the graphs
-  representation used for the slides. You don't need to install it.
+  representation used for the slides. You don't need to install it,
+  it is optional.
   On Debian-based distros: `sudo apt install graphviz`
 
 # PDF Output (Optional)
