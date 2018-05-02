@@ -175,7 +175,7 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <pre><code>   Esempio: A &lt;-&gt; B
    </code></pre>
 <div class="figure">
-<img src="dot/formula_op_conv.png" />
+<img src="imgs/formula_op_conv.png" />
 
 </div>
 <p>Perfetto</p>
@@ -185,29 +185,32 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 </ol>
 <p>In cui le negazioni compaiono solamente precedendo gli input e non &quot;in mezzo alla formula&quot;</p>
 <div class="figure">
-<img src="dot/formula_demorgan.png" />
+<img src="imgs/formula_demorgan.png" />
 
 </div>
 <ol start="3" style="list-style-type: decimal">
-<li><p>Si applica una eliminazione di doppia negazione.</p>
+<li><p>Si applica una eliminazione della doppia negazione.</p>
 <pre><code>    !!  a  =  a
     !!! a  = !a</code></pre></li>
 </ol>
 <div class="figure">
-<img src="dot/formula_neg_elim.png" />
+<img src="imgs/formula_neg_elim.png" />
 
 </div>
 <ol start="4" style="list-style-type: decimal">
 <li><p>Si distribuisce rispetto all'operatore <strong>OR</strong>:</p>
 <pre><code>P | ( Q &amp; R )   ---&gt;   ( P | Q ) &amp; ( P | R )</code></pre>
 <div class="figure">
-<img src="dot/formula_or_distrib.png" />
+<img src="imgs/formula_or_distrib.png" />
 
 </div>
-<p>Notare la ridondanza di molti di questi nodi.</p></li>
+<p>Notare la ridondanza di alcuni nodi.</p></li>
 <li><p>Alla fine si ottiene una formula a clausole, formate dall'ultimo strato da AND, il secondo strato da OR, e il terzo stato da NOTs.</p></li>
 </ol>
-<p>{{ IMMAGINE DI ESEMPIO }}</p>
+<div class="figure">
+<img src="imgs/cnf_structure.png" />
+
+</div>
 <p>I nodi ORs rappresentano indecisione sul valore di input, mentre le AND affermano decidibilita sull'input.</p>
 <pre><code>   Esempio: A &amp; B  e&#39; reversibile
             L&#39;unico modo per avere **true** in output e che in input 

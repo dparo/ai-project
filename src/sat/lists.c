@@ -29,6 +29,12 @@
 //#######################################################
 
 
+/*******************
+  WORK IN PROGRESS
+ (PROBABLY WILL NEVER
+  BE FINISHED)
+********************/
+
 /* 
 list definition
 ===============
@@ -47,7 +53,6 @@ the hash-map for that symbol
 #define LIST_T_MAX_NAME_LEN 256
 typedef struct list_t {
     char name[LIST_T_MAX_NAME_LEN];
-    // The dictionary contains unpositional literals inside the list
     stb_sdict *dict;
 } list_t;
 
@@ -57,7 +62,7 @@ list_create( char *name,
              size_t name_len )
 {
     
-    // @TODO: Add this list to the list talbe, push into some stack, and make it indexed with a hashmap
+    // @TODO: Add this list to the list table, push into some stack, and make it indexed with a hashmap
     
     list_t list;
     list.dict = stb_sdict_new(1);

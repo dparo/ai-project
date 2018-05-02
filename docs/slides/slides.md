@@ -134,7 +134,7 @@ CNF Conversion
    
        Esempio: A <-> B
        
-   ![](dot/formula_op_conv.png)
+   ![](imgs/formula_op_conv.png)
    
    Perfetto
         
@@ -147,26 +147,26 @@ CNF Conversion
         
    In cui le negazioni compaiono solamente precedendo gli input e non "in mezzo alla formula"
     
-   ![](dot/formula_demorgan.png)
+   ![](imgs/formula_demorgan.png)
 
 3. Si applica una eliminazione della doppia negazione.
    
             !!  a  =  a
             !!! a  = !a
             
-   ![](dot/formula_neg_elim.png)
+   ![](imgs/formula_neg_elim.png)
 
 4. Si distribuisce rispetto all'operatore __OR__:
 
         P | ( Q & R )   --->   ( P | Q ) & ( P | R )
-   ![](dot/formula_or_distrib.png)
+   ![](imgs/formula_or_distrib.png)
    
-       Notare la ridondanza di molti di questi nodi.
+       Notare la ridondanza di alcuni nodi.
 
 5. Alla fine si ottiene una formula a clausole, formate dall'ultimo strato
    da AND, il secondo strato da OR, e il terzo stato da NOTs.
    
-   {{ IMMAGINE DI ESEMPIO }}
+   ![](imgs/cnf_structure.png)
    
    I nodi ORs rappresentano indecisione sul valore di input, mentre
    le AND affermano decidibilita sull'input.

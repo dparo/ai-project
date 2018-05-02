@@ -186,7 +186,6 @@ main( int argc, char **argv)
     EVAL_COMMANDLINE_INPLACE("a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n | m & o ^ q");
 
 
-
     //EVAL_COMMANDLINE_INPLACE("a | b");
     
 
