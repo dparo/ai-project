@@ -53,7 +53,10 @@ Bruteforce solver
    sullo stack delle computazioni rimane solamente un elemento:
    il risultato della computazione dell'intera formula.
 
-{{ PICTURES }}
+        FORMULA:      (| C (& A B))
+        ASSEGNAMENTO: [A = 0, B = 1, C = 1]
+        
+   ![](imgs/ast_stack.gif)
 
 {{ DEMO }}
 
