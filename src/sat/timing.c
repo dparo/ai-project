@@ -39,19 +39,6 @@
 #include <time.h>
 
     
-
-
-
-#if 0
-int clock_gettime(clockid_t clk_id, struct timespec *ts);
-
-struct timespec {
-    time_t   tv_sec;        /* seconds */
-    long     tv_nsec;       /* nanoseconds */
-};
-
-#endif
-
 struct timing {
     struct timespec ts;
 };

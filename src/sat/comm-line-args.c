@@ -111,8 +111,8 @@ argp_parser (int key, char *arg, struct argp_state *state)
         // Command line reading was successfull
         commline_dbglog("ARGP_KEY_SUCCESS\n");
     } else if ( key == ARGP_KEY_FINI ) {
-        // Final time this function will ever get called
-        // can do free's here
+        // Last time this function will ever get called
+        // can do free's and cleanup's here
         commline_dbglog("ARGP_KEY_FINI\n");
     } else {
         switch (key) {

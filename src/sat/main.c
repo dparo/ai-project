@@ -125,7 +125,7 @@ fatal(char *fmt, ...)
 #include <readline/readline.h>
 #include <readline/history.h>
 
-// the formula is null terminated with necessary space for null termination
+
 void
 user_interact(char **commandline, size_t *commandline_len)
 {
@@ -178,41 +178,10 @@ main( int argc, char **argv)
     char * commandline = NULL;
     size_t commandline_len = 0;
 
-
-    // @NOTE: This theorem prover: ~(a & b) == (~a | ~b) works
-    //        This does not  --->  ~(a | b) == (~a & ~b)
-   
 #if 0
+    // Turn this branching on for quick testing of a specific formula,
+    // Fast easy debugging
     EVAL_COMMANDLINE_INPLACE("a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n | m & o ^ q");
-
-
-    //EVAL_COMMANDLINE_INPLACE("a | b");
-    
-
-    //EVAL_COMMANDLINE_INPLACE("a & b");
-    
-
-    //EVAL_COMMANDLINE_INPLACE("~(a | b) == (~a & ~b)");
-    //EVAL_COMMANDLINE_INPLACE("~(a & b) == (~a | ~b)");
-
-
-    //EVAL_COMMANDLINE_INPLACE ("a & 0");
-    //EVAL_COMMANDLINE_INPLACE ("0 & 0");
-    //EVAL_COMMANDLINE_INPLACE ("(~(a | b)) == (~a & ~b)");
-    //EVAL_COMMANDLINE_INPLACE ("0 | 0");
-    //EVAL_COMMANDLINE_INPLACE ("1 | 0");
-    //EVAL_COMMANDLINE_INPLACE ("0 | 1");
-    
-    //EVAL_COMMANDLINE_INPLACE ("a = f | (b, c)");
-
-    //EVAL_COMMANDLINE_INPLACE ("a = f(b, c)");
-
-
-    // EVAL_COMMANDLINE_INPLACE ("(a ~| b)");
-    //EVAL_COMMANDLINE_INPLACE ("(a <-> b) == (a == b)");
-    //EVAL_COMMANDLINE_INPLACE ("a = {b, c & d, e}");
-    //EVAL_COMMANDLINE_INPLACE ("(#x a) & b");
-    //EVAL_COMMANDLINE_INPLACE ("a & (#x b)");
 #else
     while ( 1 ) {
         if ( commandline ) { free(commandline); commandline_len = 0; }
