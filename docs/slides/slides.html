@@ -62,10 +62,10 @@ Davide Paro
 <div id="parsing" class="slide section level1">
 <h1>Parsing</h1>
 <ol style="list-style-type: decimal">
-<li>Il primo passo consiste nella tokenizzazione della formula ogni singolo carattere viene raggrupato in &quot;tokens&quot; secondo le regole sintattiche definite dal linguaggio. Il linguaggio mette a disposizione la possibilita' di definire commenti.</li>
+<li><p>Il primo passo consiste nella <strong>tokenizzazione</strong> della formula. Ogni singolo carattere viene raggruppato in &quot;tokens&quot; secondo le regole sintattiche definite dal linguaggio.</p></li>
 <li><p>Una volta generati i &quot;tokens&quot;, si procede alla conversione della formula dalla forma <strong>infissa</strong> (piu' comoda agli umani) in una forma <strong>prefissa</strong> (LISP Notation).</p>
 <pre><code>  (A &amp; B) | C     --&gt;    (| (&amp; A B) C)</code></pre></li>
-<li><p>Si fa uso dell'algoritmo Shunting-Yard fortemente customizzato con estensioni per risolvere il problema in questione. In base a regole di precedenza degli operatori e alle regole sintattiche defininte per il linguaggio verra' generata la notazione prefissa appropriata</p></li>
+<li><p>Si fa uso dell'algoritmo <strong>Shunting-Yard</strong> fortemente customizzato con estensioni per risolvere il problema in questione. In base a regole di precedenza degli operatori e alle regole sintattiche definite per il linguaggio verra' generata la notazione prefissa appropriata.</p></li>
 </ol>
 </div>
 <div id="ast-generation" class="slide section level1">
@@ -73,9 +73,14 @@ Davide Paro
 <ol style="list-style-type: decimal">
 <li>Una volta &quot;parsata&quot; la formula in forma prefissa si genera l'albero di sintassi &lt;<strong>AST</strong>&gt;. L'albero di sintassi verra' implementato semplicemente con un semplice STACK.</li>
 <li><p>Segue un analisi semantica e di validita' della formula presente nell'AST. Se erronea, viene rifiutata.</p>
-<p>A &amp; | B e' una formula mal formata -&gt; errore</p></li>
+<pre><code>  A &amp; | B   e&#39; una formula mal formata -&gt; errore</code></pre></li>
+<li><p>Una volta verificata la validita' della formula se ne estraggono i vari simboli/letterali/identificatori e si usano per costruire una <strong>Symbol Table</strong>. (Esattamente come un compilatore)</p>
+<pre><code>  FORMULA:      (| (&amp; A B) C) </code></pre>
+<div class="figure">
+<img src="imgs/generated_ast.png" />
+
+</div></li>
 </ol>
-<p>{{ PICTURES }}</p>
 </div>
 <div id="bruteforce-solver" class="slide section level1">
 <h1>Bruteforce solver</h1>
@@ -84,9 +89,14 @@ Davide Paro
 </blockquote>
 <ol style="list-style-type: decimal">
 <li>In base al numero di letterali trovati all'interno della formula si procede alla generazione di 2^n possibili combinazioni (dove n e' il numero di letterali)</li>
-<li>Grazie al fatto di aver rappresentato l'AST con un semplice stack ci permette di implementare un risolutore che sostanzialmente lavora come una <strong>stack-virtual-machine</strong>. Si procede dal fondo dello stack per ogni letterale/costante si &quot;pusha&quot; il valore in un altro stack <strong>(Virtual Machine Stack)</strong> e per ogni operatore si fa il &quot;pop&quot; del numero necessario di operandi e si &quot;ripusha&quot; il risultato. Alla fine della &quot;evaluation&quot; dell'intero AST in caso di formula ben formata sullo stack delle computazioni rimane solamente un elemento: il risultato della computazione dell'intera formula.</li>
+<li><p>Grazie al fatto di aver rappresentato l'AST con un semplice stack ci permette di implementare un risolutore che sostanzialmente lavora come una <strong>stack-virtual-machine</strong>. Si procede dal fondo dello stack per ogni letterale/costante si &quot;pusha&quot; il valore in un altro stack <strong>(Virtual Machine Stack)</strong> e per ogni operatore si fa il &quot;pop&quot; del numero necessario di operandi e si &quot;ripusha&quot; il risultato. Alla fine della &quot;evaluation&quot; dell'intero AST in caso di formula ben formata sullo stack delle computazioni rimane solamente un elemento: il risultato della computazione dell'intera formula.</p>
+<pre><code>FORMULA:      (| (&amp; A B) C)
+ASSEGNAMENTO: [A = 0, B = 1, C = 1]</code></pre></li>
 </ol>
-<p>{{ PICTURES }}</p>
+<div class="figure">
+<img src="imgs/ast_stack.gif" />
+
+</div>
 <p>{{ DEMO }}</p>
 </div>
 <div id="performance-analysis" class="slide section level1">
@@ -129,6 +139,7 @@ Davide Paro
 <li>Il tempo di computazione diventa piu' del doppio per ogni letterale</li>
 <li>Il tempo di computazione peggiora ulteriormente se sono presenti sotto-formule coincidenti. Esse vengono valutate piu' volte dal risolutore</li>
 </ul>
+<p><a href="./imgs/bruteforce_unusable_output.html" target="_blank"><strong>Bruteforce Unusable Output</strong></a></p>
 </div>
 <div id="a-better-approach" class="slide section level1">
 <h1>A Better Approach</h1>
@@ -144,7 +155,7 @@ Davide Paro
 <li><p>Algoritmo classico, e usato come base per algoritmi migliori che si sono evoluti da DPLL. Esempio:</p>
 <pre><code>Chaff, zChaff, GRASP</code></pre></li>
 </ul>
-<p>Sono delle implemntazioni piu' performanti e raffinate di <strong>DPLL</strong></p>
+<p>Sono delle implementazioni piu' performanti e raffinate di <strong>DPLL</strong></p>
 <p><a href="https://en.wikipedia.org/wiki/DPLL_algorithm"><strong>Wikipedia Link</strong></a></p>
 <div class="sourceCode"><pre class="sourceCode ruby"><code class="sourceCode ruby">     <span class="dt">Algorithm</span> <span class="dt">DPLL</span>
        <span class="dt">Input</span>: A set of clauses K.
@@ -178,7 +189,6 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <img src="imgs/formula_op_conv.png" />
 
 </div>
-<p>Perfetto</p>
 <ol start="2" style="list-style-type: decimal">
 <li><p>Si applica De-Morgan ricorsivamente in modo da &quot;spingere le negazioni in basso&quot;. Alla fine dell'applicazione di De-Morgan si avra' una formula dipendentemente da</p>
 <pre><code>a1, a2, ...., an, !a1, !a2, ...., !an</code></pre></li>

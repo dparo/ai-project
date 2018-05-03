@@ -86,7 +86,7 @@ Performance Analysis
   sotto-formule coincidenti. Esse vengono valutate piu' volte dal
   risolutore
 
-[<__Bruteforce Unusable Output__>](./imgs/bruteforce_unusable_output.html){target="_blank"}
+  [**Bruteforce Unusable Output**](./imgs/bruteforce_unusable_output.html){target="_blank"}
 
 A Better Approach
 =================
