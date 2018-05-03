@@ -88,4 +88,43 @@
   * Verify if the formula is always `true` indipendently on the interpretation
     of the input values. (Theorem Prover Solver)
     
+# Having fun with the REPL
+* Let's prove if De-Morgan was right altogether when he revised his own laws
   
+  First we will prove it using bruteforcing method. Run:
+  
+  ```
+  ./bin/pci --solver=bf
+  ```
+  
+  In the REPL type the De-Morgan Law: `~(a | b) == (~a & ~b)`
+  
+  In the Result column of the generated table you should see
+  only `1's`.
+  
+  **NOTE**: The columns are only `tab` separated and they are not
+  aligned. While this makes reading the result more difficult, it 
+  allows for simpler spreadsheet import and generation of `.csv` files,
+  which is required anyway when the formula starts to have more than
+  2 or 3 literals.
+
+## There's gotta be a better way !
+* Yes, the interpreter has a special solver for proving `laws` and `theorems`.
+  Run the interpreter with:
+  ```
+  ./bin/pci --solver=th
+  ```
+  
+  Now in the REPL retype the same formula `~(a | b) == (~a & ~b)`.
+  
+  The interpreter will output a nice colorfull green message
+  saying that the theorem was proven successfully. It also
+  prints some usefull information like the amount of time
+  it took for doing the required computations.
+
+# What now?
+* I don't know, keep having fun with it. Implement new features
+  for the interpreter like lists or support for propositional calculus.
+  Or write a circuit synthetizer that uses this program
+  as a backend to prove the circuit validity. 
+  **Sky is the limit my friend...**

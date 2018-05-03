@@ -45,6 +45,8 @@
 
   - https://en.wikipedia.org/wiki/Recursive_descent_parser ( PROPER WAY TO IMPLEMENT THE PARSER: NOT THE CASE FOR THIS PROJECT )
 
-* Introduzione
-  - BLAH BLAH
-    
+* zChaff Papers
+- https://www.princeton.edu/~chaff/publication.html
+- http://www.princeton.edu/~chaff/publication/DAC2001v56.pdf
+- https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7225110
+- https://www.princeton.edu/~chaff/publication/iccad2001_final.pdf

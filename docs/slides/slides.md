@@ -41,8 +41,8 @@ AST Generation
           FORMULA:      (| (& A B) C) 
     ![](imgs/generated_ast.png)
 
-Bruteforce solver
-=================
+BruteForce Solver (BF)
+======================
 > Genera una truth table
 
 1. In base al numero di letterali trovati all'interno della
@@ -66,8 +66,8 @@ Bruteforce solver
 
 {{ DEMO }}
 
-Performance Analysis
-=====================
+BF: Performance Analysis
+========================
 * Un risolutore basato su bruteforce comincia a diventare impraticabile
   gia' con 16 letterali.
   
@@ -191,6 +191,17 @@ CNF Conversion
    
    {{IMMAGINE DI ESEMPIO}}
    
+Why CNF Form?
+=============
+* La formula a CNF essendo formata da operatori `&` presenti solo in
+  "cima", permette di dividere la verifica dell'intera soddisfacibilita'
+  della formula nella verifica seperata della soddisfacibilita' delle
+  singole clausole (Minore branching factor e parallelizzabile).
+  
+  Infatti l'operatore `&` e' iniettivo quando si impone la condizione
+  che l'output deve essere `vero`. Cio' permette di propagare
+  il valore ai sotto-alberi che formano l'intera formula.
+   
    
 DPLL Explanation
 ================
@@ -214,9 +225,11 @@ DPLL Procede nel seguente modo:
    > e il cuore di tutto l'algoritmo DPLL
            
 3. Gli operatori **OR** denotano indecisione sul valore dell'input.
+   DPLL ora deve prendere una **decisione**.
    DPLL continua prendendo un letterale a caso, assegnando
-   ad esso rispettivamente il valore __true__ riduce l'AST
-   e chiama ricorsivamente di nuovo DPLL. Se la chiamata ricorsiva
+   ad esso rispettivamente il valore __true__ riduce l'AST con
+   un **unit-propagate**
+   e chiama ricorsivamente DPLL di nuovo. Se la chiamata ricorsiva
    porta ad insoddisfacimento alla formula, DPLL riassegna al
    letterale il valore __false__ e riprova. (BACKTRACKING).
        
@@ -241,6 +254,8 @@ Proving Theorems with DPLL
 ==========================
 * Con DPLL e' possibile verificare la tautologia di una formula
   e di conseguenza dimostrare teoremi.
+* Ampio utilizzo nell'ambito **EDA** (Electronic Design Automation)
+  per la sintetizzazzione e verifica di correttezza di circuiti logici.
 * Il modo per dimostrare un teorema e' prendere la formula
   originale aggiungere un nodo **NOT** ovvero negarla e valutare
   DPLL su di essa. 
@@ -258,12 +273,87 @@ Proving Theorems with DPLL
 {{IMMAGINE}}
 {{DEMO}}
 
-Performance Analysis
+DPLL & BF Comparison
 ====================
+* Ovviamento il tempo di computazione rispetto a un algoritmo 
+  bruteforce e' **DRASTICAMENTE** migliorato.
+
+            Esempio di prima: "a1 | a2 | .... | an"
+
+  N: Numero letterali        Tempo Computazione **BF**      Tempo Computazione **DPLL**
+  -------------------        -------------------------      ---------------------------
+                   15                 6 secondi                       < 1 milli-secondo
+                   16                12 secondi                       < 1 milli-secondo
+                   17                27 secondi                       < 1 milli-secondo
+                   18                57 secondi                       < 1 milli-secondo
+                   19               121 secondi                       < 1 milli-secondo
 
 
 
+DPLL & TP: Curiosity
+====================
+* Per esempio questa formula casuale:
+          
+          a == b ^ c -> d | e <-> f ^ g & h 
+                 | j | k & l > n | m & o ^ q
+  
+  stressa maggiormente il risolutore `DPLL`, infatti per
+  arrivare ad una soluzione si ha rispettivamente che:
+                 
+         DPLL impiega :  14 milli-secondi
+         TP impiega   : < 1 milli-secondo
 
-Improving Performance
-=====================
+* Sulla stessa formula `DPLL` e `TP` hanno tempi di computazione
+  completamente diversi ( + di 1 ordine di grandezza).
+  
+* **Se e solo se _ASSUMIAMO_** l'euristica che la formula non possa 
+  assumere **SEMPRE il valore falso**,
+  allora possiamo concludere che se `TP` dimostra la validita' del teorema
+  allora sicuramente si ha la garanzia dell'esistenza di una interpretazione
+  in cui la formula assume il valore `true`.
+  Se `TP` arriva all'insoddisfacimento (siccome abbiamo escluso caso
+  formato da soli 0), possiamo comunque concludere che la formula
+  fornisce almeno un valore `true`.
+  
+  Se `DPLL` raggiunge un insoddisfacimento allora sicuramente la
+  formula non e' una tautologia.
+  
+  Se `DPLL` raggiunge un soddisfacimento allora, la formula
+  potrebbe o no essere una tautologia.
+  
+  
+  Questa **EURISTICA** ci permette di ottimizzare l'algoritmo e
+  di lanciare in parallelo (su 2 Thread diversi) sia `DPLL` sia
+  `TP`, se `TP` arriva prima ad una soluzione ci permette di
+  diminuire i tempi di computazione al **MINIMO** tra rispettivamente
+  i tempi di computazione dei singoli algoritmi.
 
+* Questa **EURISTICA** per ovvie ragioni non e' ammissibile
+  per formule composte da 1 singolo letterale, ma al
+  crescere del numero di letterali che compongono la formula
+  l'euristica tende sempre di piu' ad essere ammissibile.
+  
+* L'uso di questa euristica tuttavia non garantisce la completezza
+  della soluzione.
+  
+DPLL: Performance Analysis
+==========================
+* **DPLL-unit-propagate** costituisce la parte piu' corposa e il cuore
+  dell'intero algoritmo. Nella nostra implementazione occupa
+  circa il `95%` dell'`execution-time`. Nella nostra implementazione
+  l'AST viene copiato e fisicamente ridotto, eliminando nodi nella
+  fase di `unit-propagate`. Cio' garantisce una piu' facile
+  implementazione di determinare che cosa sia una **clausola
+  unitaria** ma comporta dei costi non trascurabili in performance.
+* Un `90%` di tempo di computazione speso in `unit-propagate` e' un
+  valore tipico in qualunque implementazione DPLL.
+
+  Non si riesce a fare molto meglio di cosi'.
+
+
+DPLL: Improving Performance
+===========================
+
+
+zChaff: State of the Art DPLL-Derived Implementation
+======================================================

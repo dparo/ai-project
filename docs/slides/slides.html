@@ -82,8 +82,8 @@ Davide Paro
 </div></li>
 </ol>
 </div>
-<div id="bruteforce-solver" class="slide section level1">
-<h1>Bruteforce solver</h1>
+<div id="bruteforce-solver-bf" class="slide section level1">
+<h1>BruteForce Solver (BF)</h1>
 <blockquote>
 <p>Genera una truth table</p>
 </blockquote>
@@ -99,8 +99,8 @@ ASSEGNAMENTO: [A = 0, B = 1, C = 1]</code></pre></li>
 </div>
 <p>{{ DEMO }}</p>
 </div>
-<div id="performance-analysis" class="slide section level1">
-<h1>Performance Analysis</h1>
+<div id="bf-performance-analysis" class="slide section level1">
+<h1>BF: Performance Analysis</h1>
 <ul>
 <li><p>Un risolutore basato su bruteforce comincia a diventare impraticabile gia' con 16 letterali.</p>
 <pre><code>  Esempio: &quot;a1 | a2 | .... | an&quot;</code></pre></li>
@@ -137,7 +137,8 @@ ASSEGNAMENTO: [A = 0, B = 1, C = 1]</code></pre></li>
 </table>
 <ul>
 <li>Il tempo di computazione diventa piu' del doppio per ogni letterale</li>
-<li>Il tempo di computazione peggiora ulteriormente se sono presenti sotto-formule coincidenti. Esse vengono valutate piu' volte dal risolutore</li>
+<li><p>Il tempo di computazione peggiora ulteriormente se sono presenti sotto-formule coincidenti. Esse vengono valutate piu' volte dal risolutore</p></li>
+<li><p>Inoltre quando il numero di letterali inizia ad essere consistente l'output generato da Bruteforce risulta pressoche' inutilizzabile.</p></li>
 </ul>
 <p><a href="./imgs/bruteforce_unusable_output.html" target="_blank"><strong>Bruteforce Unusable Output</strong></a></p>
 </div>
@@ -145,7 +146,9 @@ ASSEGNAMENTO: [A = 0, B = 1, C = 1]</code></pre></li>
 <h1>A Better Approach</h1>
 <ul>
 <li>Se ci interessa solamente dimostrare la soddisfacibilita' di una formula logica si puo' utilizzare un algoritmo che fa uso di backtracking.</li>
-<li><strong>SODDISFACIBILITA'</strong>: Si vuole dimostrare se la formula risulta sempre vera indipendentemente dall'assegnamento dei valori di input.</li>
+<li><strong>SODDISFACIBILITA'</strong>: Si vuole dimostarre se la formula presenta almeno un <strong>interpretazione</strong> (un particolare assegnamento per i letterali) che rende la formula <em>vera</em>.</li>
+<li><strong>INSODDISFACIBILITA'</strong>: Si vuole dimostrare che indipendentemente dall'assegnamento dei letterali la formula risulta sempre <em>falsa</em>.</li>
+<li><strong>VALIDITA' DI UNA TESI</strong>: Equivale a dimostrare che la tesi negata risulta insoddisfacibile. (Dimostrazione per assurdo)</li>
 </ul>
 </div>
 <div id="dpll-algorithm" class="slide section level1">
@@ -227,6 +230,13 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
             sia **A** che **B** siano posti ad **true**</code></pre>
 <p>{{IMMAGINE DI ESEMPIO}}</p>
 </div>
+<div id="why-cnf-form" class="slide section level1">
+<h1>Why CNF Form?</h1>
+<ul>
+<li>La formula a CNF essendo formata da operatori <code>&amp;</code> presenti solo in &quot;cima&quot;, permette di dividere la verifica dell'intera soddisfacibilita' della formula nella verifica seperata della soddisfacibilita' delle singole clausole (Minore branching factor e parallelizzabile).</li>
+</ul>
+<p>Infatti l'operatore <code>&amp;</code> e' iniettivo quando si impone la condizione che l'output deve essere <code>vero</code>. Cio' permette di propagare il valore ai sotto-alberi che formano l'intera formula.</p>
+</div>
 <div id="dpll-explanation" class="slide section level1">
 <h1>DPLL Explanation</h1>
 <p>DPLL Procede nel seguente modo:</p>
@@ -243,7 +253,7 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <p>Lo unit propagation costituisce la parte piu' complessa e il cuore di tutto l'algoritmo DPLL</p>
 </blockquote>
 <ol start="3" style="list-style-type: decimal">
-<li><p>Gli operatori <strong>OR</strong> denotano indecisione sul valore dell'input. DPLL continua prendendo un letterale a caso, assegnando ad esso rispettivamente il valore <strong>true</strong> riduce l'AST e chiama ricorsivamente di nuovo DPLL. Se la chiamata ricorsiva porta ad insoddisfacimento alla formula, DPLL riassegna al letterale il valore <strong>false</strong> e riprova. (BACKTRACKING).</p></li>
+<li><p>Gli operatori <strong>OR</strong> denotano indecisione sul valore dell'input. DPLL ora deve prendere una <strong>decisione</strong>. DPLL continua prendendo un letterale a caso, assegnando ad esso rispettivamente il valore <strong>true</strong> riduce l'AST con un <strong>unit-propagate</strong> e chiama ricorsivamente DPLL di nuovo. Se la chiamata ricorsiva porta ad insoddisfacimento alla formula, DPLL riassegna al letterale il valore <strong>false</strong> e riprova. (BACKTRACKING).</p></li>
 <li><p>Prima o poi l'albero si sara' ridotto banalmente a:</p>
 <pre><code>  1) true     sicuramente la formula e&#39; soddisfacibile
   2) false    sicuramente la formula e&#39; insoddisfacibile
@@ -257,17 +267,86 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <h1>Proving Theorems with DPLL</h1>
 <ul>
 <li>Con DPLL e' possibile verificare la tautologia di una formula e di conseguenza dimostrare teoremi.</li>
+<li>Ampio utilizzo nell'ambito <strong>EDA</strong> (Electronic Design Automation) per la sintetizzazzione e verifica di correttezza di circuiti logici.</li>
 <li>Il modo per dimostrare un teorema e' prendere la formula originale aggiungere un nodo <strong>NOT</strong> ovvero negarla e valutare DPLL su di essa.</li>
 </ul>
 <p><strong>(<em>DIMOSTRAZIONE PER ASSURDO</em>)</strong></p>
 <p>Se DPLL applicato su questa nuova formula porta sempre a insoddisfacimento, allora la formula e' sicuramente una tautologia, e quindi il teorema e' dimostrato. Se invece DPLL trova un soddisfacimento per questa formula allora sicuramente la tesi non e' valida. L'algoritmo in questo caso riporta l'assegnamento dei letterali cha hanno causato la non validita' della tesi.</p>
 <p>{{IMMAGINE}} {{DEMO}}</p>
 </div>
-<div id="performance-analysis-1" class="slide section level1">
-<h1>Performance Analysis</h1>
+<div id="dpll-bf-comparison" class="slide section level1">
+<h1>DPLL &amp; BF Comparison</h1>
+<ul>
+<li><p>Ovviamento il tempo di computazione rispetto a un algoritmo bruteforce e' <strong>DRASTICAMENTE</strong> migliorato.</p>
+<pre><code>    Esempio di prima: &quot;a1 | a2 | .... | an&quot;</code></pre></li>
+</ul>
+<table>
+<thead>
+<tr class="header">
+<th align="left">N: Numero letterali</th>
+<th align="left">Tempo Computazione <strong>BF</strong></th>
+<th align="left">Tempo Computazione <strong>DPLL</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">15</td>
+<td align="left">6 secondi</td>
+<td align="left">&lt; 1 milli-secondo</td>
+</tr>
+<tr class="even">
+<td align="left">16</td>
+<td align="left">12 secondi</td>
+<td align="left">&lt; 1 milli-secondo</td>
+</tr>
+<tr class="odd">
+<td align="left">17</td>
+<td align="left">27 secondi</td>
+<td align="left">&lt; 1 milli-secondo</td>
+</tr>
+<tr class="even">
+<td align="left">18</td>
+<td align="left">57 secondi</td>
+<td align="left">&lt; 1 milli-secondo</td>
+</tr>
+<tr class="odd">
+<td align="left">19</td>
+<td align="left">121 secondi</td>
+<td align="left">&lt; 1 milli-secondo</td>
+</tr>
+</tbody>
+</table>
 </div>
-<div id="improving-performance" class="slide section level1">
-<h1>Improving Performance</h1>
+<div id="dpll-tp-curiosity" class="slide section level1">
+<h1>DPLL &amp; TP: Curiosity</h1>
+<ul>
+<li><p>Per esempio questa formula casuale:</p>
+<pre><code>  a == b ^ c -&gt; d | e &lt;-&gt; f ^ g &amp; h 
+         | j | k &amp; l &gt; n | m &amp; o ^ q</code></pre></li>
+</ul>
+<p>stressa maggiormente il risolutore <code>DPLL</code>, infatti per arrivare ad una soluzione si ha rispettivamente che:</p>
+<pre><code>     DPLL impiega :  14 milli-secondi
+     TP impiega   : &lt; 1 milli-secondo</code></pre>
+<ul>
+<li><p>Sulla stessa formula <code>DPLL</code> e <code>TP</code> hanno tempi di computazione completamente diversi ( + di 1 ordine di grandezza).</p></li>
+<li><strong>Se e solo se <em>ASSUMIAMO</em></strong></li>
+<li><p><strong>Possibile miglioramento</strong>: Lanciare sempre <code>DPLL</code> e <code>TP</code> in parallelo.</p></li>
+</ul>
+<p><code>DPLL</code> cerca di dimostrare la soddisfacibilita' <code>TP</code> cerca di dimostrare l'insoddisfacibilita'</p>
+</div>
+<div id="dpll-performance-analysis" class="slide section level1">
+<h1>DPLL: Performance Analysis</h1>
+<ul>
+<li><strong>DPLL-unit-propagate</strong> costituisce la parte piu' corposa e il cuore dell'intero algoritmo. Nella nostra implementazione occupa circa il <code>95%</code> dell'<code>execution-time</code>. Nella nostra implementazione l'AST viene copiato e fisicamente ridotto, eliminando nodi nella fase di <code>unit-propagate</code>. Cio' garantisce una piu' facile implementazione di determinare che cosa sia una <strong>clausola unitaria</strong> ma comporta dei costi non trascurabili in performance.</li>
+<li>Un <code>90%</code> di tempo di computazione speso in <code>unit-propagate</code> e' un valore tipico in qualunque implementazione DPLL.</li>
+</ul>
+<p>Non si riesce a fare molto meglio di cosi'.</p>
+</div>
+<div id="dpll-improving-performance" class="slide section level1">
+<h1>DPLL: Improving Performance</h1>
+</div>
+<div id="zchaff-state-of-the-art-dpll-derived-implementation" class="slide section level1">
+<h1>zChaff: State of the Art DPLL-Derived Implementation</h1>
 </div>
 </body>
 </html>
