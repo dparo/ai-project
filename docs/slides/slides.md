@@ -86,6 +86,9 @@ Performance Analysis
   sotto-formule coincidenti. Esse vengono valutate piu' volte dal
   risolutore
 
+* Inoltre quando il numero di letterali inizia ad essere consistente
+  l'output generato da Bruteforce risulta pressoche' inutilizzabile.
+
   [**Bruteforce Unusable Output**](./imgs/bruteforce_unusable_output.html){target="_blank"}
 
 A Better Approach
