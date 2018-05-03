@@ -59,6 +59,7 @@ enum operator {
     OPERATOR_EXIST,
     OPERATOR_ON,
     OPERATOR_IN,
+    OPERATOR_AT,
     
     OPERATOR_TERNARY,
 };
@@ -82,15 +83,15 @@ static const struct operator_infos {
     enum operator_prefixing prefixing;
 } OPS[] = {
     [OPERATOR_NONE] =              { INT_MIN, 0, 0, POSTFIX_OP},
-    [OPERATOR_NOT] =            { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
+    [OPERATOR_NOT] =               { 2, 1, LEFT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_AND] =               { 11, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_NAND] =              { 11, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [OPERATOR_NOR] =              { 11, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_NOR] =               { 11, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_OR] =                { 12, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_XOR] =               { 9, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_IMPLY] =             { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_DOUBLE_IMPLY] =      { 1, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
-    [OPERATOR_EQUAL_EQUAL] =             { 7, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
+    [OPERATOR_EQUAL_EQUAL] =       { 7, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_NOT_EQUAL] =         { 7, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_GREATER] =           { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
     [OPERATOR_GREATER_EQUAL] =     { 6, 2, LEFT_ASSOCIATIVE_OP, INFIX_OP },
@@ -107,6 +108,7 @@ static const struct operator_infos {
     [OPERATOR_EXIST] =             { 14, 2, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_ON] =                { 13, 2, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_IN] =                { 13, 2, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
+    [OPERATOR_AT] =                { 13, 2, RIGHT_ASSOCIATIVE_OP, PREFIX_OP },
     [OPERATOR_TERNARY] =           { 14, 3, RIGHT_ASSOCIATIVE_OP, POSTFIX_OP },
 };
 
@@ -343,6 +345,9 @@ ast_node_print( FILE *f, struct ast_node *node )
     } else if (node->op == OPERATOR_IN) {
         text = "`in`";
         text_len = sizeof("`in`") - 1;
+    } else if (node->op == OPERATOR_AT) {
+        text = "`@`";
+        text_len = sizeof("`@`") - 1;
     } else if ( node->op == OPERATOR_INDEX )  {
         text = "`index`";
         text_len = sizeof("`index`") - 1;
@@ -573,7 +578,7 @@ ast_node_from_token( struct ast_node *node,
         case TT_PUNCT_LESS_OR_EQUAL: { node->op = OPERATOR_LESS_EQUAL; } break;
         case TT_PUNCT_POUND:       { node->op = OPERATOR_ENUMERATE; } break;
         case TT_PUNCT_DOLLAR_SIGN: { node->op = OPERATOR_EXIST; } break;
-        case TT_PUNCT_AT_SIGN: { node->op = OPERATOR_IN; } break;
+        case TT_PUNCT_AT_SIGN: { node->op = OPERATOR_AT; } break;
 
 
             // @ TODO: REVISIT TERNARY OPERATORS

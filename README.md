@@ -32,7 +32,8 @@
   ->       IMPLY OPERATOR
   <->      DOUBLE IMPLY OPERATOR
       
-  CURRENTLY UNDERSTOOD BUT NOT IMPLEMENTED OPERATORS
+  CURRENTLY UNDERSTOOD BUT NOT IMPLEMENTED OPERATORS.
+  SUPPORT MAY BE ADDED LATER
   
   =              ASSIGN OPERATOR
   +              CONCAT OPERATOR
@@ -44,12 +45,32 @@
   
   #              ENUMERATE OPERATOR
   $              EXIST OPERATOR
-  @              ON OPERATOR
-  in             KEYWORD OPERATOR
+  @              AT OPERATOR
+  in             IN KEYWORD OPERATOR
   ?:             TERNARY OPERATOR
   ```
-* An identifier is any token starting either with a letter or underscore
-* Support for C-Style comments `//` `/*   */`
+* Currently **NO** implementation, but the following idioms can be
+  parsed correctly
+  ```
+  (a, b, c, ...)     PAREN DELIMITED LIST
+  [a, b, c, ...]     BRACKET DELIMITED LIST
+  {a, b, c, ...}     BRACE DELIMITED LIST
+  ```
+* An identifier is any token starting either with a letter or underscore.
+  Examples:
+  ```
+  a    _a_   xyz  a1
+  ```
+* Support for parsing C-style strings, currently the interpreter **rejects** strings:
+  ```
+  "Hello world"
+  "Hello world with escaped \"quotes\""
+  ```
+  Same thing for C-style character constants (The REPL rejects them)
+  ```
+  'A'  'B'   '\n'
+  ```
+* Support for C-Style comments `//` `/*   */`. The REPL simply ignores comments.
 * **True** and **False** constants can be used respectively with `1` or `0` digits.
 * Any other digit will be rejected by the interpreter: `1000` is not a valid constant
 
