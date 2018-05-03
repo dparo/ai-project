@@ -5,21 +5,21 @@
 
 Parsing
 =======
-1. Il primo passo consiste nella tokenizzazione della formula
-   ogni singolo carattere viene raggrupato in "tokens" secondo
-   le regole sintattiche definite dal linguaggio. Il linguaggio
-   mette a disposizione la possibilita' di definire commenti.
+1. Il primo passo consiste nella **tokenizzazione** della formula.
+   Ogni singolo carattere viene raggruppato in "tokens" secondo
+   le regole sintattiche definite dal linguaggio. 
+
 2. Una volta generati i "tokens", si procede alla conversione
    della formula dalla forma __infissa__ (piu' comoda agli umani)
    in una forma __prefissa__ (LISP Notation).
 
           (A & B) | C     -->    (| (& A B) C)
   
-3. Si fa uso dell'algoritmo Shunting-Yard fortemente customizzato con
+3. Si fa uso dell'algoritmo **Shunting-Yard** fortemente customizzato con
    estensioni per risolvere il problema in questione. In base
    a regole di precedenza degli operatori e alle regole sintattiche
-   defininte per il linguaggio verra' generata la notazione prefissa
-   appropriata
+   definite per il linguaggio verra' generata la notazione prefissa
+   appropriata.
    
 
 AST Generation
@@ -31,9 +31,15 @@ AST Generation
 2. Segue un analisi semantica e di validita' della formula
    presente nell'AST. Se erronea, viene rifiutata.
 
-      A & | B   e' una formula mal formata -> errore
+          A & | B   e' una formula mal formata -> errore
 
-{{ PICTURES }}
+3. Una volta verificata la validita' della formula
+   se ne estraggono i vari simboli/letterali/identificatori
+   e si usano per costruire una **Symbol Table**.
+   (Esattamente come un compilatore)
+       
+          FORMULA:      (| (& A B) C) 
+    ![](imgs/generated_ast.png)
 
 Bruteforce solver
 =================
@@ -53,7 +59,7 @@ Bruteforce solver
    sullo stack delle computazioni rimane solamente un elemento:
    il risultato della computazione dell'intera formula.
 
-        FORMULA:      (| C (& A B))
+        FORMULA:      (| (& A B) C)
         ASSEGNAMENTO: [A = 0, B = 1, C = 1]
         
    ![](imgs/ast_stack.gif)
@@ -80,6 +86,8 @@ Performance Analysis
   sotto-formule coincidenti. Esse vengono valutate piu' volte dal
   risolutore
 
+[<__Bruteforce Unusable Output__>](./imgs/bruteforce_unusable_output.html){target="_blank"}
+
 A Better Approach
 =================
 * Se ci interessa solamente dimostrare la soddisfacibilita' di una
@@ -98,7 +106,7 @@ DPLL Algorithm
 
         Chaff, zChaff, GRASP
   
-  Sono delle implemntazioni piu' performanti e raffinate di **DPLL**
+  Sono delle implementazioni piu' performanti e raffinate di **DPLL**
   
   [__Wikipedia Link__](https://en.wikipedia.org/wiki/DPLL_algorithm)
   
@@ -139,9 +147,6 @@ CNF Conversion
        
    ![](imgs/formula_op_conv.png)
    
-   Perfetto
-        
-
 2. Si applica De-Morgan ricorsivamente in modo da "spingere le negazioni in basso".
    Alla fine dell'applicazione di De-Morgan si avra' una formula dipendentemente
    da 
