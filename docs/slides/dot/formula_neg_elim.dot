@@ -1,4 +1,4 @@
-// Demorgan of the formula "A <-> B"
+// Negation elimination of the formula "A <-> B"
 graph G  {
     graph [fontname = "Hack"];
     node  [fontname = "Hack"];

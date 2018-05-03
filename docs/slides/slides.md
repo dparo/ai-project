@@ -93,10 +93,13 @@ A Better Approach
 * Se ci interessa solamente dimostrare la soddisfacibilita' di una
   formula logica si puo' utilizzare un algoritmo che fa uso di 
   backtracking.
-* **SODDISFACIBILITA'**: Si vuole dimostrare se la formula risulta
-  sempre vera indipendentemente dall'assegnamento dei valori
-  di input.
-
+* **SODDISFACIBILITA'**: Si vuole dimostarre se la formula presenta
+  almeno un **interpretazione** (un particolare assegnamento per i letterali) 
+  che rende la formula _vera_.
+* **INSODDISFACIBILITA'**: Si vuole dimostrare che indipendentemente
+  dall'assegnamento dei letterali la formula risulta sempre _falsa_.
+* **VALIDITA' DI UNA TESI**: Equivale a dimostrare che la tesi
+  negata risulta insoddisfacibile. (Dimostrazione per assurdo) 
 
 DPLL Algorithm
 ==============
