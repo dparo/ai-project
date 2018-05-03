@@ -5,16 +5,16 @@
 `git clone --recursive https://github.com/dparo/ai-project`
 
 # Running the interpreter
-* `./bin/pci --solver=SOLVER`. If not solver is specified it defaults to `dpll`.
+* `./bin/pci --solver=SOLVER`. If no solver is specified it defaults to `dpll`.
   Solver can be one of:
   ```
   bf                           = Use bruteforce solver
   dpll                         = Use DPLL solver
-  th | tp | dpll-th | dpll-tp  = Prove a Theorem with the DPLL
+  th | tp | dpll-th | dpll-tp  = Prove a Theorem with DPLL backend
   ```
 
 # Interacting with the REPL
-* A token is seperated by whitespaces ` ` and punctuators
+* A token is seperated by whitespaces and punctuators
 * Punctuators are basic operators, the currently available operators
   are:
   ```
@@ -50,10 +50,10 @@
   ```
 * An identifier is any token starting either with a letter or underscore
 * Support for C-Style comments `//` `/*   */`
-* **True** and **False** can just be used with `1` or `0` constant.
-* Any other digit will be rejected by the interpreter `1000` is not a valid constant
+* **True** and **False** constants can be used respectively with `1` or `0` digits.
+* Any other digit will be rejected by the interpreter: `1000` is not a valid constant
 
-# Writing the first simple formula
+## Writing the first simple formula
 * Start typing simple formulas with the available operators:
   ```
   A & B
