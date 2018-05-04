@@ -250,6 +250,15 @@ DPLL Procede nel seguente modo:
 {{ DEMO }}
 
 
+DPLL Full Example
+=================
+## Formula:
+~~~
+~A & ( A | B | C )
+~~~
+    
+   ![](imgs/dpll_full_run.gif)
+    
 Proving Theorems with DPLL
 ==========================
 * Con DPLL e' possibile verificare la tautologia di una formula
@@ -315,14 +324,16 @@ DPLL & TP: Curiosity
   formato da soli 0), possiamo comunque concludere che la formula
   fornisce almeno un valore `true`.
   
-  Se `DPLL` raggiunge un insoddisfacimento allora sicuramente la
+* Se `DPLL` raggiunge un insoddisfacimento allora sicuramente la
   formula non e' una tautologia.
   
-  Se `DPLL` raggiunge un soddisfacimento allora, la formula
+* Se `DPLL` raggiunge un soddisfacimento allora, la formula
   potrebbe o no essere una tautologia.
   
-  
-  Questa **EURISTICA** ci permette di ottimizzare l'algoritmo e
+ 
+ 
+ 
+* Questa **EURISTICA** ci permette di ottimizzare l'algoritmo e
   di lanciare in parallelo (su 2 Thread diversi) sia `DPLL` sia
   `TP`, se `TP` arriva prima ad una soluzione ci permette di
   diminuire i tempi di computazione al **MINIMO** tra rispettivamente
@@ -333,8 +344,8 @@ DPLL & TP: Curiosity
   crescere del numero di letterali che compongono la formula
   l'euristica tende sempre di piu' ad essere ammissibile.
   
-* L'uso di questa euristica tuttavia non garantisce la completezza
-  della soluzione.
+* L'uso di questa **EURISTICA** tuttavia non garantisce la completezza
+  e la validita' della soluzione.
   
 DPLL: Performance Analysis
 ==========================
@@ -347,6 +358,12 @@ DPLL: Performance Analysis
   unitaria** ma comporta dei costi non trascurabili in performance.
 * Un `90%` di tempo di computazione speso in `unit-propagate` e' un
   valore tipico in qualunque implementazione DPLL.
+
+* **BAD!**: `dpll-unit-propagate` non e' "lavoro" **utile**
+  alla determinazione della soluzione. E' solo **book-keeping**
+  che deve essere svolto per fare funzionare l'algoritmo,
+  e' solo una ricostruzione dell'AST che mantiene equivalenza
+  semantica, e non porta `DPLL` ad avvicinarsi ad una soluzione.
 
   Non si riesce a fare molto meglio di cosi'.
 

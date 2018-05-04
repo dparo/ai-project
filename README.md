@@ -1,8 +1,8 @@
-
-# Introduzione
-
 # Cloning
 `git clone --recursive https://github.com/dparo/ai-project`
+
+# Building
+Please refer to the `README.md` located in `src/` directory.
 
 # Running the interpreter
 * `./bin/pci --solver=SOLVER`. If no solver is specified it defaults to `dpll`.
@@ -119,7 +119,7 @@
   
   The interpreter will output a nice colorfull green message
   saying that the theorem was proven successfully. It also
-  prints some usefull information like the amount of time
+  prints some usefull informations like the amount of time
   it took for doing the required computations.
 
 # What now?

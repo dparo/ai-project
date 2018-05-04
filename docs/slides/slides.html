@@ -263,6 +263,15 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 </ol>
 <p>{{ IMMAGINE }} {{ DEMO }}</p>
 </div>
+<div id="dpll-full-example" class="slide section level1">
+<h1>DPLL Full Example</h1>
+<h2 id="formula">Formula:</h2>
+<pre><code>~A &amp; ( A | B | C )</code></pre>
+<div class="figure">
+<img src="imgs/dpll_full_run.gif" />
+
+</div>
+</div>
 <div id="proving-theorems-with-dpll" class="slide section level1">
 <h1>Proving Theorems with DPLL</h1>
 <ul>
@@ -329,16 +338,20 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
      TP impiega   : &lt; 1 milli-secondo</code></pre>
 <ul>
 <li><p>Sulla stessa formula <code>DPLL</code> e <code>TP</code> hanno tempi di computazione completamente diversi ( + di 1 ordine di grandezza).</p></li>
-<li><strong>Se e solo se <em>ASSUMIAMO</em></strong></li>
-<li><p><strong>Possibile miglioramento</strong>: Lanciare sempre <code>DPLL</code> e <code>TP</code> in parallelo.</p></li>
+<li><p><strong>Se e solo se <em>ASSUMIAMO</em></strong> l'euristica che la formula non possa assumere <strong>SEMPRE il valore falso</strong>, allora possiamo concludere che se <code>TP</code> dimostra la validita' del teorema allora sicuramente si ha la garanzia dell'esistenza di una interpretazione in cui la formula assume il valore <code>true</code>. Se <code>TP</code> arriva all'insoddisfacimento (siccome abbiamo escluso caso formato da soli 0), possiamo comunque concludere che la formula fornisce almeno un valore <code>true</code>.</p></li>
+<li><p>Se <code>DPLL</code> raggiunge un insoddisfacimento allora sicuramente la formula non e' una tautologia.</p></li>
+<li><p>Se <code>DPLL</code> raggiunge un soddisfacimento allora, la formula potrebbe o no essere una tautologia.</p></li>
+<li><p>Questa <strong>EURISTICA</strong> ci permette di ottimizzare l'algoritmo e di lanciare in parallelo (su 2 Thread diversi) sia <code>DPLL</code> sia <code>TP</code>, se <code>TP</code> arriva prima ad una soluzione ci permette di diminuire i tempi di computazione al <strong>MINIMO</strong> tra rispettivamente i tempi di computazione dei singoli algoritmi.</p></li>
+<li><p>Questa <strong>EURISTICA</strong> per ovvie ragioni non e' ammissibile per formule composte da 1 singolo letterale, ma al crescere del numero di letterali che compongono la formula l'euristica tende sempre di piu' ad essere ammissibile.</p></li>
+<li><p>L'uso di questa <strong>EURISTICA</strong> tuttavia non garantisce la completezza e la validita' della soluzione.</p></li>
 </ul>
-<p><code>DPLL</code> cerca di dimostrare la soddisfacibilita' <code>TP</code> cerca di dimostrare l'insoddisfacibilita'</p>
 </div>
 <div id="dpll-performance-analysis" class="slide section level1">
 <h1>DPLL: Performance Analysis</h1>
 <ul>
 <li><strong>DPLL-unit-propagate</strong> costituisce la parte piu' corposa e il cuore dell'intero algoritmo. Nella nostra implementazione occupa circa il <code>95%</code> dell'<code>execution-time</code>. Nella nostra implementazione l'AST viene copiato e fisicamente ridotto, eliminando nodi nella fase di <code>unit-propagate</code>. Cio' garantisce una piu' facile implementazione di determinare che cosa sia una <strong>clausola unitaria</strong> ma comporta dei costi non trascurabili in performance.</li>
-<li>Un <code>90%</code> di tempo di computazione speso in <code>unit-propagate</code> e' un valore tipico in qualunque implementazione DPLL.</li>
+<li><p>Un <code>90%</code> di tempo di computazione speso in <code>unit-propagate</code> e' un valore tipico in qualunque implementazione DPLL.</p></li>
+<li><p><strong>BAD!</strong>: <code>dpll-unit-propagate</code> non e' &quot;lavoro&quot; <strong>utile</strong> alla determinazione della soluzione. E' solo <strong>book-keeping</strong> che deve essere svolto per fare funzionare l'algoritmo, e' solo una ricostruzione dell'AST che mantiene equivalenza semantica, e non porta <code>DPLL</code> ad avvicinarsi ad una soluzione.</p></li>
 </ul>
 <p>Non si riesce a fare molto meglio di cosi'.</p>
 </div>
