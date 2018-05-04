@@ -198,9 +198,9 @@ Why CNF Form?
   della formula nella verifica seperata della soddisfacibilita' delle
   singole clausole (Minore branching factor e parallelizzabile).
   
-  Infatti l'operatore `&` e' iniettivo quando si impone la condizione
-  che l'output deve essere `vero`. Cio' permette di propagare
-  il valore ai sotto-alberi che formano l'intera formula.
+  Infatti l'operatore `&` e' una funzione iniettiva sotto le ipotesi di imporre
+  che l'output deve essere `1`. Cio' permette di propagare
+  il valore ai sotto-alberi che formano la clausola.
    
    
 DPLL Explanation
@@ -296,7 +296,6 @@ DPLL & BF Comparison
                    17                27 secondi                       < 1 milli-secondo
                    18                57 secondi                       < 1 milli-secondo
                    19               121 secondi                       < 1 milli-secondo
-
 
 
 DPLL & TP: Curiosity
@@ -403,9 +402,82 @@ DPLL: Performance Analysis
   come `OR (|)` e `AND (&)`.
 
 
-DPLL: Improving Performance
-===========================
-
-
 zChaff: State of the Art DPLL-Derived Implementation
 ======================================================
+* **PERFORMANCE** -> `10x ~ 200x` speedup rispetto a DPLL
+  per problemi di soddisfacimento piu' grandi.
+
+* Per evitare grossi costi di computazione nella
+  fase di backtracking e conseguente ripristino dell'AST,
+  tiene traccia di una lista di **Chaffs-Implications**.
+  Una formula e' `chaff-implicated` se tutti i letterali
+  sono posti al valore 0 (false) ad esclusione di 1 solo letterale.
+  ```
+  a0 = 0; a1= 0; .... ai = 1; ....; an = 0;
+  ```
+  Dove `ai` e' il generico letterale `i` presente all'interno della formula.
+  
+  Fa uso della cosidetta `Two-Watched Literals Rule`.
+  
+  **IDEA**: Per ogni clausola si tengono "sott'occhio" due letterali,
+  finche' questi due letterali non vengono assegnati o soddisfatti,
+  la clausola non puo' produrre `unit-propagation`.
+
+  Solo quando uno dei due letterali viene posto a `0` che la clausola
+  deve essere analizzata con dettaglio. Se:
+  * E' presente un'altro letterale non settato e non "watched",
+    si comincia a tenere "d'occhio" quest'ultimo.
+  * Se e' presente un letterale soddisfatto nella clausola, non
+    c'e' bisogno di alcuna particolare computazione.
+  * Se non e' presente alcun letterale soddisfatto, allora la clausola
+    e' pronta ad essere `unit-propagated`.
+    
+  **SCOPO**: Ridurre lo **unit-propagation** che e' la parte
+  computazionalmente piu' dispendiosa nella risoluzione di un problema `SAT`.
+  
+* **NOTA**: In `zChaff` l'**undo** di un assegnamento non e' costoso in termini
+  computazionali
+  
+  > This speedup is not the result of sophisticated learning strategies for 
+  > pruning  the  search  space,  but  rather,  of  efficient engineering of
+  > the   key   steps   involved   in   the   basic   search   algorithm.
+  > Specifically, this speedup is derived from:
+  > - a highly optimized BCP algorithm, and
+  > - a  decision  strategy  highly  optimized  for  speed,  as well as 
+  >   focused on recently added clauses
+  
+  
+zChaff: Variable State Independent Decaying Sum
+===============================================
+* A differenza di `DPLL`, il quale quando non sono presenti clausole unitarie
+  adotta una metodologia di assegnamento randomico,
+  `zChaff` utilizza delle tecniche con **heuristica**
+  per determinare l'assegnamento migliore da fare nel passo successivo.
+
+1. Ad ogni letterale viene associato un contatore inizializzato a `0`
+2. Quando una clausola viene aggiunta al database, il contatore
+   associato ad ogni letterale presente nella clausola viene incrementato di `1`
+3. Nella fase di decisione del letterale da assegnare, viene
+   scelto il letterale che presenta un contatore con valore piu' **alto**
+4. Eventuali vincoli vengono rimossi randomicamente
+5. Periodicamente si dividono tutti i contatori per una `costante`.
+
+* **IDEA**: Concentrare i tempi di computazione solamente su clausole
+  che sono state provate insoddisfacibili **recentemente**.
+
+Appendix
+========
+## Other decision Heuristics used in common SAT solvers
+
+### DLIS (Dynamic Largest Individual Sum)
+* Scegli l'assegnamento che rende il maggior numero di clausole
+  soddisfacibili
+  
+### Jersolow-Wang method
+Per ogni letterale viene computato il seguente **peso**:
+
+```
+J(l) = sum_of_weights(l)
+```
+
+* Scegli il letterale che massimizza J(l).

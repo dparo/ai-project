@@ -235,7 +235,7 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <ul>
 <li>La formula a CNF essendo formata da operatori <code>&amp;</code> presenti solo in &quot;cima&quot;, permette di dividere la verifica dell'intera soddisfacibilita' della formula nella verifica seperata della soddisfacibilita' delle singole clausole (Minore branching factor e parallelizzabile).</li>
 </ul>
-<p>Infatti l'operatore <code>&amp;</code> e' iniettivo quando si impone la condizione che l'output deve essere <code>vero</code>. Cio' permette di propagare il valore ai sotto-alberi che formano l'intera formula.</p>
+<p>Infatti l'operatore <code>&amp;</code> e' una funzione iniettiva sotto le ipotesi di imporre che l'output deve essere <code>1</code>. Cio' permette di propagare il valore ai sotto-alberi che formano la clausola.</p>
 </div>
 <div id="dpll-explanation" class="slide section level1">
 <h1>DPLL Explanation</h1>
@@ -349,8 +349,8 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <div id="dpll-performance-analysis" class="slide section level1">
 <h1>DPLL: Performance Analysis</h1>
 <ul>
-<li><strong>DPLL-unit-propagate</strong> costituisce la parte piu' corposa e il cuore dell'intero algoritmo. Nella nostra implementazione occupa circa il <code>95%</code> dell'<code>execution-time</code>. Nella nostra implementazione l'AST viene copiato e fisicamente ridotto, eliminando nodi nella fase di <code>unit-propagate</code>. Cio' garantisce una piu' facile implementazione di determinare che cosa sia una <strong>clausola unitaria</strong> ma comporta dei costi non trascurabili in performance.</li>
-<li><p>Un <code>90%</code> di tempo di computazione speso in <code>unit-propagate</code> e' un valore tipico in qualunque implementazione DPLL.</p></li>
+<li><strong>DPLL-unit-propagate</strong> costituisce la parte piu' corposa e il cuore dell'intero algoritmo. Nella nostra implementazione occupa circa il <code>50 ~ 70%</code> dell'<code>execution-time</code>. Nella nostra implementazione l'AST viene copiato e fisicamente ridotto, eliminando nodi nella fase di <code>unit-propagate</code>. Cio' garantisce una piu' facile implementazione di determinare che cosa sia una <strong>clausola unitaria</strong> ma comporta dei costi non trascurabili in performance.</li>
+<li><p>Un <code>&gt;= 90%</code> di tempo di computazione speso in <code>unit-propagate</code> e' un valore tipico per implementazioni <code>DPLL</code> che non fanno uso di <strong>duplicazione</strong> dell'<code>AST</code>.</p></li>
 <li><p><strong>BAD!</strong>: <code>dpll-unit-propagate</code> non e' &quot;lavoro&quot; <strong>utile</strong> alla determinazione della soluzione. E' solo <strong>book-keeping</strong> che deve essere svolto per fare funzionare l'algoritmo, e' solo una ricostruzione dell'AST che mantiene equivalenza semantica, e non porta <code>DPLL</code> ad avvicinarsi ad una soluzione.</p></li>
 </ul>
 <p>Non si riesce a fare molto meglio di cosi'.</p>
@@ -387,13 +387,54 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 </tr>
 </tbody>
 </table>
-<p>Si nota palesemente la dipendenza dal branching factor dell' <code>AST</code>. Operatori come <code>XOR ^</code> e <code>IS EQUAL ==</code> tendono ad essere piu' dispendiosi in termini di branching factor rispetto ad operatori come <code>OR |</code> e <code>AND &amp;</code>.</p>
-</div>
-<div id="dpll-improving-performance" class="slide section level1">
-<h1>DPLL: Improving Performance</h1>
+<p>Si nota palesemente la dipendenza dal branching factor dell' <code>AST</code>. Operatori come <code>XOR (^)</code> e <code>IS EQUAL (==)</code> tendono ad essere piu' dispendiosi in termini di branching factor rispetto ad operatori come <code>OR (|)</code> e <code>AND (&amp;)</code>.</p>
 </div>
 <div id="zchaff-state-of-the-art-dpll-derived-implementation" class="slide section level1">
 <h1>zChaff: State of the Art DPLL-Derived Implementation</h1>
+<ul>
+<li><p><strong>PERFORMANCE</strong> -&gt; <code>10x ~ 200x</code> speedup rispetto a DPLL per problemi di soddisfacimento piu' grandi.</p></li>
+<li><p>Per evitare grossi costi di computazione nella fase di backtracking e conseguente ripristino dell'AST, tiene traccia di una lista di <strong>Chaffs-Implications</strong>. Una formula e' <code>chaff-implicated</code> se tutti i letterali sono posti al valore 0 (false) ad esclusione di 1 solo letterale. <code>a0 = 0; a1= 0; .... ai = 1; ....; an = 0;</code> Dove <code>ai</code> e' il generico letterale <code>i</code> presente all'interno della formula.</p></li>
+</ul>
+<p>Fa uso della cosidetta <code>Two-Watched Literals Rule</code>.</p>
+<p><strong>IDEA</strong>: Per ogni clausola si tengono &quot;sott'occhio&quot; due letterali, finche' questi due letterali non vengono assegnati o soddisfatti, la clausola non puo' produrre <code>unit-propagation</code>.</p>
+<p>Solo quando uno dei due letterali viene posto a <code>0</code> che la clausola deve essere analizzata con dettaglio. Se: * E' presente un'altro letterale non settato e non &quot;watched&quot;, si comincia a tenere &quot;d'occhio&quot; quest'ultimo. * Se e' presente un letterale soddisfatto nella clausola, non c'e' bisogno di alcuna particolare computazione. * Se non e' presente alcun letterale soddisfatto, allora la clausola e' pronta ad essere <code>unit-propagated</code>.</p>
+<p><strong>SCOPO</strong>: Ridurre lo <strong>unit-propagation</strong> che e' la parte computazionalmente piu' dispendiosa nella risoluzione di un problema <code>SAT</code>.</p>
+<ul>
+<li><strong>NOTA</strong>: In <code>zChaff</code> l'<strong>undo</strong> di un assegnamento non e' costoso in termini computazionali</li>
+</ul>
+<blockquote>
+<p>This speedup is not the result of sophisticated learning strategies for pruning the search space, but rather, of efficient engineering of the key steps involved in the basic search algorithm. Specifically, this speedup is derived from: - a highly optimized BCP algorithm, and - a decision strategy highly optimized for speed, as well as focused on recently added clauses</p>
+</blockquote>
+</div>
+<div id="zchaff-variable-state-independent-decaying-sum" class="slide section level1">
+<h1>zChaff: Variable State Independent Decaying Sum</h1>
+<ul>
+<li>A differenza di <code>DPLL</code>, il quale quando non sono presenti clausole unitarie adotta una metodologia di assegnamento randomico, <code>zChaff</code> utilizza delle tecniche con <strong>heuristica</strong> per determinare l'assegnamento migliore da fare nel passo successivo.</li>
+</ul>
+<ol style="list-style-type: decimal">
+<li>Ad ogni letterale viene associato un contatore inizializzato a <code>0</code></li>
+<li>Quando una clausola viene aggiunta al database, il contatore associato ad ogni letterale presente nella clausola viene incrementato di <code>1</code></li>
+<li>Nella fase di decisione del letterale da assegnare, viene scelto il letterale che presenta un contatore con valore piu' <strong>alto</strong></li>
+<li>Eventuali vincoli vengono rimossi randomicamente</li>
+<li>Periodicamente si dividono tutti i contatori per una <code>costante</code>.</li>
+</ol>
+<ul>
+<li><strong>IDEA</strong>: Concentrare i tempi di computazione solamente su clausole che sono state provate insoddisfacibili <strong>recentemente</strong>.</li>
+</ul>
+</div>
+<div id="appendix" class="slide section level1">
+<h1>Appendix</h1>
+<h2 id="other-decision-heuristics-used-in-common-sat-solvers">Other decision Heuristics used in common SAT solvers</h2>
+<h3 id="dlis-dynamic-largest-individual-sum">DLIS (Dynamic Largest Individual Sum)</h3>
+<ul>
+<li>Scegli l'assegnamento che rende il maggior numero di clausole soddisfacibili</li>
+</ul>
+<h3 id="jersolow-wang-method">Jersolow-Wang method</h3>
+<p>Per ogni letterale viene computato il seguente <strong>peso</strong>:</p>
+<pre><code>J(l) = sum_of_weights(l)</code></pre>
+<ul>
+<li>Scegli il letterale che massimizza J(l).</li>
+</ul>
 </div>
 </body>
 </html>

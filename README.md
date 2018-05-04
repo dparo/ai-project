@@ -126,7 +126,10 @@ Please refer to the `README.md` located in `src/` directory.
 * I don't know, keep having fun with it. Implement new features
   for the interpreter like lists or support for propositional calculus.
   Or write a circuit synthesizer that uses this program
-  as a backend to prove the circuit validity. 
+  as a backend to prove simple circuits validity. 
+  Or try to rewrite it in order to overcome the limitations referred
+  down below.
+  
   **Sky is the limit my friend...**
 
 # LIMITATIONS (IMPORTANT)
@@ -160,7 +163,7 @@ Please refer to the `README.md` located in `src/` directory.
   tend to be cheap, while operators like `^` `==` tend to branch more which
   causes more visible exponential memory consumption
   
-* This interpreter is not obviously and `industrial strength proven` interpreter
+* This interpreter is not obviously an `industrial strength proven` interpreter
   and may only be used with caution and just to have some fun.
   Don't rely on it to try to synthesize logic circuits with **millions**
   of `logic gates`.
