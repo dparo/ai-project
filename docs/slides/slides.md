@@ -367,6 +367,40 @@ DPLL: Performance Analysis
 
   Non si riesce a fare molto meglio di cosi'.
 
+* Nella nostra implementazione si duplica, l'`AST`
+  prima di ogni chiamata ricorsiva. Cio' garantisce un
+  backtracking con performance instantanee (Se la formula
+  porta ad insoddisfaccimento semplicemente `free` l'AST
+  e ritorna al chiamante che ha una copia dell'albero propria).
+  Questo tuttavia comporta consumo di memoria esponenziale,
+  e l'interprete potrebbe diventare impraticabile per la
+  sintetizzazione di circuiti elettronici in cui compaiono
+  alberi di formule con elevato grado di branching.
+  Sicuramente sarebbe un punto da migliorare nell'implementazione
+  del nostro risolutore per renderlo `industrial-strength`.
+  
+  ~~~c
+  /* F1 */ a == b ^ c -> d | e <-> f ^ g & h | j 
+                   | k & l > n | m & o ^ q
+  
+  /* F2 */ a == b ^ c -> d | e <-> f ^ g & h | j 
+                   | k & l > n | m & o ^ q ~& z0
+  
+  /* F3 */ a == b ^ c -> d | e <-> f ^ g & h | j 
+                   | k & l > n | m & o ^ q ~& z0 ^ z1 == z2
+  ~~~
+
+  | Formula | Memory Consumption |
+  |---------|--------------------|
+  |  F1     |  4.7 MegaBytes     |
+  |  F2     |  7.68 MegaBytes    |
+  |  F3     |  96.20 MegaBytes   |
+
+  Si nota palesemente la dipendenza dal branching factor dell' `AST`.
+  Operatori come `XOR ^` e `IS EQUAL ==` tendono ad essere piu'
+  dispendiosi in termini di branching factor rispetto ad operatori
+  come `OR |` e `AND &`.
+
 
 DPLL: Improving Performance
 ===========================

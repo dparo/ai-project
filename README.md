@@ -125,6 +125,43 @@ Please refer to the `README.md` located in `src/` directory.
 # What now?
 * I don't know, keep having fun with it. Implement new features
   for the interpreter like lists or support for propositional calculus.
-  Or write a circuit synthetizer that uses this program
+  Or write a circuit synthesizer that uses this program
   as a backend to prove the circuit validity. 
   **Sky is the limit my friend...**
+
+# LIMITATIONS (IMPORTANT)
+* This project is supposed to be used merely as studying material
+  and just to have some fun learning and interacting with the `SAT World`.
+  In the current implementation of the `SAT` for every recursion call
+  of `DPLL` we duplicate the `AST`. This leads to easier implementation
+  of the algorithm and technically faster (if not instant)
+  `backtracking-time` performance, since,
+  when `DPLL` arrives to an unstatisfiable solution it just needs to `free`
+  the `AST` and return to the caller which in turn stores it's own copy.
+  
+  > This leads to **HUGE** **EXPONENTIAL** memory consumption.
+  
+  For example those random formulas leads to a **peak** memory
+  consumption of:
+  
+  ```c
+  /* F1 */ a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n | m & o ^ q
+  /* F2 */ a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n | m & o ^ q ~& z0
+  /* F3 */ a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n | m & o ^ q ~& z0 ^ z1 == z2
+  ```
+  
+  | Formula | Memory Consumption |
+  |---------|--------------------|
+  |  F1     |  4.7 MegaBytes     |
+  |  F2     |  7.68 MegaBytes    |
+  |  F3     |  96.20 MegaBytes   |
+  
+  It is obviously dependent on the branching factor. `AND` and `OR` operators
+  tend to be cheap, while operators like `^` `==` tend to branch more which
+  causes more visible exponential memory consumption
+  
+* This interpreter is not obviously and `industrial strength proven` interpreter
+  and may only be used with caution and just to have some fun.
+  Don't rely on it to try to synthesize logic circuits with **millions**
+  of `logic gates`.
+  
