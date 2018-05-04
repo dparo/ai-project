@@ -2,6 +2,13 @@
 % Davide Paro;
 % May 2018
 
+Content
+=======
+{{ ... }}
+
+Outline
+=======
+{{ ... }}
 
 Parsing
 =======
@@ -465,9 +472,16 @@ zChaff: Variable State Independent Decaying Sum
 * **IDEA**: Concentrare i tempi di computazione solamente su clausole
   che sono state provate insoddisfacibili **recentemente**.
 
-Appendix
-========
-## Other decision Heuristics used in common SAT solvers
+Future Work
+===========
+* Adattamento e studio degli algoritmi introdotti per la
+  risoluzione di problemi **QBF** (Quantified Boolean Formula)
+  che un problema **PSPACE-complete**, che ha applicazioni
+  pratiche in **intelligenza-artificiale** e verifica
+  di validita' di **circuiti sequenziali** in campo `EDA`.
+
+Appendix A (Common Heuristics in SAT Solvers)
+=============================================
 
 ### DLIS (Dynamic Largest Individual Sum)
 * Scegli l'assegnamento che rende il maggior numero di clausole
@@ -481,3 +495,44 @@ J(l) = sum_of_weights(l)
 ```
 
 * Scegli il letterale che massimizza J(l).
+
+Appendix B (QBF)
+================
+## DPLL Based QBF Resolutions
+[A Comparative Study of 2QBF Algorithms](https://www.princeton.edu/~chaff/publication/SAT04_2qbf_compare.pdf)
+
+* Algorithm1:
+
+> Algorithm A uses two DPLL SAT solvers, solver A and solver B, that communicate information
+> to each other. Solver A maintains a CNF φA which begins as the original CNF
+> φ, and solver B maintains a CNF φB which begins empty and is incremented
+> during the solving process to contain clauses that depend only on the universal variable
+>
+> 1.  Solver A begins by finding a satisfying assignment α for φ.
+>    (a)  If none exists, then the algorithm halts and returns false.
+>    (b)  Otherwise, the solver then finds a cover set α′ of α, a partial assignment of
+>         α that also satisfies all the clauses of φ. The complement of the
+>         conjunction of universal literals in α′ is added as a clause b1
+>         to φB.
+>
+> 2.  Solver B then finds a satisfying assignment β of the variables in X
+>     for φB, provided one exists.
+>     (a)  If it does not exist, then the algorithm halts and returns true.
+>     (b)  If β exists, on the other hand, then β is taken as an initial
+>          assignment for solver A, and we return to step 1, where solver A
+>          tries to find a satisfying assignment of φA given β as an initial assignment,
+>          and the process repeats.
+
+* Algorithm2:
+
+> Algorithm II is a variation of algorithm I. As before, there are two SAT solvers, A and B,
+> that have the same tasks as in algorithm I. The difference is that in algorithm II, when solver B finds a
+> satisfying assignment to X , solver A does not use that assignment itself as an initial assignment; solver A
+> finds its own satisfying assignment independently of solver B’s assignment, i.e., in algorithm II, step 1(b)
+> is replaced by the following two steps:
+>  1.  (b)   i.  Solver A finds a cover set α′ of α, a partial assignment of α that
+>                also satisfies all the clauses of φ . The complement of the conjunction
+>                of universal literals in α′ is added as a clause b1 to φB.
+>            ii.  Solver A then finds a clause b′ 1 that has the property that φA ∧ b1 is logically equivalent to
+>                 φA ∧ b′1 (this is done by taking a cutset of the implication graph of the complements of all of
+>                 the literals in b1; implication graphs are explained in [12]). φA is then augmented by b′1

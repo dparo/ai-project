@@ -8,7 +8,7 @@
   You will need pandoc to convert the markdown file `.md` to
   a `.html` file used for viewing the slides.
   (Yes exactly, no PowerPoint bullshit. Praise the Shell)
-* Download pandoc from (Pandoc Website)[https://pandoc.org/index.html]
+* Download pandoc from [Pandoc Website](https://pandoc.org/index.html)
   or if you're on any Debian based distro `sudo apt install pandoc`
 * run `build.sh` to compile the slides
 * **NOTE**: Graphviz `dot` program is required to compile the graphs

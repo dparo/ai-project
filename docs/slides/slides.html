@@ -59,6 +59,14 @@ Davide Paro
   </p>
   <p class="date">May 2018</p>
 </div>
+<div id="content" class="slide section level1">
+<h1>Content</h1>
+<p>{{ ... }}</p>
+</div>
+<div id="outline" class="slide section level1">
+<h1>Outline</h1>
+<p>{{ ... }}</p>
+</div>
 <div id="parsing" class="slide section level1">
 <h1>Parsing</h1>
 <ol style="list-style-type: decimal">
@@ -422,9 +430,14 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <li><strong>IDEA</strong>: Concentrare i tempi di computazione solamente su clausole che sono state provate insoddisfacibili <strong>recentemente</strong>.</li>
 </ul>
 </div>
-<div id="appendix" class="slide section level1">
-<h1>Appendix</h1>
-<h2 id="other-decision-heuristics-used-in-common-sat-solvers">Other decision Heuristics used in common SAT solvers</h2>
+<div id="future-work" class="slide section level1">
+<h1>Future Work</h1>
+<ul>
+<li>Adattamento e studio degli algoritmi introdotti per la risoluzione di problemi <strong>QBF</strong> (Quantified Boolean Formula) che un problema <strong>PSPACE-complete</strong>, che ha applicazioni pratiche in <strong>intelligenza-artificiale</strong> e verifica di validita' di <strong>circuiti sequenziali</strong> in campo <code>EDA</code>.</li>
+</ul>
+</div>
+<div id="appendix-a-common-heuristics-in-sat-solvers" class="slide section level1">
+<h1>Appendix A (Common Heuristics in SAT Solvers)</h1>
 <h3 id="dlis-dynamic-largest-individual-sum">DLIS (Dynamic Largest Individual Sum)</h3>
 <ul>
 <li>Scegli l'assegnamento che rende il maggior numero di clausole soddisfacibili</li>
@@ -435,6 +448,37 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <ul>
 <li>Scegli il letterale che massimizza J(l).</li>
 </ul>
+</div>
+<div id="appendix-b-qbf" class="slide section level1">
+<h1>Appendix B (QBF)</h1>
+<h2 id="dpll-based-qbf-resolutions">DPLL Based QBF Resolutions</h2>
+<p><a href="https://www.princeton.edu/~chaff/publication/SAT04_2qbf_compare.pdf">A Comparative Study of 2QBF Algorithms</a></p>
+<ul>
+<li>Algorithm1:</li>
+</ul>
+<blockquote>
+<p>Algorithm A uses two DPLL SAT solvers, solver A and solver B, that communicate information to each other. Solver A maintains a CNF φA which begins as the original CNF φ, and solver B maintains a CNF φB which begins empty and is incremented during the solving process to contain clauses that depend only on the universal variable</p>
+<ol style="list-style-type: decimal">
+<li>Solver A begins by finding a satisfying assignment α for φ.</li>
+</ol>
+<ol style="list-style-type: lower-alpha">
+<li>If none exists, then the algorithm halts and returns false.</li>
+<li>Otherwise, the solver then finds a cover set α′ of α, a partial assignment of α that also satisfies all the clauses of φ. The complement of the conjunction of universal literals in α′ is added as a clause b1 to φB.</li>
+</ol>
+<ol start="2" style="list-style-type: decimal">
+<li>Solver B then finds a satisfying assignment β of the variables in X for φB, provided one exists.
+<ol style="list-style-type: lower-alpha">
+<li>If it does not exist, then the algorithm halts and returns true.</li>
+<li>If β exists, on the other hand, then β is taken as an initial assignment for solver A, and we return to step 1, where solver A tries to find a satisfying assignment of φA given β as an initial assignment, and the process repeats.</li>
+</ol></li>
+</ol>
+</blockquote>
+<ul>
+<li>Algorithm2:</li>
+</ul>
+<blockquote>
+<p>Algorithm II is a variation of algorithm I. As before, there are two SAT solvers, A and B, that have the same tasks as in algorithm I. The difference is that in algorithm II, when solver B finds a satisfying assignment to X , solver A does not use that assignment itself as an initial assignment; solver A finds its own satisfying assignment independently of solver B’s assignment, i.e., in algorithm II, step 1(b) is replaced by the following two steps: 1. (b) i. Solver A finds a cover set α′ of α, a partial assignment of α that also satisfies all the clauses of φ . The complement of the conjunction of universal literals in α′ is added as a clause b1 to φB. ii. Solver A then finds a clause b′ 1 that has the property that φA ∧ b1 is logically equivalent to φA ∧ b′1 (this is done by taking a cutset of the implication graph of the complements of all of the literals in b1; implication graphs are explained in [12]). φA is then augmented by b′1</p>
+</blockquote>
 </div>
 </body>
 </html>
