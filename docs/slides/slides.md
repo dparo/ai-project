@@ -351,13 +351,14 @@ DPLL: Performance Analysis
 ==========================
 * **DPLL-unit-propagate** costituisce la parte piu' corposa e il cuore
   dell'intero algoritmo. Nella nostra implementazione occupa
-  circa il `95%` dell'`execution-time`. Nella nostra implementazione
+  circa il `50 ~ 70%` dell'`execution-time`. Nella nostra implementazione
   l'AST viene copiato e fisicamente ridotto, eliminando nodi nella
   fase di `unit-propagate`. Cio' garantisce una piu' facile
   implementazione di determinare che cosa sia una **clausola
   unitaria** ma comporta dei costi non trascurabili in performance.
-* Un `90%` di tempo di computazione speso in `unit-propagate` e' un
-  valore tipico in qualunque implementazione DPLL.
+* Un `>= 90%` di tempo di computazione speso in `unit-propagate` e' un
+  valore tipico per implementazioni `DPLL` che non fanno uso
+  di **duplicazione** dell'`AST`.
 
 * **BAD!**: `dpll-unit-propagate` non e' "lavoro" **utile**
   alla determinazione della soluzione. E' solo **book-keeping**
@@ -397,9 +398,9 @@ DPLL: Performance Analysis
   |  F3     |  96.20 MegaBytes   |
 
   Si nota palesemente la dipendenza dal branching factor dell' `AST`.
-  Operatori come `XOR ^` e `IS EQUAL ==` tendono ad essere piu'
+  Operatori come `XOR (^)` e `IS EQUAL (==)` tendono ad essere piu'
   dispendiosi in termini di branching factor rispetto ad operatori
-  come `OR |` e `AND &`.
+  come `OR (|)` e `AND (&)`.
 
 
 DPLL: Improving Performance
