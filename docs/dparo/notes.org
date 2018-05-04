@@ -55,7 +55,7 @@
 - http://www.princeton.edu/~chaff/publication/DAC2001v56.pdf
 - https://www.princeton.edu/~chaff/publication/iccad2001_final.pdf
 - https://www.princeton.edu/~chaff/publication/iccad_2002.pdf
-- https://www.princeton.edu/~chaff/publication/cp_2002.pdf
+
 - https://www.princeton.edu/~chaff/publication/cade_cav_2002.pdf
 - https://www.princeton.edu/~chaff/publication/DATE2003_validating_sat_solver.pdf
 
@@ -65,3 +65,4 @@
 
 - https://www.princeton.edu/~chaff/publication/SAT04_2qbf_compare.pdf
 - https://www.princeton.edu/~chaff/publication/SAT04_search_qbf_diameter.pdf (NOT MUCH IN HERE)
+- https://www.princeton.edu/~chaff/publication/cp_2002.pdf (ACNF: unit-cubes, satisfiable-cubes)

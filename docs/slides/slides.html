@@ -401,10 +401,10 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <h1>zChaff: State of the Art DPLL-Derived Implementation</h1>
 <ul>
 <li><p><strong>PERFORMANCE</strong> -&gt; <code>10x ~ 200x</code> speedup rispetto a DPLL per problemi di soddisfacimento piu' grandi.</p></li>
-<li><p>Per evitare grossi costi di computazione nella fase di backtracking e conseguente ripristino dell'AST, tiene traccia di una lista di <strong>Chaffs-Implications</strong>. Una formula e' <code>chaff-implicated</code> se tutti i letterali sono posti al valore 0 (false) ad esclusione di 1 solo letterale. <code>a0 = 0; a1= 0; .... ai = 1; ....; an = 0;</code> Dove <code>ai</code> e' il generico letterale <code>i</code> presente all'interno della formula.</p></li>
+<li><p>Per evitare grossi costi di computazione nella fase di backtracking, si tiene traccia di una lista di <strong>Chaffs-Implications</strong>. Una formula e' <code>chaff-implicated</code> se tutti i letterali sono posti al valore 0 (false) ad esclusione di 1 solo letterale. <code>a0 = 0; a1= 0; .... ai = 1; ....; an = 0;</code> Dove <code>ai</code> e' il generico letterale <code>i</code> presente all'interno della formula.</p></li>
 </ul>
 <p>Fa uso della cosidetta <code>Two-Watched Literals Rule</code>.</p>
-<p><strong>IDEA</strong>: Per ogni clausola si tengono &quot;sott'occhio&quot; due letterali, finche' questi due letterali non vengono assegnati o soddisfatti, la clausola non puo' produrre <code>unit-propagation</code>.</p>
+<p><strong>IDEA</strong>: Per ogni clausola si tengono &quot;sott'occhio&quot; due letterali, finche', questi due letterali non vengono assegnati o a loro volta soddisfatti, la clausola non puo' produrre uno <code>unit-propagation</code>.</p>
 <p>Solo quando uno dei due letterali viene posto a <code>0</code> che la clausola deve essere analizzata con dettaglio. Se: * E' presente un'altro letterale non settato e non &quot;watched&quot;, si comincia a tenere &quot;d'occhio&quot; quest'ultimo. * Se e' presente un letterale soddisfatto nella clausola, non c'e' bisogno di alcuna particolare computazione. * Se non e' presente alcun letterale soddisfatto, allora la clausola e' pronta ad essere <code>unit-propagated</code>.</p>
 <p><strong>SCOPO</strong>: Ridurre lo <strong>unit-propagation</strong> che e' la parte computazionalmente piu' dispendiosa nella risoluzione di un problema <code>SAT</code>.</p>
 <ul>
@@ -417,7 +417,7 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <div id="zchaff-variable-state-independent-decaying-sum" class="slide section level1">
 <h1>zChaff: Variable State Independent Decaying Sum</h1>
 <ul>
-<li>A differenza di <code>DPLL</code>, il quale quando non sono presenti clausole unitarie adotta una metodologia di assegnamento randomico, <code>zChaff</code> utilizza delle tecniche con <strong>heuristica</strong> per determinare l'assegnamento migliore da fare nel passo successivo.</li>
+<li>A differenza di <code>DPLL</code>, il quale quando non sono presenti clausole unitarie adotta una metodologia di assegnamento randomico, <code>zChaff</code> utilizza delle tecniche con <strong>euristica</strong> per determinare l'assegnamento migliore da fare nel passo successivo.</li>
 </ul>
 <ol style="list-style-type: decimal">
 <li>Ad ogni letterale viene associato un contatore inizializzato a <code>0</code></li>
@@ -430,10 +430,26 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <li><strong>IDEA</strong>: Concentrare i tempi di computazione solamente su clausole che sono state provate insoddisfacibili <strong>recentemente</strong>.</li>
 </ul>
 </div>
+<div id="conflict-driven-and-satisfiability-directed-learning" class="slide section level1">
+<h1>Conflict-Driven and Satisfiability-Directed Learning</h1>
+<p>{{ ... }}</p>
+</div>
 <div id="future-work" class="slide section level1">
 <h1>Future Work</h1>
 <ul>
-<li>Adattamento e studio degli algoritmi introdotti per la risoluzione di problemi <strong>QBF</strong> (Quantified Boolean Formula) che un problema <strong>PSPACE-complete</strong>, che ha applicazioni pratiche in <strong>intelligenza-artificiale</strong> e verifica di validita' di <strong>circuiti sequenziali</strong> in campo <code>EDA</code>.</li>
+<li>Riscrittura <code>DPLL</code> per renderlo meno <strong>memory-hungry</strong>.</li>
+<li>Aggiunta nel REPL per supporto di semplici definizioni di liste</li>
+</ul>
+<pre><code>    uomini = [marco, luca, giovanni, ...]
+    donne  = [laura, roberta, veronica, ...]
+    // QUERY: marco e&#39; una donna ???
+    [&gt;] marco IN donne      // oppure
+    [&gt;] donne[marco]</code></pre>
+<ul>
+<li>Adattamento dell'inteprete per risoluzione di problemi <strong>QBF</strong> (Quantified Boolean Formula), con conseguente studio della lettaratura sugli algoritmi introdotti per la risoluzione di questo problema, che risulta essere un problema <strong>PSPACE-complete</strong>, che ha forti applicazioni pratiche in <strong>intelligenza-artificiale</strong> e nella verifica della validita' di <strong>circuiti sequenziali</strong> in campo <code>EDA</code>.</li>
+<li>Implementazione di varie tecniche euristiche usati dai risolutori piu' moderni.</li>
+<li>Possibilita' di trasformare l'interpretere in un vero e proprio linguaggio di programmazione tipo <strong>PROLOG</strong>.</li>
+<li>E altro ancora ...</li>
 </ul>
 </div>
 <div id="appendix-a-common-heuristics-in-sat-solvers" class="slide section level1">
@@ -479,6 +495,18 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <blockquote>
 <p>Algorithm II is a variation of algorithm I. As before, there are two SAT solvers, A and B, that have the same tasks as in algorithm I. The difference is that in algorithm II, when solver B finds a satisfying assignment to X , solver A does not use that assignment itself as an initial assignment; solver A finds its own satisfying assignment independently of solver B’s assignment, i.e., in algorithm II, step 1(b) is replaced by the following two steps: 1. (b) i. Solver A finds a cover set α′ of α, a partial assignment of α that also satisfies all the clauses of φ . The complement of the conjunction of universal literals in α′ is added as a clause b1 to φB. ii. Solver A then finds a clause b′ 1 that has the property that φA ∧ b1 is logically equivalent to φA ∧ b′1 (this is done by taking a cutset of the implication graph of the complements of all of the literals in b1; implication graphs are explained in [12]). φA is then augmented by b′1</p>
 </blockquote>
+</div>
+<div id="appendix-c-acnf-augmented-conjunctive-normal-form" class="slide section level1">
+<h1>Appendix C (ACNF: Augmented Conjunctive Normal Form)</h1>
+<ul>
+<li>Usata nella risoluzione <strong>QBF</strong>.</li>
+<li>Rilassa il modello <code>CNF</code> permetto presenza di operatori <code>OR</code> nel top-level della formula accanto alle clausole. (Ricordo che le clausole sono delimitate da operatori <code>AND</code>).</li>
+<li>Oltre al concetto di <strong>clausola</strong> introdotta in <code>CNF</code>, in <code>ACNF</code> si parla di <strong>cubi</strong>.</li>
+<li>I <strong>cubi</strong> sono sostanzialmente degli <code>ORs</code> con i termini a clausola. (ORs con i top-level ANDs).</li>
+<li>Come per le <strong>clausole-unitarie</strong>, esistono i <strong>cubi-unitari</strong>. I cubi-unitari generanno delle implicazioni.</li>
+<li>Lo scopo <strong>clausole</strong> introdotte in <code>CNF</code> e' portare a insoddisfacimento, il compito dei <strong>cubi</strong> in <code>ACNF</code>, invece e' portare a soddisfacimento.</li>
+<li>I cubi sono i &quot;complementari&quot; delle clausole.</li>
+</ul>
 </div>
 </body>
 </html>

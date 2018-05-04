@@ -415,8 +415,8 @@ zChaff: State of the Art DPLL-Derived Implementation
   per problemi di soddisfacimento piu' grandi.
 
 * Per evitare grossi costi di computazione nella
-  fase di backtracking e conseguente ripristino dell'AST,
-  tiene traccia di una lista di **Chaffs-Implications**.
+  fase di backtracking,
+  si tiene traccia di una lista di **Chaffs-Implications**.
   Una formula e' `chaff-implicated` se tutti i letterali
   sono posti al valore 0 (false) ad esclusione di 1 solo letterale.
   ```
@@ -427,8 +427,8 @@ zChaff: State of the Art DPLL-Derived Implementation
   Fa uso della cosidetta `Two-Watched Literals Rule`.
   
   **IDEA**: Per ogni clausola si tengono "sott'occhio" due letterali,
-  finche' questi due letterali non vengono assegnati o soddisfatti,
-  la clausola non puo' produrre `unit-propagation`.
+  finche', questi due letterali non vengono assegnati o a loro volta soddisfatti,
+  la clausola non puo' produrre uno `unit-propagation`.
 
   Solo quando uno dei due letterali viene posto a `0` che la clausola
   deve essere analizzata con dettaglio. Se:
@@ -458,7 +458,7 @@ zChaff: Variable State Independent Decaying Sum
 ===============================================
 * A differenza di `DPLL`, il quale quando non sono presenti clausole unitarie
   adotta una metodologia di assegnamento randomico,
-  `zChaff` utilizza delle tecniche con **heuristica**
+  `zChaff` utilizza delle tecniche con **euristica**
   per determinare l'assegnamento migliore da fare nel passo successivo.
 
 1. Ad ogni letterale viene associato un contatore inizializzato a `0`
@@ -472,13 +472,34 @@ zChaff: Variable State Independent Decaying Sum
 * **IDEA**: Concentrare i tempi di computazione solamente su clausole
   che sono state provate insoddisfacibili **recentemente**.
 
+Conflict-Driven and Satisfiability-Directed Learning
+====================================================
+{{ ... }}
+
 Future Work
 ===========
-* Adattamento e studio degli algoritmi introdotti per la
-  risoluzione di problemi **QBF** (Quantified Boolean Formula)
-  che un problema **PSPACE-complete**, che ha applicazioni
-  pratiche in **intelligenza-artificiale** e verifica
-  di validita' di **circuiti sequenziali** in campo `EDA`.
+* Riscrittura `DPLL` per renderlo meno **memory-hungry**.
+* Aggiunta nel REPL per supporto di semplici definizioni di liste
+
+~~~~~
+    uomini = [marco, luca, giovanni, ...]
+    donne  = [laura, roberta, veronica, ...]
+    // QUERY: marco e' una donna ???
+    [>] marco IN donne      // oppure
+    [>] donne[marco]
+~~~~~
+
+* Adattamento dell'inteprete per risoluzione di problemi **QBF** (Quantified Boolean Formula),
+  con conseguente studio della lettaratura sugli algoritmi introdotti per la
+  risoluzione di questo problema, che risulta essere un
+  problema **PSPACE-complete**, che ha forti applicazioni
+  pratiche in **intelligenza-artificiale** e nella verifica
+  della validita' di **circuiti sequenziali** in campo `EDA`.
+* Implementazione di varie tecniche euristiche
+  usati dai risolutori piu' moderni.
+* Possibilita' di trasformare l'interpretere in un vero
+  e proprio linguaggio di programmazione tipo **PROLOG**.
+* E altro ancora ...
 
 Appendix A (Common Heuristics in SAT Solvers)
 =============================================
@@ -533,6 +554,23 @@ Appendix B (QBF)
 >  1.  (b)   i.  Solver A finds a cover set α′ of α, a partial assignment of α that
 >                also satisfies all the clauses of φ . The complement of the conjunction
 >                of universal literals in α′ is added as a clause b1 to φB.
->            ii.  Solver A then finds a clause b′ 1 that has the property that φA ∧ b1 is logically equivalent to
->                 φA ∧ b′1 (this is done by taking a cutset of the implication graph of the complements of all of
->                 the literals in b1; implication graphs are explained in [12]). φA is then augmented by b′1
+>            ii. Solver A then finds a clause b′ 1 that has the property that φA ∧ b1 is logically equivalent to
+>                φA ∧ b′1 (this is done by taking a cutset of the implication graph of the complements of all of
+>                the literals in b1; implication graphs are explained in [12]). φA is then augmented by b′1
+
+Appendix C (ACNF: Augmented Conjunctive Normal Form)
+====================================================
+* Usata nella risoluzione **QBF**.
+* Rilassa il modello `CNF` permetto presenza di operatori
+  `OR` nel top-level della formula accanto alle clausole.
+  (Ricordo che le clausole sono delimitate da operatori `AND`).
+* Oltre al concetto di **clausola** introdotta in `CNF`, 
+  in `ACNF` si parla di **cubi**.
+* I **cubi** sono sostanzialmente degli `ORs` con
+  i termini a clausola. (ORs con i top-level ANDs).
+*  Come per le **clausole-unitarie**, esistono i **cubi-unitari**.
+  I cubi-unitari generanno delle implicazioni.
+* Lo scopo **clausole** introdotte in `CNF` e' portare a insoddisfacimento,
+  il compito dei **cubi** in `ACNF`, invece e' portare a soddisfacimento.
+* I cubi sono i "complementari" delle clausole.
+  

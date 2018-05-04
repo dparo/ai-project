@@ -1,7 +1,7 @@
 # How it works.
 * The `code-gen` reads templates file from the `templates` directory.
-  It applies substituion rules to generate common source-code.
-  It allows to "achieve" ( in quote marks! ) metaprogramming in C,
+  It applies substitution rules to generate common source-code.
+  It allows to "achieve" ( in quote marks! ) metaprogramming in `C`,
   and avoid maintenance issue of maintaining multiple files which are
   basically identical with a couple of differences.
   
