@@ -379,7 +379,7 @@ DPLL: Performance Analysis
   Sicuramente sarebbe un punto da migliorare nell'implementazione
   del nostro risolutore per renderlo `industrial-strength`.
   
-  ~~~c
+~~~~~~~~~c
   /* F1 */ a == b ^ c -> d | e <-> f ^ g & h | j 
                    | k & l > n | m & o ^ q
   
@@ -388,7 +388,7 @@ DPLL: Performance Analysis
   
   /* F3 */ a == b ^ c -> d | e <-> f ^ g & h | j 
                    | k & l > n | m & o ^ q ~& z0 ^ z1 == z2
-  ~~~
+~~~~~~~~~
 
   | Formula | Memory Consumption |
   |---------|--------------------|

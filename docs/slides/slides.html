@@ -354,6 +354,40 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <li><p><strong>BAD!</strong>: <code>dpll-unit-propagate</code> non e' &quot;lavoro&quot; <strong>utile</strong> alla determinazione della soluzione. E' solo <strong>book-keeping</strong> che deve essere svolto per fare funzionare l'algoritmo, e' solo una ricostruzione dell'AST che mantiene equivalenza semantica, e non porta <code>DPLL</code> ad avvicinarsi ad una soluzione.</p></li>
 </ul>
 <p>Non si riesce a fare molto meglio di cosi'.</p>
+<ul>
+<li>Nella nostra implementazione si duplica, l'<code>AST</code> prima di ogni chiamata ricorsiva. Cio' garantisce un backtracking con performance instantanee (Se la formula porta ad insoddisfaccimento semplicemente <code>free</code> l'AST e ritorna al chiamante che ha una copia dell'albero propria). Questo tuttavia comporta consumo di memoria esponenziale, e l'interprete potrebbe diventare impraticabile per la sintetizzazione di circuiti elettronici in cui compaiono alberi di formule con elevato grado di branching. Sicuramente sarebbe un punto da migliorare nell'implementazione del nostro risolutore per renderlo <code>industrial-strength</code>.</li>
+</ul>
+<div class="sourceCode"><pre class="sourceCode c"><code class="sourceCode c">  <span class="co">/* F1 */</span> a == b ^ c -&gt; d | e &lt;-&gt; f ^ g &amp; h | j 
+                   | k &amp; l &gt; n | m &amp; o ^ q
+  
+  <span class="co">/* F2 */</span> a == b ^ c -&gt; d | e &lt;-&gt; f ^ g &amp; h | j 
+                   | k &amp; l &gt; n | m &amp; o ^ q ~&amp; z0
+  
+  <span class="co">/* F3 */</span> a == b ^ c -&gt; d | e &lt;-&gt; f ^ g &amp; h | j 
+                   | k &amp; l &gt; n | m &amp; o ^ q ~&amp; z0 ^ z1 == z2</code></pre></div>
+<table>
+<thead>
+<tr class="header">
+<th align="left">Formula</th>
+<th align="left">Memory Consumption</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="left">F1</td>
+<td align="left">4.7 MegaBytes</td>
+</tr>
+<tr class="even">
+<td align="left">F2</td>
+<td align="left">7.68 MegaBytes</td>
+</tr>
+<tr class="odd">
+<td align="left">F3</td>
+<td align="left">96.20 MegaBytes</td>
+</tr>
+</tbody>
+</table>
+<p>Si nota palesemente la dipendenza dal branching factor dell' <code>AST</code>. Operatori come <code>XOR ^</code> e <code>IS EQUAL ==</code> tendono ad essere piu' dispendiosi in termini di branching factor rispetto ad operatori come <code>OR |</code> e <code>AND &amp;</code>.</p>
 </div>
 <div id="dpll-improving-performance" class="slide section level1">
 <h1>DPLL: Improving Performance</h1>
