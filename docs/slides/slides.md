@@ -391,7 +391,12 @@ DPLL: Performance Analysis
   alla determinazione della soluzione. E' solo **book-keeping**
   che deve essere svolto per fare funzionare l'algoritmo,
   e' solo una ricostruzione dell'AST che mantiene equivalenza
-  semantica, e non porta `DPLL` ad avvicinarsi ad una soluzione.
+  semantica.
+  `unit-propagate` costituisce un grosso **bottleneck**
+  nelle implementazioni di risolutori `SAT`.
+  Le moderne tecniche adottate nei risolutori attuali hanno
+  lo scopo principale di minimizzare il tempo di computazione
+  speso in `unit-propagate`.
 
   Non si riesce a fare molto meglio di cosi'.
 

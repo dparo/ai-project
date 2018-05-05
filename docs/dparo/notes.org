@@ -50,7 +50,6 @@
 - https://www.princeton.edu/~chaff/publication.html
 
 ** To Be READ
-- https://www.cs.cmu.edu/afs/cs/project/jair/pub/volume21/dixon04a-html/node1.html
 
 - https://www.princeton.edu/~chaff/publication/cade_cav_2002.pdf ( This is the good shit, the best for last )
 
@@ -68,3 +67,4 @@
 
 ** Skipped Or Read Briefly
 - https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7225110
+- https://www.cs.cmu.edu/afs/cs/project/jair/pub/volume21/dixon04a-html/node1.html
