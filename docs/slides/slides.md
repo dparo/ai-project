@@ -4,11 +4,15 @@
 
 Content
 =======
-{{ ... }}
-
-Outline
-=======
-{{ ... }}
+* Introduzione a risolutori `SAT` for problemi
+  **NP-complete**
+* Discussione di algoritmi classici per la risoluzione
+* Discussione di algoritmi che compongono lo
+  stato dell'arte dei risolutori piu' moderni
+* Presentazione di un semplice risolutore
+  basato su **bruteforce** e ricerca con backtracking
+  **DPLL**.
+* Analisi a grandi linee delle performance e dettagli applicativi
 
 Parsing
 =======
@@ -304,9 +308,8 @@ DPLL & BF Comparison
                    18                57 secondi                       < 1 milli-secondo
                    19               121 secondi                       < 1 milli-secondo
 
-
-DPLL & TP: Curiosity
-====================
+DPLL & TP: Curiosities
+======================
 * Per esempio questa formula casuale:
           
           a == b ^ c -> d | e <-> f ^ g & h 
@@ -408,6 +411,12 @@ DPLL: Performance Analysis
   dispendiosi in termini di branching factor rispetto ad operatori
   come `OR (|)` e `AND (&)`.
 
+* **Soluzione**: Invece di duplicare l'`AST`, nella
+  fase di iterazione per `unit-propagate`, si **marcano**
+  i nodi con dei `flags` (**mark & sweep**).
+  Maggiore difficolta' di `debugging`,
+  e non didattico per la comprensione del problema e
+  dell'algoritmo.
 
 zChaff: State of the Art DPLL-Derived Implementation
 ======================================================
@@ -416,9 +425,10 @@ zChaff: State of the Art DPLL-Derived Implementation
 
 * Per evitare grossi costi di computazione nella
   fase di backtracking,
-  si tiene traccia di una lista di **Chaffs-Implications**.
-  Una formula e' `chaff-implicated` se tutti i letterali
-  sono posti al valore 0 (false) ad esclusione di 1 solo letterale.
+  si tiene traccia di una lista di **asserting-clauses**.
+  Una clausole e' `clause asserted` se tutti i letterali che la
+  compongono assumono valore `0` ad esclusione di 1 solo letterale
+  che assumera valore `1`.
   ```
   a0 = 0; a1= 0; .... ai = 1; ....; an = 0;
   ```
@@ -432,27 +442,21 @@ zChaff: State of the Art DPLL-Derived Implementation
 
   Solo quando uno dei due letterali viene posto a `0` che la clausola
   deve essere analizzata con dettaglio. Se:
-  * E' presente un'altro letterale non settato e non "watched",
+  
+  - E' presente un'altro letterale non settato e non "watched",
     si comincia a tenere "d'occhio" quest'ultimo.
-  * Se e' presente un letterale soddisfatto nella clausola, non
+  
+  - Se e' presente un letterale soddisfatto nella clausola, non
     c'e' bisogno di alcuna particolare computazione.
-  * Se non e' presente alcun letterale soddisfatto, allora la clausola
+  
+  - Se non e' presente alcun letterale soddisfatto, allora la clausola
     e' pronta ad essere `unit-propagated`.
-    
+   
   **SCOPO**: Ridurre lo **unit-propagation** che e' la parte
   computazionalmente piu' dispendiosa nella risoluzione di un problema `SAT`.
   
 * **NOTA**: In `zChaff` l'**undo** di un assegnamento non e' costoso in termini
   computazionali
-  
-  > This speedup is not the result of sophisticated learning strategies for 
-  > pruning  the  search  space,  but  rather,  of  efficient engineering of
-  > the   key   steps   involved   in   the   basic   search   algorithm.
-  > Specifically, this speedup is derived from:
-  > - a highly optimized BCP algorithm, and
-  > - a  decision  strategy  highly  optimized  for  speed,  as well as 
-  >   focused on recently added clauses
-  
   
 zChaff: Variable State Independent Decaying Sum
 ===============================================
@@ -471,10 +475,43 @@ zChaff: Variable State Independent Decaying Sum
 
 * **IDEA**: Concentrare i tempi di computazione solamente su clausole
   che sono state provate insoddisfacibili **recentemente**.
+ 
+  > This speedup is not the result of sophisticated learning strategies for 
+  > pruning  the  search  space,  but  rather,  of  efficient engineering of
+  > the   key   steps   involved   in   the   basic   search   algorithm.
+  > Specifically, this speedup is derived from:
+  > - a highly optimized BCP algorithm, and
+  > - a  decision  strategy  highly  optimized  for  speed,  as well as 
+  >   focused on recently added clauses
+
 
 Conflict-Driven and Satisfiability-Directed Learning
 ====================================================
-{{ ... }}
+* Si fanno uso di tecniche di apprendimento. Sotto
+  particolari condizioni si aggiungono ulteriori clausole
+  al **clause-database** che costituisce
+  la **knowledge-base** del risolutore.
+  Lo scopo e' ridurre il fattore di ramificazione che deve essere eplorato
+  prima di arrivare alla soddisfacibilita'.
+  Oltretutto fa uso di **non-chronological backtracking**.
+  (**NB**: In DPLL l'ordine di backtracking e' deciso
+           dallo stack di ricorsione )
+
+* Mantiene in memoria un grafo dell'implicazioni
+  che viene modificato durante la fase di risoluzione.
+  Ogni **nodo** rappresenta un assegnamento ad una
+  variabile. Ogni **ramo** incidente in un dato nodo
+  rappresenta il **motivo** che ha portato a tale 
+  assegnamento. Quando si arriva ad un conflitto
+  di assegnamento il grafo viene analizzato per capire
+  il motivo del conflitto, e conseguentemente
+  evitare in futuro di commettere lo stesso errore
+  di assegnamento che porterebbe inevitavibilmente
+  ad un insoddisfacimento della formula.
+
+
+
+
 
 Future Work
 ===========

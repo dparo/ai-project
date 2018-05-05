@@ -61,11 +61,13 @@ Davide Paro
 </div>
 <div id="content" class="slide section level1">
 <h1>Content</h1>
-<p>{{ ... }}</p>
-</div>
-<div id="outline" class="slide section level1">
-<h1>Outline</h1>
-<p>{{ ... }}</p>
+<ul>
+<li>Introduzione a risolutori <code>SAT</code> for problemi <strong>NP-complete</strong></li>
+<li>Discussione di algoritmi classici per la risoluzione</li>
+<li>Discussione di algoritmi che compongono lo stato dell'arte dei risolutori piu' moderni</li>
+<li>Presentazione di un semplice risolutore basato su <strong>bruteforce</strong> e ricerca con backtracking <strong>DPLL</strong>.</li>
+<li>Analisi a grandi linee delle performance e dettagli applicativi</li>
+</ul>
 </div>
 <div id="parsing" class="slide section level1">
 <h1>Parsing</h1>
@@ -334,8 +336,8 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 </tbody>
 </table>
 </div>
-<div id="dpll-tp-curiosity" class="slide section level1">
-<h1>DPLL &amp; TP: Curiosity</h1>
+<div id="dpll-tp-curiosities" class="slide section level1">
+<h1>DPLL &amp; TP: Curiosities</h1>
 <ul>
 <li><p>Per esempio questa formula casuale:</p>
 <pre><code>  a == b ^ c -&gt; d | e &lt;-&gt; f ^ g &amp; h 
@@ -396,23 +398,28 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 </tbody>
 </table>
 <p>Si nota palesemente la dipendenza dal branching factor dell' <code>AST</code>. Operatori come <code>XOR (^)</code> e <code>IS EQUAL (==)</code> tendono ad essere piu' dispendiosi in termini di branching factor rispetto ad operatori come <code>OR (|)</code> e <code>AND (&amp;)</code>.</p>
+<ul>
+<li><strong>Soluzione</strong>: Invece di duplicare l'<code>AST</code>, nella fase di iterazione per <code>unit-propagate</code>, si <strong>marcano</strong> i nodi con dei <code>flags</code> (<strong>mark &amp; sweep</strong>). Maggiore difficolta' di <code>debugging</code>, e non didattico per la comprensione del problema e dell'algoritmo.</li>
+</ul>
 </div>
 <div id="zchaff-state-of-the-art-dpll-derived-implementation" class="slide section level1">
 <h1>zChaff: State of the Art DPLL-Derived Implementation</h1>
 <ul>
 <li><p><strong>PERFORMANCE</strong> -&gt; <code>10x ~ 200x</code> speedup rispetto a DPLL per problemi di soddisfacimento piu' grandi.</p></li>
-<li><p>Per evitare grossi costi di computazione nella fase di backtracking, si tiene traccia di una lista di <strong>Chaffs-Implications</strong>. Una formula e' <code>chaff-implicated</code> se tutti i letterali sono posti al valore 0 (false) ad esclusione di 1 solo letterale. <code>a0 = 0; a1= 0; .... ai = 1; ....; an = 0;</code> Dove <code>ai</code> e' il generico letterale <code>i</code> presente all'interno della formula.</p></li>
+<li><p>Per evitare grossi costi di computazione nella fase di backtracking, si tiene traccia di una lista di <strong>asserting-clauses</strong>. Una clausole e' <code>clause asserted</code> se tutti i letterali che la compongono assumono valore <code>0</code> ad esclusione di 1 solo letterale che assumera valore <code>1</code>. <code>a0 = 0; a1= 0; .... ai = 1; ....; an = 0;</code> Dove <code>ai</code> e' il generico letterale <code>i</code> presente all'interno della formula.</p></li>
 </ul>
 <p>Fa uso della cosidetta <code>Two-Watched Literals Rule</code>.</p>
 <p><strong>IDEA</strong>: Per ogni clausola si tengono &quot;sott'occhio&quot; due letterali, finche', questi due letterali non vengono assegnati o a loro volta soddisfatti, la clausola non puo' produrre uno <code>unit-propagation</code>.</p>
-<p>Solo quando uno dei due letterali viene posto a <code>0</code> che la clausola deve essere analizzata con dettaglio. Se: * E' presente un'altro letterale non settato e non &quot;watched&quot;, si comincia a tenere &quot;d'occhio&quot; quest'ultimo. * Se e' presente un letterale soddisfatto nella clausola, non c'e' bisogno di alcuna particolare computazione. * Se non e' presente alcun letterale soddisfatto, allora la clausola e' pronta ad essere <code>unit-propagated</code>.</p>
+<p>Solo quando uno dei due letterali viene posto a <code>0</code> che la clausola deve essere analizzata con dettaglio. Se:</p>
+<ul>
+<li><p>E' presente un'altro letterale non settato e non &quot;watched&quot;, si comincia a tenere &quot;d'occhio&quot; quest'ultimo.</p></li>
+<li><p>Se e' presente un letterale soddisfatto nella clausola, non c'e' bisogno di alcuna particolare computazione.</p></li>
+<li><p>Se non e' presente alcun letterale soddisfatto, allora la clausola e' pronta ad essere <code>unit-propagated</code>.</p></li>
+</ul>
 <p><strong>SCOPO</strong>: Ridurre lo <strong>unit-propagation</strong> che e' la parte computazionalmente piu' dispendiosa nella risoluzione di un problema <code>SAT</code>.</p>
 <ul>
 <li><strong>NOTA</strong>: In <code>zChaff</code> l'<strong>undo</strong> di un assegnamento non e' costoso in termini computazionali</li>
 </ul>
-<blockquote>
-<p>This speedup is not the result of sophisticated learning strategies for pruning the search space, but rather, of efficient engineering of the key steps involved in the basic search algorithm. Specifically, this speedup is derived from: - a highly optimized BCP algorithm, and - a decision strategy highly optimized for speed, as well as focused on recently added clauses</p>
-</blockquote>
 </div>
 <div id="zchaff-variable-state-independent-decaying-sum" class="slide section level1">
 <h1>zChaff: Variable State Independent Decaying Sum</h1>
@@ -429,10 +436,16 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <ul>
 <li><strong>IDEA</strong>: Concentrare i tempi di computazione solamente su clausole che sono state provate insoddisfacibili <strong>recentemente</strong>.</li>
 </ul>
+<blockquote>
+<p>This speedup is not the result of sophisticated learning strategies for pruning the search space, but rather, of efficient engineering of the key steps involved in the basic search algorithm. Specifically, this speedup is derived from: - a highly optimized BCP algorithm, and - a decision strategy highly optimized for speed, as well as focused on recently added clauses</p>
+</blockquote>
 </div>
 <div id="conflict-driven-and-satisfiability-directed-learning" class="slide section level1">
 <h1>Conflict-Driven and Satisfiability-Directed Learning</h1>
-<p>{{ ... }}</p>
+<ul>
+<li><p>Si fanno uso di tecniche di apprendimento. Sotto particolari condizioni si aggiungono ulteriori clausole al <strong>clause-database</strong> che costituisce la <strong>knowledge-base</strong> del risolutore. Lo scopo e' ridurre il fattore di ramificazione che deve essere eplorato prima di arrivare alla soddisfacibilita'. Oltretutto fa uso di <strong>non-chronological backtracking</strong>. (<strong>NB</strong>: In DPLL l'ordine di backtracking e' deciso dallo stack di ricorsione )</p></li>
+<li><p>Mantiene in memoria un grafo dell'implicazioni che viene modificato durante la fase di risoluzione. Ogni <strong>nodo</strong> rappresenta un assegnamento ad una variabile. Ogni <strong>ramo</strong> incidente in un dato nodo rappresenta il <strong>motivo</strong> che ha portato a tale assegnamento. Quando si arriva ad un conflitto di assegnamento il grafo viene analizzato per capire il motivo del conflitto, e conseguentemente evitare in futuro di commettere lo stesso errore di assegnamento che porterebbe inevitavibilmente ad un insoddisfacimento della formula.</p></li>
+</ul>
 </div>
 <div id="future-work" class="slide section level1">
 <h1>Future Work</h1>

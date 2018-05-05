@@ -32,8 +32,11 @@ Please refer to the `README.md` located in `src/` directory.
   ->       IMPLY OPERATOR
   <->      DOUBLE IMPLY OPERATOR
       
-  CURRENTLY UNDERSTOOD BUT NOT IMPLEMENTED OPERATORS.
+      
+      
+  CURRENTLY RESERVED AND NOT IMPLEMENTED OPERATORS
   SUPPORT MAY BE ADDED LATER
+  ================================================
   
   =              ASSIGN OPERATOR
   +              CONCAT OPERATOR

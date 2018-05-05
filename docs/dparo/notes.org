@@ -46,15 +46,13 @@
   - https://en.wikipedia.org/wiki/Recursive_descent_parser ( PROPER WAY TO IMPLEMENT THE PARSER: NOT THE CASE FOR THIS PROJECT )
 
 * zChaff Papers
+
+- https://www.princeton.edu/~chaff/publication.html
+
 ** To Be READ
 - https://www.cs.cmu.edu/afs/cs/project/jair/pub/volume21/dixon04a-html/node1.html
 
 - https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7225110
-
-- https://www.princeton.edu/~chaff/publication.html
-- http://www.princeton.edu/~chaff/publication/DAC2001v56.pdf
-- https://www.princeton.edu/~chaff/publication/iccad2001_final.pdf
-- https://www.princeton.edu/~chaff/publication/iccad_2002.pdf
 
 - https://www.princeton.edu/~chaff/publication/cade_cav_2002.pdf
 - https://www.princeton.edu/~chaff/publication/DATE2003_validating_sat_solver.pdf
@@ -63,6 +61,9 @@
 ** Already READ
 - https://bears.ece.ucsb.edu/class/256bd/RCFB256B3450-Zchoff.pdf
 
+- http://www.princeton.edu/~chaff/publication/DAC2001v56.pdf (Introduction to zChaff)
 - https://www.princeton.edu/~chaff/publication/SAT04_2qbf_compare.pdf
 - https://www.princeton.edu/~chaff/publication/SAT04_search_qbf_diameter.pdf (NOT MUCH IN HERE)
 - https://www.princeton.edu/~chaff/publication/cp_2002.pdf (ACNF: unit-cubes, satisfiable-cubes)
+- https://www.princeton.edu/~chaff/publication/iccad2001_final.pdf ( Implication Graph )
+- https://www.princeton.edu/~chaff/publication/iccad_2002.pdf (Long Distance Resolution Lemmas and Proofs)
