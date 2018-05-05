@@ -335,6 +335,13 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 </tr>
 </tbody>
 </table>
+<h2 id="dpll-ethical-problem">DPLL Ethical problem</h2>
+<ul>
+<li>Come provare che il <strong>risultato</strong> prodotto da <code>DPLL</code> sia effettivamente corretto ... ?</li>
+<li>Quando <code>DPLL</code> arriva a soddisfacimento riporta i valori dei letterali assegnati, e quindi la verifica e' <strong>banale</strong>: si tratta di verificare se la formula con le variabili settate a tali valori sia effettivamente vera.</li>
+<li>Ma se <code>DPLL</code> arriva come rusultato a <strong>insoddisfacimento</strong> ... ? Come faccio effettivamente a verificare che il risultato sia corretto e non un bug all'interno dell'implementazione del risolutore ... ?</li>
+<li>Per formule semplici posso complementare la risoluzione affiancando <code>DPLL</code> con <code>Bruteforcer</code> e verificare; ma per formule complesse ... ?</li>
+</ul>
 </div>
 <div id="dpll-tp-curiosities" class="slide section level1">
 <h1>DPLL &amp; TP: Curiosities</h1>
@@ -371,10 +378,10 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
                    | k &amp; l &gt; n | m &amp; o ^ q
   
   <span class="co">/* F2 */</span> a == b ^ c -&gt; d | e &lt;-&gt; f ^ g &amp; h | j 
-                   | k &amp; l &gt; n | m &amp; o ^ q ~&amp; z0
+                   | k &amp; l &gt; n | m &amp; o ^ q ~&amp; r
   
   <span class="co">/* F3 */</span> a == b ^ c -&gt; d | e &lt;-&gt; f ^ g &amp; h | j 
-                   | k &amp; l &gt; n | m &amp; o ^ q ~&amp; z0 ^ z1 == z2</code></pre></div>
+                   | k &amp; l &gt; n | m &amp; o ^ q ~&amp; r ^ s == t</code></pre></div>
 <table>
 <thead>
 <tr class="header">
@@ -419,6 +426,11 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <p><strong>SCOPO</strong>: Ridurre lo <strong>unit-propagation</strong> che e' la parte computazionalmente piu' dispendiosa nella risoluzione di un problema <code>SAT</code>.</p>
 <ul>
 <li><strong>NOTA</strong>: In <code>zChaff</code> l'<strong>undo</strong> di un assegnamento non e' costoso in termini computazionali</li>
+</ul>
+<h2 id="zchaff-resolution-based-checker">zChaff: Resolution-Based Checker</h2>
+<ul>
+<li>Fa uso di tecniche di <strong>tracing</strong> durante la fase di risoluzione.</li>
+<li>Questo <strong>trace</strong> verra' infine utilizzato per dimostare la validita' della risoluzione riportata da zChaff in caso di insoddisfacimento <strong>(Rischio di BUG)</strong>.</li>
 </ul>
 </div>
 <div id="zchaff-variable-state-independent-decaying-sum" class="slide section level1">

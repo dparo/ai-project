@@ -270,6 +270,7 @@ DPLL Full Example
     
    ![](imgs/dpll_full_run.gif)
     
+
 Proving Theorems with DPLL
 ==========================
 * Con DPLL e' possibile verificare la tautologia di una formula
@@ -307,6 +308,23 @@ DPLL & BF Comparison
                    17                27 secondi                       < 1 milli-secondo
                    18                57 secondi                       < 1 milli-secondo
                    19               121 secondi                       < 1 milli-secondo
+                   
+## DPLL Ethical problem
+* Come provare che il **risultato** prodotto
+  da `DPLL` sia effettivamente corretto ... ?
+* Quando `DPLL` arriva a soddisfacimento riporta
+  i valori dei letterali assegnati, e quindi la
+  verifica e' **banale**: si tratta di verificare se
+  la formula con le variabili settate a tali
+  valori sia effettivamente vera.
+* Ma se `DPLL` arriva come rusultato a **insoddisfacimento** ... ?
+  Come faccio effettivamente a verificare che il risultato sia
+  corretto e non un bug all'interno 
+  dell'implementazione del risolutore ... ?
+* Per formule semplici posso complementare la risoluzione
+  affiancando `DPLL` con `Bruteforcer` e verificare;
+  ma per formule complesse  ... ?
+
 
 DPLL & TP: Curiosities
 ======================
@@ -394,10 +412,10 @@ DPLL: Performance Analysis
                    | k & l > n | m & o ^ q
   
   /* F2 */ a == b ^ c -> d | e <-> f ^ g & h | j 
-                   | k & l > n | m & o ^ q ~& z0
+                   | k & l > n | m & o ^ q ~& r
   
   /* F3 */ a == b ^ c -> d | e <-> f ^ g & h | j 
-                   | k & l > n | m & o ^ q ~& z0 ^ z1 == z2
+                   | k & l > n | m & o ^ q ~& r ^ s == t
 ~~~~~~~~~
 
   | Formula | Memory Consumption |
@@ -457,6 +475,13 @@ zChaff: State of the Art DPLL-Derived Implementation
   
 * **NOTA**: In `zChaff` l'**undo** di un assegnamento non e' costoso in termini
   computazionali
+  
+## zChaff: Resolution-Based Checker
+* Fa uso di tecniche di **tracing** durante la fase di risoluzione.
+* Questo **trace** verra' infine utilizzato per dimostare la 
+  validita' della risoluzione riportata da zChaff in caso
+  di insoddisfacimento 
+  **(Rischio di BUG)**.
   
 zChaff: Variable State Independent Decaying Sum
 ===============================================

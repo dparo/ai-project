@@ -152,8 +152,8 @@ Please refer to the `README.md` located in `src/` directory.
   
   ```c
   /* F1 */ a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n | m & o ^ q
-  /* F2 */ a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n | m & o ^ q ~& z0
-  /* F3 */ a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n | m & o ^ q ~& z0 ^ z1 == z2
+  /* F2 */ a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n | m & o ^ q ~& r
+  /* F3 */ a == b ^ c -> d | e <-> f ^ g & h | j | k & l > n | m & o ^ q ~& r ^ s == t
   ```
   
   | Formula | Memory Consumption |

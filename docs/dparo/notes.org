@@ -52,11 +52,7 @@
 ** To Be READ
 - https://www.cs.cmu.edu/afs/cs/project/jair/pub/volume21/dixon04a-html/node1.html
 
-- https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7225110
-
-- https://www.princeton.edu/~chaff/publication/cade_cav_2002.pdf
-- https://www.princeton.edu/~chaff/publication/DATE2003_validating_sat_solver.pdf
-
+- https://www.princeton.edu/~chaff/publication/cade_cav_2002.pdf ( This is the good shit, the best for last )
 
 ** Already READ
 - https://bears.ece.ucsb.edu/class/256bd/RCFB256B3450-Zchoff.pdf
@@ -67,3 +63,8 @@
 - https://www.princeton.edu/~chaff/publication/cp_2002.pdf (ACNF: unit-cubes, satisfiable-cubes)
 - https://www.princeton.edu/~chaff/publication/iccad2001_final.pdf ( Implication Graph )
 - https://www.princeton.edu/~chaff/publication/iccad_2002.pdf (Long Distance Resolution Lemmas and Proofs)
+- https://www.princeton.edu/~chaff/publication/DATE2003_validating_sat_solver.pdf 
+  (Proof for zChaff Correctness, adding to zChaff a tracer to prove the result of zChaff is correct and not buggy)
+
+** Skipped Or Read Briefly
+- https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7225110
