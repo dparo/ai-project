@@ -51,7 +51,6 @@
 
 ** To Be READ
 
-- https://www.princeton.edu/~chaff/publication/cade_cav_2002.pdf ( This is the good shit, the best for last )
 
 ** Already READ
 - https://bears.ece.ucsb.edu/class/256bd/RCFB256B3450-Zchoff.pdf
@@ -65,6 +64,7 @@
 - https://www.princeton.edu/~chaff/publication/DATE2003_validating_sat_solver.pdf 
   (Proof for zChaff Correctness, adding to zChaff a tracer to prove the result of zChaff is correct and not buggy)
 
-** Skipped Or Read Briefly
+** Only Read Briefly
 - https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=7225110
 - https://www.cs.cmu.edu/afs/cs/project/jair/pub/volume21/dixon04a-html/node1.html
+- https://www.princeton.edu/~chaff/publication/cade_cav_2002.pdf ( This is the good shit, the best for last )

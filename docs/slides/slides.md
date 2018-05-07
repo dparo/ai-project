@@ -546,6 +546,8 @@ Conflict-Driven and Satisfiability-Directed Learning
 Future Work
 ===========
 * Riscrittura `DPLL` per renderlo meno **memory-hungry**.
+* Riscrittura `DPLL` senza **ricorsione** ma utilizzando
+  **iterazione**, per evitare `stack blow-up`
 * Aggiunta nel REPL per supporto di semplici definizioni di liste
 
 ~~~~~
