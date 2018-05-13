@@ -7,6 +7,7 @@
   <meta http-equiv="Content-Style-Type" content="text/css" />
   <meta name="generator" content="pandoc" />
   <meta name="author" content="Davide Paro" />
+  <meta name="author" content="" />
   <title>A SAT Solver Implementation</title>
   <style type="text/css">code{white-space: pre;}</style>
   <style type="text/css">
@@ -55,7 +56,7 @@ code > span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Inf
 <div class="slide titlepage">
   <h1 class="title">A SAT Solver Implementation</h1>
   <p class="author">
-Davide Paro
+Davide Paro<br/>
   </p>
   <p class="date">May 2018</p>
 </div>
@@ -69,22 +70,22 @@ Davide Paro
 <li>Analisi a grandi linee delle performance e dettagli applicativi</li>
 </ul>
 </div>
-<div id="parsing" class="slide section level1">
-<h1>Parsing</h1>
+<div id="lexing-parsing" class="slide section level1">
+<h1>Lexing / Parsing</h1>
 <ol style="list-style-type: decimal">
-<li><p>Il primo passo consiste nella <strong>tokenizzazione</strong> della formula. Ogni singolo carattere viene raggruppato in &quot;tokens&quot; secondo le regole sintattiche definite dal linguaggio.</p></li>
+<li><p>Il primo passo consiste nella fase di <strong>lexing</strong> dello user-input. Ogni singolo carattere viene raggruppato in <strong>tokens</strong> secondo le regole sintattiche definite dal linguaggio.</p></li>
 <li><p>Una volta generati i &quot;tokens&quot;, si procede alla conversione della formula dalla forma <strong>infissa</strong> (piu' comoda agli umani) in una forma <strong>prefissa</strong> (LISP Notation).</p>
 <pre><code>  (A &amp; B) | C     --&gt;    (| (&amp; A B) C)</code></pre></li>
-<li><p>Si fa uso dell'algoritmo <strong>Shunting-Yard</strong> fortemente customizzato con estensioni per risolvere il problema in questione. In base a regole di precedenza degli operatori e alle regole sintattiche definite per il linguaggio verra' generata la notazione prefissa appropriata.</p></li>
+<li><p>Si fa uso dell'algoritmo <strong>Shunting-Yard</strong> (customizzato con estensioni) per la conversione in forma infissa. In base a regole di precedenza degli operatori e a regole sintattiche definite per il linguaggio verra' generata la notazione prefissa appropriata.</p></li>
 </ol>
 </div>
-<div id="ast-generation" class="slide section level1">
-<h1>AST Generation</h1>
+<div id="parsing-ast-generation" class="slide section level1">
+<h1>Parsing: AST Generation</h1>
 <ol style="list-style-type: decimal">
-<li>Una volta &quot;parsata&quot; la formula in forma prefissa si genera l'albero di sintassi &lt;<strong>AST</strong>&gt;. L'albero di sintassi verra' implementato semplicemente con un semplice STACK.</li>
-<li><p>Segue un analisi semantica e di validita' della formula presente nell'AST. Se erronea, viene rifiutata.</p>
+<li>Durante la fase di parsing si genera l'albero di sintassi &lt;<strong>AST</strong>&gt;. L'albero di sintassi verra' implementato semplicemente con uno <code>STACK</code>.</li>
+<li><p>Segue un analisi semantica e di validita' della formula presente nell'AST. Se erronea, verra' rifiutata.</p>
 <pre><code>  A &amp; | B   e&#39; una formula mal formata -&gt; errore</code></pre></li>
-<li><p>Una volta verificata la validita' della formula se ne estraggono i vari simboli/letterali/identificatori e si usano per costruire una <strong>Symbol Table</strong>. (Esattamente come un compilatore)</p>
+<li><p>Una volta verificata la validita' della formula se ne estraggono i vari simboli/letterali/identificatori presenti e si usano per costruire una <strong>Symbol Table</strong>. (Esattamente come un compilatore)</p>
 <pre><code>  FORMULA:      (| (&amp; A B) C) </code></pre>
 <div class="figure">
 <img src="imgs/generated_ast.png" />
@@ -99,7 +100,7 @@ Davide Paro
 </blockquote>
 <ol style="list-style-type: decimal">
 <li>In base al numero di letterali trovati all'interno della formula si procede alla generazione di 2^n possibili combinazioni (dove n e' il numero di letterali)</li>
-<li><p>Grazie al fatto di aver rappresentato l'AST con un semplice stack ci permette di implementare un risolutore che sostanzialmente lavora come una <strong>stack-virtual-machine</strong>. Si procede dal fondo dello stack per ogni letterale/costante si &quot;pusha&quot; il valore in un altro stack <strong>(Virtual Machine Stack)</strong> e per ogni operatore si fa il &quot;pop&quot; del numero necessario di operandi e si &quot;ripusha&quot; il risultato. Alla fine della &quot;evaluation&quot; dell'intero AST in caso di formula ben formata sullo stack delle computazioni rimane solamente un elemento: il risultato della computazione dell'intera formula.</p>
+<li><p>Grazie al fatto di aver rappresentato l'AST con un semplice stack ci permette di implementare un risolutore che lavora come una <strong>stack-virtual-machine</strong>. Si procede dal fondo dello stack per ogni letterale/costante si <code>pusha</code> il valore in un altro stack e per ogni operatore si fa il <code>pop</code> del numero necessario di operandi e si <code>ripusha</code> il risultato. Alla fine della <code>evaluation</code> dell'intero AST in caso di formula ben formata sullo stack delle computazioni rimane solamente un elemento: il risultato della computazione dell'intera formula.</p>
 <pre><code>FORMULA:      (| (&amp; A B) C)
 ASSEGNAMENTO: [A = 0, B = 1, C = 1]</code></pre></li>
 </ol>
@@ -118,37 +119,36 @@ ASSEGNAMENTO: [A = 0, B = 1, C = 1]</code></pre></li>
 <table>
 <thead>
 <tr class="header">
-<th align="left">N: Numero letterali</th>
-<th align="left">Tempo di computazione</th>
+<th>N: Numero letterali</th>
+<th>Tempo di computazione</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">15</td>
-<td align="left">6 secondi</td>
+<td>15</td>
+<td>6 secondi</td>
 </tr>
 <tr class="even">
-<td align="left">16</td>
-<td align="left">12 secondi</td>
+<td>16</td>
+<td>12 secondi</td>
 </tr>
 <tr class="odd">
-<td align="left">17</td>
-<td align="left">27 secondi</td>
+<td>17</td>
+<td>27 secondi</td>
 </tr>
 <tr class="even">
-<td align="left">18</td>
-<td align="left">57 secondi</td>
+<td>18</td>
+<td>57 secondi</td>
 </tr>
 <tr class="odd">
-<td align="left">19</td>
-<td align="left">121 secondi</td>
+<td>19</td>
+<td>121 secondi</td>
 </tr>
 </tbody>
 </table>
 <ul>
-<li>Il tempo di computazione diventa piu' del doppio per ogni letterale</li>
-<li><p>Il tempo di computazione peggiora ulteriormente se sono presenti sotto-formule coincidenti. Esse vengono valutate piu' volte dal risolutore</p></li>
-<li><p>Inoltre quando il numero di letterali inizia ad essere consistente l'output generato da Bruteforce risulta pressoche' inutilizzabile.</p></li>
+<li><p>Il tempo di computazione diventa piu' del doppio per ogni letterale</p></li>
+<li><p>Inoltre quando il numero di letterali inizia ad essere numeroso l'output generato da Bruteforce risulta pressoche' inutilizzabile.</p></li>
 </ul>
 <p><a href="./imgs/bruteforce_unusable_output.html" target="_blank"><strong>Bruteforce Unusable Output</strong></a></p>
 </div>
@@ -203,10 +203,8 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 
 </div>
 <ol start="2" style="list-style-type: decimal">
-<li><p>Si applica De-Morgan ricorsivamente in modo da &quot;spingere le negazioni in basso&quot;. Alla fine dell'applicazione di De-Morgan si avra' una formula dipendentemente da</p>
-<pre><code>a1, a2, ...., an, !a1, !a2, ...., !an</code></pre></li>
+<li>Si applica De-Morgan ricorsivamente in modo da &quot;spingere le negazioni in basso&quot;.</li>
 </ol>
-<p>In cui le negazioni compaiono solamente precedendo gli input e non &quot;in mezzo alla formula&quot;</p>
 <div class="figure">
 <img src="imgs/formula_demorgan.png" />
 
@@ -216,36 +214,41 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <pre><code>    !!  a  =  a
     !!! a  = !a</code></pre></li>
 </ol>
+<p>Alla fine dell'eliminazione della doppia negazione si avra' una formula dipendentemente da:</p>
+<pre><code>    a1, a2, ...., an, !a1, !a2, ...., !an
+    </code></pre>
+<p>In cui le negazioni compaiono solamente precedendo gli input e non <code>in mezzo alla formula</code></p>
 <div class="figure">
 <img src="imgs/formula_neg_elim.png" />
 
 </div>
 <ol start="4" style="list-style-type: decimal">
 <li><p>Si distribuisce rispetto all'operatore <strong>OR</strong>:</p>
-<pre><code>P | ( Q &amp; R )   ---&gt;   ( P | Q ) &amp; ( P | R )</code></pre>
+<pre><code>P | ( Q &amp; R )   ---&gt;   ( P | Q ) &amp; ( P | R )</code></pre></li>
+</ol>
 <div class="figure">
 <img src="imgs/formula_or_distrib.png" />
 
 </div>
-<p>Notare la ridondanza di alcuni nodi.</p></li>
-<li><p>Alla fine si ottiene una formula a clausole, formate dall'ultimo strato da AND, il secondo strato da OR, e il terzo stato da NOTs.</p></li>
+<pre><code>   Notare la ridondanza di alcuni nodi.</code></pre>
+<ol start="5" style="list-style-type: decimal">
+<li>Alla fine si ottiene una formula a clausole, formate dall'ultimo strato da <strong>AND</strong>, il secondo strato da <strong>OR</strong>, e il terzo stato da <strong>NOT</strong>.</li>
 </ol>
 <div class="figure">
 <img src="imgs/cnf_structure.png" />
 
 </div>
-<p>I nodi ORs rappresentano indecisione sul valore di input, mentre le AND affermano decidibilita sull'input.</p>
+<p>I nodi <code>OR</code> rappresentano indecisione sul valore di input, mentre i nodi <code>AND</code> affermano decidibilita sull'input.</p>
 <pre><code>   Esempio: A &amp; B  e&#39; reversibile
             L&#39;unico modo per avere **true** in output e che in input 
             sia **A** che **B** siano posti ad **true**</code></pre>
-<p>{{IMMAGINE DI ESEMPIO}}</p>
 </div>
 <div id="why-cnf-form" class="slide section level1">
 <h1>Why CNF Form?</h1>
 <ul>
 <li>La formula a CNF essendo formata da operatori <code>&amp;</code> presenti solo in &quot;cima&quot;, permette di dividere la verifica dell'intera soddisfacibilita' della formula nella verifica seperata della soddisfacibilita' delle singole clausole (Minore branching factor e parallelizzabile).</li>
 </ul>
-<p>Infatti l'operatore <code>&amp;</code> e' una funzione iniettiva sotto le ipotesi di imporre che l'output deve essere <code>1</code>. Cio' permette di propagare il valore ai sotto-alberi che formano la clausola.</p>
+<p>Infatti l'operatore <code>&amp;</code> e' una funzione iniettiva sotto le ipotesi di imporre che l'output deve essere <code>1</code>. Cio' permette di propagare il valore ai sotto-alberi che formano le clausole.</p>
 </div>
 <div id="dpll-explanation" class="slide section level1">
 <h1>DPLL Explanation</h1>
@@ -260,11 +263,11 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
    G | 1             --&gt;   1</code></pre></li>
 </ol>
 <blockquote>
-<p>Lo unit propagation costituisce la parte piu' complessa e il cuore di tutto l'algoritmo DPLL</p>
+<p>Lo unit propagation (a volte chiamato Boolean Constraint Propagation BCP) costituisce la parte piu' complessa e il cuore di tutto l'algoritmo DPLL</p>
 </blockquote>
 <ol start="3" style="list-style-type: decimal">
 <li><p>Gli operatori <strong>OR</strong> denotano indecisione sul valore dell'input. DPLL ora deve prendere una <strong>decisione</strong>. DPLL continua prendendo un letterale a caso, assegnando ad esso rispettivamente il valore <strong>true</strong> riduce l'AST con un <strong>unit-propagate</strong> e chiama ricorsivamente DPLL di nuovo. Se la chiamata ricorsiva porta ad insoddisfacimento alla formula, DPLL riassegna al letterale il valore <strong>false</strong> e riprova. (BACKTRACKING).</p></li>
-<li><p>Prima o poi l'albero si sara' ridotto banalmente a:</p>
+<li><p>Dopo <code>N</code> chiamate ricorsive l'albero si sara' ridotto banalmente a:</p>
 <pre><code>  1) true     sicuramente la formula e&#39; soddisfacibile
   2) false    sicuramente la formula e&#39; insoddisfacibile
   3) [-]      (formula vuota) insoddisfacibile</code></pre></li>
@@ -287,10 +290,10 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <ul>
 <li>Con DPLL e' possibile verificare la tautologia di una formula e di conseguenza dimostrare teoremi.</li>
 <li>Ampio utilizzo nell'ambito <strong>EDA</strong> (Electronic Design Automation) per la sintetizzazzione e verifica di correttezza di circuiti logici.</li>
-<li>Il modo per dimostrare un teorema e' prendere la formula originale aggiungere un nodo <strong>NOT</strong> ovvero negarla e valutare DPLL su di essa.</li>
+<li>Il modo per dimostrare un teorema e' prendere la formula originale aggiungere un nodo <strong>NOT</strong> in cima all'albero (ovvero negarla) e valutare DPLL sulla nuova formula.</li>
 </ul>
 <p><strong>(<em>DIMOSTRAZIONE PER ASSURDO</em>)</strong></p>
-<p>Se DPLL applicato su questa nuova formula porta sempre a insoddisfacimento, allora la formula e' sicuramente una tautologia, e quindi il teorema e' dimostrato. Se invece DPLL trova un soddisfacimento per questa formula allora sicuramente la tesi non e' valida. L'algoritmo in questo caso riporta l'assegnamento dei letterali cha hanno causato la non validita' della tesi.</p>
+<p>Se DPLL applicato su questa nuova formula porta sempre a insoddisfacimento, allora la formula e' sicuramente una <strong>tautologia</strong>, e quindi il teorema e' dimostrato. Se invece DPLL trova un soddisfacimento per questa formula allora sicuramente la tesi <code>non e' valida</code>. L'algoritmo in questo caso riporta l'assegnamento dei letterali cha hanno causato la non validita' della tesi.</p>
 <p>{{IMMAGINE}} {{DEMO}}</p>
 </div>
 <div id="dpll-bf-comparison" class="slide section level1">
@@ -302,36 +305,36 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <table>
 <thead>
 <tr class="header">
-<th align="left">N: Numero letterali</th>
-<th align="left">Tempo Computazione <strong>BF</strong></th>
-<th align="left">Tempo Computazione <strong>DPLL</strong></th>
+<th>N: Numero letterali</th>
+<th>Tempo Computazione <strong>BF</strong></th>
+<th>Tempo Computazione <strong>DPLL</strong></th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">15</td>
-<td align="left">6 secondi</td>
-<td align="left">&lt; 1 milli-secondo</td>
+<td>15</td>
+<td>6 secondi</td>
+<td>&lt; 1 milli-secondo</td>
 </tr>
 <tr class="even">
-<td align="left">16</td>
-<td align="left">12 secondi</td>
-<td align="left">&lt; 1 milli-secondo</td>
+<td>16</td>
+<td>12 secondi</td>
+<td>&lt; 1 milli-secondo</td>
 </tr>
 <tr class="odd">
-<td align="left">17</td>
-<td align="left">27 secondi</td>
-<td align="left">&lt; 1 milli-secondo</td>
+<td>17</td>
+<td>27 secondi</td>
+<td>&lt; 1 milli-secondo</td>
 </tr>
 <tr class="even">
-<td align="left">18</td>
-<td align="left">57 secondi</td>
-<td align="left">&lt; 1 milli-secondo</td>
+<td>18</td>
+<td>57 secondi</td>
+<td>&lt; 1 milli-secondo</td>
 </tr>
 <tr class="odd">
-<td align="left">19</td>
-<td align="left">121 secondi</td>
-<td align="left">&lt; 1 milli-secondo</td>
+<td>19</td>
+<td>121 secondi</td>
+<td>&lt; 1 milli-secondo</td>
 </tr>
 </tbody>
 </table>
@@ -366,14 +369,13 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <div id="dpll-performance-analysis" class="slide section level1">
 <h1>DPLL: Performance Analysis</h1>
 <ul>
-<li><strong>DPLL-unit-propagate</strong> costituisce la parte piu' corposa e il cuore dell'intero algoritmo. Nella nostra implementazione occupa circa il <code>50 ~ 70%</code> dell'<code>execution-time</code>. Nella nostra implementazione l'AST viene copiato e fisicamente ridotto, eliminando nodi nella fase di <code>unit-propagate</code>. Cio' garantisce una piu' facile implementazione di determinare che cosa sia una <strong>clausola unitaria</strong> ma comporta dei costi non trascurabili in performance.</li>
-<li><p>Un <code>&gt;= 90%</code> di tempo di computazione speso in <code>unit-propagate</code> e' un valore tipico per implementazioni <code>DPLL</code> che non fanno uso di <strong>duplicazione</strong> dell'<code>AST</code>.</p></li>
-<li><p><strong>BAD!</strong>: <code>dpll-unit-propagate</code> non e' &quot;lavoro&quot; <strong>utile</strong> alla determinazione della soluzione. E' solo <strong>book-keeping</strong> che deve essere svolto per fare funzionare l'algoritmo, e' solo una ricostruzione dell'AST che mantiene equivalenza semantica. <code>unit-propagate</code> costituisce un grosso <strong>bottleneck</strong> nelle implementazioni di risolutori <code>SAT</code>. Le moderne tecniche adottate nei risolutori attuali hanno lo scopo principale di minimizzare il tempo di computazione speso in <code>unit-propagate</code>.</p></li>
+<li><p><strong>DPLL-unit-propagate</strong> costituisce la parte piu' corposa e il cuore dell'intero algoritmo. Nella nostra implementazione occupa circa il <code>50 ~ 70%</code> dell'<code>execution-time</code>. Nella nostra implementazione l'AST viene copiato e fisicamente ridotto, eliminando nodi nella fase di <code>unit-propagate</code>. Cio' garantisce una piu' facile implementazione di determinare che cosa sia una <strong>clausola unitaria</strong> ma comporta dei costi non trascurabili in memoria.</p></li>
+<li><p>Nella nostra implementazione si duplica, l'<code>AST</code> prima di ogni chiamata ricorsiva. Cio' garantisce un backtracking con performance instantanee: (Se la formula porta ad insoddisfaccimento, semplicemente si fa il <code>free</code> dell'AST e si ritorna al chiamante che ha una propria copia dell'albero). Questo tuttavia comporta consumo di memoria esponenziale, e l'interprete potrebbe diventare impraticabile per formule che presentano un elevato fattore di branching. Sicuramente e' un punto da migliorare nell'implementazione del nostro risolutore per renderlo <code>industrial-strength</code>.</p></li>
+<li><p>Un <code>90%</code> di tempo di computazione speso in <code>unit-propagate</code> e' un valore tipico per implementazioni <code>DPLL</code> che non fanno uso di <strong>duplicazione</strong> dell'<code>AST</code>.</p></li>
+<li><p><strong>BAD!</strong>: <code>dpll-unit-propagate</code> non e' <code>lavoro</code> <strong>utile</strong> alla determinazione della soluzione. E' solo <strong>book-keeping</strong> che deve essere svolto per fare funzionare l'algoritmo, e' solo una ricostruzione dell'AST che mantiene equivalenza semantica. <code>unit-propagate</code> costituisce un grosso <strong>bottleneck</strong> nelle implementazioni di risolutori <code>SAT</code>. Le moderne tecniche adottate nei risolutori attuali hanno lo scopo principale di minimizzare il tempo di computazione speso in <code>unit-propagate</code>.</p></li>
 </ul>
-<p>Non si riesce a fare molto meglio di cosi'.</p>
-<ul>
-<li>Nella nostra implementazione si duplica, l'<code>AST</code> prima di ogni chiamata ricorsiva. Cio' garantisce un backtracking con performance instantanee (Se la formula porta ad insoddisfaccimento semplicemente <code>free</code> l'AST e ritorna al chiamante che ha una copia dell'albero propria). Questo tuttavia comporta consumo di memoria esponenziale, e l'interprete potrebbe diventare impraticabile per la sintetizzazione di circuiti elettronici in cui compaiono alberi di formule con elevato grado di branching. Sicuramente sarebbe un punto da migliorare nell'implementazione del nostro risolutore per renderlo <code>industrial-strength</code>.</li>
-</ul>
+<p>Con una semplice implementazione di <code>DPLL</code> non si riesce a fare meglio di cosi'. Bisogna cambiare strategia.</p>
+<h2 id="our-dpll-implementation-memory-consumption">Our DPLL Implementation: Memory Consumption</h2>
 <div class="sourceCode"><pre class="sourceCode c"><code class="sourceCode c">  <span class="co">/* F1 */</span> a == b ^ c -&gt; d | e &lt;-&gt; f ^ g &amp; h | j 
                    | k &amp; l &gt; n | m &amp; o ^ q
   
@@ -385,41 +387,41 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <table>
 <thead>
 <tr class="header">
-<th align="left">Formula</th>
-<th align="left">Memory Consumption</th>
+<th>Formula</th>
+<th>Memory Consumption</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
-<td align="left">F1</td>
-<td align="left">4.7 MegaBytes</td>
+<td>F1</td>
+<td>4.7 MegaBytes</td>
 </tr>
 <tr class="even">
-<td align="left">F2</td>
-<td align="left">7.68 MegaBytes</td>
+<td>F2</td>
+<td>7.68 MegaBytes</td>
 </tr>
 <tr class="odd">
-<td align="left">F3</td>
-<td align="left">96.20 MegaBytes</td>
+<td>F3</td>
+<td>96.20 MegaBytes</td>
 </tr>
 </tbody>
 </table>
 <p>Si nota palesemente la dipendenza dal branching factor dell' <code>AST</code>. Operatori come <code>XOR (^)</code> e <code>IS EQUAL (==)</code> tendono ad essere piu' dispendiosi in termini di branching factor rispetto ad operatori come <code>OR (|)</code> e <code>AND (&amp;)</code>.</p>
 <ul>
-<li><strong>Soluzione</strong>: Invece di duplicare l'<code>AST</code>, nella fase di iterazione per <code>unit-propagate</code>, si <strong>marcano</strong> i nodi con dei <code>flags</code> (<strong>mark &amp; sweep</strong>). Maggiore difficolta' di <code>debugging</code>, e non didattico per la comprensione del problema e dell'algoritmo.</li>
+<li><strong>Soluzione</strong>: Invece di duplicare l'<code>AST</code>, nella fase di iterazione per <code>unit-propagate</code>, si <strong>marcano</strong> i nodi con dei <code>flags</code> (<strong>mark &amp; sweep</strong>). Questo comporta maggiore difficolta' di <code>debugging</code>, e in piu' non risulta didattico per la comprensione del problema e dell'algoritmo.</li>
 </ul>
 </div>
 <div id="zchaff-state-of-the-art-dpll-derived-implementation" class="slide section level1">
 <h1>zChaff: State of the Art DPLL-Derived Implementation</h1>
 <ul>
 <li><p><strong>PERFORMANCE</strong> -&gt; <code>10x ~ 200x</code> speedup rispetto a DPLL per problemi di soddisfacimento piu' grandi.</p></li>
-<li><p>Per evitare grossi costi di computazione nella fase di backtracking, si tiene traccia di una lista di <strong>asserting-clauses</strong>. Una clausole e' <code>clause asserted</code> se tutti i letterali che la compongono assumono valore <code>0</code> ad esclusione di 1 solo letterale che assumera valore <code>1</code>. <code>a0 = 0; a1= 0; .... ai = 1; ....; an = 0;</code> Dove <code>ai</code> e' il generico letterale <code>i</code> presente all'interno della formula.</p></li>
+<li><p>Per evitare grossi costi di computazione nella fase di backtracking, si tiene traccia di una lista di <strong>asserting-clauses</strong>. Una clausola e' <code>clause asserted</code> se tutti i letterali che la compongono assumono valore <code>0</code> ad esclusione di un solo letterale che assumera valore <code>1</code>. <code>a0 = 0; a1= 0; .... ai = 1; ....; an = 0;</code> Dove <code>ai</code> e' il generico letterale <code>i</code> presente all'interno della formula.</p></li>
 </ul>
 <p>Fa uso della cosidetta <code>Two-Watched Literals Rule</code>.</p>
-<p><strong>IDEA</strong>: Per ogni clausola si tengono &quot;sott'occhio&quot; due letterali, finche', questi due letterali non vengono assegnati o a loro volta soddisfatti, la clausola non puo' produrre uno <code>unit-propagation</code>.</p>
+<p><strong>IDEA</strong>: Per ogni clausola si tengono &quot;sott'occhio&quot; due letterali, finche', questi due letterali non vengono assegnati o a loro volta soddisfatti, la clausola non potra' produrre uno <code>unit-propagation</code>.</p>
 <p>Solo quando uno dei due letterali viene posto a <code>0</code> che la clausola deve essere analizzata con dettaglio. Se:</p>
 <ul>
-<li><p>E' presente un'altro letterale non settato e non &quot;watched&quot;, si comincia a tenere &quot;d'occhio&quot; quest'ultimo.</p></li>
+<li><p>E' presente un'altro letterale non settato e non <code>watched</code>, si comincia a tenere &quot;d'occhio&quot; quest'ultimo.</p></li>
 <li><p>Se e' presente un letterale soddisfatto nella clausola, non c'e' bisogno di alcuna particolare computazione.</p></li>
 <li><p>Se non e' presente alcun letterale soddisfatto, allora la clausola e' pronta ad essere <code>unit-propagated</code>.</p></li>
 </ul>
@@ -430,7 +432,7 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <h2 id="zchaff-resolution-based-checker">zChaff: Resolution-Based Checker</h2>
 <ul>
 <li>Fa uso di tecniche di <strong>tracing</strong> durante la fase di risoluzione.</li>
-<li>Questo <strong>trace</strong> verra' infine utilizzato per dimostare la validita' della risoluzione riportata da zChaff in caso di insoddisfacimento <strong>(Rischio di BUG)</strong>.</li>
+<li>Questo <strong>trace</strong> verra' infine utilizzato per dimostare la validita' della risoluzione riportata da zChaff in caso di insoddisfacimento.</li>
 </ul>
 </div>
 <div id="zchaff-variable-state-independent-decaying-sum" class="slide section level1">
@@ -463,7 +465,8 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <h1>Future Work</h1>
 <ul>
 <li>Riscrittura <code>DPLL</code> per renderlo meno <strong>memory-hungry</strong>.</li>
-<li>Aggiunta nel REPL per supporto di semplici definizioni di liste</li>
+<li><p>Riscrittura <code>DPLL</code> senza <strong>ricorsione</strong> ma utilizzando <strong>iterazione</strong>, per evitare <code>stack blow-up</code></p></li>
+<li><p>Aggiunta nel <code>REPL</code> il supporto per la definzione di semplici liste</p></li>
 </ul>
 <pre><code>    uomini = [marco, luca, giovanni, ...]
     donne  = [laura, roberta, veronica, ...]
@@ -525,12 +528,12 @@ a &lt;-&gt; b   =   !(a ^ b)  =  !((!a | !b) &amp; (a | b))</code></pre></li>
 <h1>Appendix C (ACNF: Augmented Conjunctive Normal Form)</h1>
 <ul>
 <li>Usata nella risoluzione <strong>QBF</strong>.</li>
-<li>Rilassa il modello <code>CNF</code> permetto presenza di operatori <code>OR</code> nel top-level della formula accanto alle clausole. (Ricordo che le clausole sono delimitate da operatori <code>AND</code>).</li>
+<li>Rilassa il modello <code>CNF</code> permettendo presenza di operatori <code>OR</code> nel top-level della formula accanto alle clausole. (Ricordo che le clausole in <code>CNF</code> sono delimitate da operatori <code>AND</code>).</li>
 <li>Oltre al concetto di <strong>clausola</strong> introdotta in <code>CNF</code>, in <code>ACNF</code> si parla di <strong>cubi</strong>.</li>
 <li>I <strong>cubi</strong> sono sostanzialmente degli <code>ORs</code> con i termini a clausola. (ORs con i top-level ANDs).</li>
 <li>Come per le <strong>clausole-unitarie</strong>, esistono i <strong>cubi-unitari</strong>. I cubi-unitari generanno delle implicazioni.</li>
-<li>Lo scopo <strong>clausole</strong> introdotte in <code>CNF</code> e' portare a insoddisfacimento, il compito dei <strong>cubi</strong> in <code>ACNF</code>, invece e' portare a soddisfacimento.</li>
-<li>I cubi sono i &quot;complementari&quot; delle clausole.</li>
+<li>Lo scopo delle <strong>clausole</strong> introdotte in <code>CNF</code> e' portare a insoddisfacimento della formula, il compito dei <strong>cubi</strong> in <code>ACNF</code>, invece e' quello di portare a soddisfacimento.</li>
+<li>I cubi sono i <code>complementari</code> delle clausole.</li>
 </ul>
 </div>
 </body>

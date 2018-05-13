@@ -14,10 +14,10 @@ Content
   **DPLL**.
 * Analisi a grandi linee delle performance e dettagli applicativi
 
-Parsing
-=======
-1. Il primo passo consiste nella **tokenizzazione** della formula.
-   Ogni singolo carattere viene raggruppato in "tokens" secondo
+Lexing / Parsing
+================
+1. Il primo passo consiste nella fase di **lexing** dello user-input.
+   Ogni singolo carattere viene raggruppato in **tokens** secondo
    le regole sintattiche definite dal linguaggio. 
 
 2. Una volta generati i "tokens", si procede alla conversione
@@ -26,26 +26,26 @@ Parsing
 
           (A & B) | C     -->    (| (& A B) C)
   
-3. Si fa uso dell'algoritmo **Shunting-Yard** fortemente customizzato con
-   estensioni per risolvere il problema in questione. In base
-   a regole di precedenza degli operatori e alle regole sintattiche
+3. Si fa uso dell'algoritmo **Shunting-Yard** (customizzato con
+   estensioni) per la conversione in forma infissa. In base
+   a regole di precedenza degli operatori e a regole sintattiche
    definite per il linguaggio verra' generata la notazione prefissa
    appropriata.
    
 
-AST Generation
-==============
-1. Una volta "parsata" la formula in forma prefissa si
-   genera l'albero di sintassi <**AST**>. L'albero
-   di sintassi verra' implementato semplicemente con
-   un semplice STACK.
+Parsing: AST Generation
+=======================
+1. Durante la fase di parsing si genera
+   l'albero di sintassi <**AST**>.
+   L'albero di sintassi verra' implementato 
+   semplicemente con uno `STACK`.
 2. Segue un analisi semantica e di validita' della formula
-   presente nell'AST. Se erronea, viene rifiutata.
+   presente nell'AST. Se erronea, verra' rifiutata.
 
           A & | B   e' una formula mal formata -> errore
 
 3. Una volta verificata la validita' della formula
-   se ne estraggono i vari simboli/letterali/identificatori
+   se ne estraggono i vari simboli/letterali/identificatori presenti
    e si usano per costruire una **Symbol Table**.
    (Esattamente come un compilatore)
        
@@ -60,13 +60,13 @@ BruteForce Solver (BF)
    formula si procede alla generazione di 2^n possibili combinazioni
    (dove n e' il numero di letterali)
 2. Grazie al fatto di aver rappresentato l'AST con un semplice stack
-   ci permette di implementare un risolutore che sostanzialmente
+   ci permette di implementare un risolutore che
    lavora come una **stack-virtual-machine**.
    Si procede dal fondo dello stack per ogni letterale/costante
-   si "pusha" il valore in un altro stack **(Virtual Machine Stack)**
-   e per ogni operatore si fa il "pop" del numero necessario di operandi
-   e si "ripusha" il risultato.
-   Alla fine della "evaluation" dell'intero AST in caso di formula ben formata
+   si `pusha` il valore in un altro stack
+   e per ogni operatore si fa il `pop` del numero necessario di operandi
+   e si `ripusha` il risultato.
+   Alla fine della `evaluation` dell'intero AST in caso di formula ben formata
    sullo stack delle computazioni rimane solamente un elemento:
    il risultato della computazione dell'intera formula.
 
@@ -93,11 +93,8 @@ BF: Performance Analysis
                    19               121 secondi
 
 * Il tempo di computazione diventa piu' del doppio per ogni letterale
-* Il tempo di computazione peggiora ulteriormente se sono presenti
-  sotto-formule coincidenti. Esse vengono valutate piu' volte dal
-  risolutore
 
-* Inoltre quando il numero di letterali inizia ad essere consistente
+* Inoltre quando il numero di letterali inizia ad essere numeroso
   l'output generato da Bruteforce risulta pressoche' inutilizzabile.
 
   [**Bruteforce Unusable Output**](./imgs/bruteforce_unusable_output.html){target="_blank"}
@@ -165,42 +162,42 @@ CNF Conversion
    ![](imgs/formula_op_conv.png)
    
 2. Si applica De-Morgan ricorsivamente in modo da "spingere le negazioni in basso".
-   Alla fine dell'applicazione di De-Morgan si avra' una formula dipendentemente
-   da 
-
-        a1, a2, ...., an, !a1, !a2, ...., !an
-        
-   In cui le negazioni compaiono solamente precedendo gli input e non "in mezzo alla formula"
     
    ![](imgs/formula_demorgan.png)
 
 3. Si applica una eliminazione della doppia negazione.
-   
+    
             !!  a  =  a
             !!! a  = !a
-            
+   
+   Alla fine dell'eliminazione della doppia negazione si avra' una
+   formula dipendentemente da:
+
+        a1, a2, ...., an, !a1, !a2, ...., !an
+        
+   In cui le negazioni compaiono solamente precedendo gli input e non `in mezzo alla formula`
+
    ![](imgs/formula_neg_elim.png)
 
 4. Si distribuisce rispetto all'operatore __OR__:
 
         P | ( Q & R )   --->   ( P | Q ) & ( P | R )
+        
    ![](imgs/formula_or_distrib.png)
    
        Notare la ridondanza di alcuni nodi.
 
 5. Alla fine si ottiene una formula a clausole, formate dall'ultimo strato
-   da AND, il secondo strato da OR, e il terzo stato da NOTs.
+   da **AND**, il secondo strato da **OR**, e il terzo stato da **NOT**.
    
    ![](imgs/cnf_structure.png)
    
-   I nodi ORs rappresentano indecisione sul valore di input, mentre
-   le AND affermano decidibilita sull'input.
+   I nodi `OR` rappresentano indecisione sul valore di input, mentre
+   i nodi `AND` affermano decidibilita sull'input.
    
        Esempio: A & B  e' reversibile
                 L'unico modo per avere **true** in output e che in input 
                 sia **A** che **B** siano posti ad **true**
-   
-   {{IMMAGINE DI ESEMPIO}}
    
 Why CNF Form?
 =============
@@ -211,7 +208,7 @@ Why CNF Form?
   
   Infatti l'operatore `&` e' una funzione iniettiva sotto le ipotesi di imporre
   che l'output deve essere `1`. Cio' permette di propagare
-  il valore ai sotto-alberi che formano la clausola.
+  il valore ai sotto-alberi che formano le clausole.
    
    
 DPLL Explanation
@@ -232,8 +229,9 @@ DPLL Procede nel seguente modo:
            F & 1             -->   F
            G | 1             -->   1
    
-   > Lo unit propagation costituisce la parte piu' complessa
-   > e il cuore di tutto l'algoritmo DPLL
+   > Lo unit propagation (a volte chiamato Boolean Constraint Propagation BCP)
+   > costituisce la parte piu' complessa e il
+   > cuore di tutto l'algoritmo DPLL
            
 3. Gli operatori **OR** denotano indecisione sul valore dell'input.
    DPLL ora deve prendere una **decisione**.
@@ -244,7 +242,7 @@ DPLL Procede nel seguente modo:
    porta ad insoddisfacimento alla formula, DPLL riassegna al
    letterale il valore __false__ e riprova. (BACKTRACKING).
        
-4. Prima o poi l'albero si sara' ridotto banalmente a:
+4. Dopo `N` chiamate ricorsive l'albero si sara' ridotto banalmente a:
         
           1) true     sicuramente la formula e' soddisfacibile
           2) false    sicuramente la formula e' insoddisfacibile
@@ -278,16 +276,16 @@ Proving Theorems with DPLL
 * Ampio utilizzo nell'ambito **EDA** (Electronic Design Automation)
   per la sintetizzazzione e verifica di correttezza di circuiti logici.
 * Il modo per dimostrare un teorema e' prendere la formula
-  originale aggiungere un nodo **NOT** ovvero negarla e valutare
-  DPLL su di essa. 
+  originale aggiungere un nodo **NOT** in cima all'albero (ovvero negarla)
+  e valutare DPLL sulla nuova formula. 
   
   **(*DIMOSTRAZIONE PER ASSURDO*)**
   
   Se DPLL applicato su questa nuova formula porta sempre a
-  insoddisfacimento, allora la formula e' sicuramente una tautologia,
+  insoddisfacimento, allora la formula e' sicuramente una **tautologia**,
   e quindi il teorema e' dimostrato.
   Se invece DPLL trova un soddisfacimento per questa formula
-  allora sicuramente la tesi non e' valida.
+  allora sicuramente la tesi `non e' valida`.
   L'algoritmo in questo caso riporta l'assegnamento dei letterali
   cha hanno causato la non validita' della tesi.
   
@@ -310,6 +308,7 @@ DPLL & BF Comparison
                    19               121 secondi                       < 1 milli-secondo
                    
 ## DPLL Ethical problem
+
 * Come provare che il **risultato** prodotto
   da `DPLL` sia effettivamente corretto ... ?
 * Quando `DPLL` arriva a soddisfacimento riporta
@@ -324,7 +323,6 @@ DPLL & BF Comparison
 * Per formule semplici posso complementare la risoluzione
   affiancando `DPLL` con `Bruteforcer` e verificare;
   ma per formule complesse  ... ?
-
 
 DPLL & TP: Curiosities
 ======================
@@ -382,12 +380,25 @@ DPLL: Performance Analysis
   l'AST viene copiato e fisicamente ridotto, eliminando nodi nella
   fase di `unit-propagate`. Cio' garantisce una piu' facile
   implementazione di determinare che cosa sia una **clausola
-  unitaria** ma comporta dei costi non trascurabili in performance.
-* Un `>= 90%` di tempo di computazione speso in `unit-propagate` e' un
+  unitaria** ma comporta dei costi non trascurabili in memoria.
+
+* Nella nostra implementazione si duplica, l'`AST`
+  prima di ogni chiamata ricorsiva. Cio' garantisce un
+  backtracking con performance instantanee: (Se la formula
+  porta ad insoddisfaccimento, semplicemente si fa il `free` dell'AST
+  e si ritorna al chiamante che ha una propria copia dell'albero).
+  Questo tuttavia comporta consumo di memoria esponenziale,
+  e l'interprete potrebbe diventare impraticabile per formule
+  che presentano un elevato fattore di branching.
+  Sicuramente e' un punto da migliorare nell'implementazione
+  del nostro risolutore per renderlo `industrial-strength`.
+
+
+* Un `90%` di tempo di computazione speso in `unit-propagate` e' un
   valore tipico per implementazioni `DPLL` che non fanno uso
   di **duplicazione** dell'`AST`.
 
-* **BAD!**: `dpll-unit-propagate` non e' "lavoro" **utile**
+* **BAD!**: `dpll-unit-propagate` non e' `lavoro` **utile**
   alla determinazione della soluzione. E' solo **book-keeping**
   che deve essere svolto per fare funzionare l'algoritmo,
   e' solo una ricostruzione dell'AST che mantiene equivalenza
@@ -398,20 +409,12 @@ DPLL: Performance Analysis
   lo scopo principale di minimizzare il tempo di computazione
   speso in `unit-propagate`.
 
-  Non si riesce a fare molto meglio di cosi'.
+  Con una semplice implementazione di `DPLL` non si riesce a fare
+  meglio di cosi'. Bisogna cambiare strategia.
 
-* Nella nostra implementazione si duplica, l'`AST`
-  prima di ogni chiamata ricorsiva. Cio' garantisce un
-  backtracking con performance instantanee (Se la formula
-  porta ad insoddisfaccimento semplicemente `free` l'AST
-  e ritorna al chiamante che ha una copia dell'albero propria).
-  Questo tuttavia comporta consumo di memoria esponenziale,
-  e l'interprete potrebbe diventare impraticabile per la
-  sintetizzazione di circuiti elettronici in cui compaiono
-  alberi di formule con elevato grado di branching.
-  Sicuramente sarebbe un punto da migliorare nell'implementazione
-  del nostro risolutore per renderlo `industrial-strength`.
-  
+
+## Our DPLL Implementation: Memory Consumption
+
 ~~~~~~~~~c
   /* F1 */ a == b ^ c -> d | e <-> f ^ g & h | j 
                    | k & l > n | m & o ^ q
@@ -437,8 +440,8 @@ DPLL: Performance Analysis
 * **Soluzione**: Invece di duplicare l'`AST`, nella
   fase di iterazione per `unit-propagate`, si **marcano**
   i nodi con dei `flags` (**mark & sweep**).
-  Maggiore difficolta' di `debugging`,
-  e non didattico per la comprensione del problema e
+  Questo comporta maggiore difficolta' di `debugging`,
+  e in piu' non risulta didattico per la comprensione del problema e
   dell'algoritmo.
 
 zChaff: State of the Art DPLL-Derived Implementation
@@ -449,8 +452,8 @@ zChaff: State of the Art DPLL-Derived Implementation
 * Per evitare grossi costi di computazione nella
   fase di backtracking,
   si tiene traccia di una lista di **asserting-clauses**.
-  Una clausole e' `clause asserted` se tutti i letterali che la
-  compongono assumono valore `0` ad esclusione di 1 solo letterale
+  Una clausola e' `clause asserted` se tutti i letterali che la
+  compongono assumono valore `0` ad esclusione di un solo letterale
   che assumera valore `1`.
   ```
   a0 = 0; a1= 0; .... ai = 1; ....; an = 0;
@@ -461,12 +464,12 @@ zChaff: State of the Art DPLL-Derived Implementation
   
   **IDEA**: Per ogni clausola si tengono "sott'occhio" due letterali,
   finche', questi due letterali non vengono assegnati o a loro volta soddisfatti,
-  la clausola non puo' produrre uno `unit-propagation`.
+  la clausola non potra' produrre uno `unit-propagation`.
 
   Solo quando uno dei due letterali viene posto a `0` che la clausola
   deve essere analizzata con dettaglio. Se:
   
-  - E' presente un'altro letterale non settato e non "watched",
+  - E' presente un'altro letterale non settato e non `watched`,
     si comincia a tenere "d'occhio" quest'ultimo.
   
   - Se e' presente un letterale soddisfatto nella clausola, non
@@ -485,8 +488,7 @@ zChaff: State of the Art DPLL-Derived Implementation
 * Fa uso di tecniche di **tracing** durante la fase di risoluzione.
 * Questo **trace** verra' infine utilizzato per dimostare la 
   validita' della risoluzione riportata da zChaff in caso
-  di insoddisfacimento 
-  **(Rischio di BUG)**.
+  di insoddisfacimento.
   
 zChaff: Variable State Independent Decaying Sum
 ===============================================
@@ -541,12 +543,13 @@ Conflict-Driven and Satisfiability-Directed Learning
 
 
 
-
-
 Future Work
 ===========
 * Riscrittura `DPLL` per renderlo meno **memory-hungry**.
-* Aggiunta nel REPL per supporto di semplici definizioni di liste
+* Riscrittura `DPLL` senza **ricorsione** ma utilizzando
+  **iterazione**, per evitare `stack blow-up`
+
+* Aggiunta nel `REPL` il supporto per la definzione di semplici liste
 
 ~~~~~
     uomini = [marco, luca, giovanni, ...]
@@ -628,16 +631,17 @@ Appendix B (QBF)
 Appendix C (ACNF: Augmented Conjunctive Normal Form)
 ====================================================
 * Usata nella risoluzione **QBF**.
-* Rilassa il modello `CNF` permetto presenza di operatori
+* Rilassa il modello `CNF` permettendo presenza di operatori
   `OR` nel top-level della formula accanto alle clausole.
-  (Ricordo che le clausole sono delimitate da operatori `AND`).
+  (Ricordo che le clausole in `CNF` sono delimitate da operatori `AND`).
 * Oltre al concetto di **clausola** introdotta in `CNF`, 
   in `ACNF` si parla di **cubi**.
 * I **cubi** sono sostanzialmente degli `ORs` con
   i termini a clausola. (ORs con i top-level ANDs).
-*  Come per le **clausole-unitarie**, esistono i **cubi-unitari**.
+* Come per le **clausole-unitarie**, esistono i **cubi-unitari**.
   I cubi-unitari generanno delle implicazioni.
-* Lo scopo **clausole** introdotte in `CNF` e' portare a insoddisfacimento,
-  il compito dei **cubi** in `ACNF`, invece e' portare a soddisfacimento.
-* I cubi sono i "complementari" delle clausole.
+* Lo scopo delle **clausole** introdotte in `CNF` e' portare a insoddisfacimento 
+  della formula,
+  il compito dei **cubi** in `ACNF`, invece e' quello di portare a soddisfacimento.
+* I cubi sono i `complementari` delle clausole.
   
