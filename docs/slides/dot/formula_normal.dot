@@ -1,0 +1,13 @@
+// Formula "A <-> B"
+graph G  {
+    graph [fontname = "Hack"];
+    node  [fontname = "Hack"];
+    edge  [fontname = "Hack"];
+    a  [ label = "A", fillcolor = "#E7E7FF", style="filled", shape = "box"];
+    b  [ label = "B", fillcolor = "#E7E7FF", style="filled", shape = "box"];
+
+    impl [label = "<->", fillcolor = "#E7E7FF", style="filled"];
+
+    impl -- a;
+    impl -- b;
+}

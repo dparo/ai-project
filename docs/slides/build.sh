@@ -2,6 +2,8 @@
 
 set -x
 
+dot -Gdpi=92 -Tpng dot/formula_normal.dot -o imgs/formula_normal.png
+dot -Gdpi=92 -Tpng dot/formula_op_conv.dot -o imgs/formula_op_conv.png
 dot -Gdpi=92 -Tpng dot/formula_op_conv.dot -o imgs/formula_op_conv.png
 dot -Gdpi=92 -Tpng dot/formula_demorgan.dot -o imgs/formula_demorgan.png
 dot -Gdpi=92 -Tpng dot/formula_neg_elim.dot -o imgs/formula_neg_elim.png
