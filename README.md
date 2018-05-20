@@ -171,3 +171,30 @@ Please refer to the `README.md` located in `src/` directory.
   Don't rely on it to try to synthesize logic circuits with **millions**
   of `logic gates`.
   
+## Possible Improvements / Future work
+
+* Rewrite `DPLL` to be less memory-hungry
+* Rewrite `DPLL` in order to avoid using recursion to avoid stack blow-up.
+  Use classic iteration instead.
+* Add support for list definitions and simple queries. This will allow
+  to use the interpreter as kinda a small programming language (like Prolog).
+  
+  ```c
+  [>] men   = [john, paul, ...]
+  [>] women = [mary, elizabeth]
+  // QUERY: Is John a woman ?
+  [>] john IN women // or
+  [>] women[john]
+
+  ```
+* Adopt the interpreter to support **QBF** (Quantified Boolean Formula)
+  with quantifiers.
+  
+  QBF is a pspace-complete problem.
+  It finds great usage in artificial intelligence and in the field of **EDA**
+  which it is used to verify the validity of sequential electronic circuits.
+
+* Implement common heuristic methods for solving. Adopt some algorithm
+  policies used by the state of the art solver `zChaff`
+
+

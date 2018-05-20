@@ -4,7 +4,7 @@
 
 Content
 =======
-* Introduzione a risolutori `SAT` for problemi
+* Introduzione a risolutori `SAT` per problemi
   **NP-complete**
 * Discussione di algoritmi classici per la risoluzione
 * Discussione di algoritmi che compongono lo
